@@ -17,6 +17,7 @@
   --paper:#E6EAE5; --raise:#F5F7F4; --ink:#14201A; --ink2:#46544C; --muted:#748178; --rule:#C8D0CA;
   --grass:#2F6C4B; --grass2:#2B6445; --grass-deep:#245A3D; --chalk:#F3F5EE; --chalk2:rgba(243,245,238,.62); --line:rgba(243,245,238,.72);
   --flag:#F2C230; --on-flag:#2A2100; --home:#2A58D3; --away:#CF4229; --warn:#B3261E; --scrim:rgba(8,14,10,.45);
+  --faint:#A3AEA7; --home-soft:#DCE5FA; --away-soft:#F8E1DB; --red:#D93025;
   --f-ui:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
   --f-num:"Avenir Next Condensed","DIN Condensed","Roboto Condensed","Arial Narrow",-apple-system,sans-serif;
   color-scheme:light;
@@ -24,6 +25,7 @@
 @media (prefers-color-scheme:dark){:root{
   --paper:#101613; --raise:#18201C; --ink:#E4EAE5; --ink2:#AFBAB3; --muted:#7F8C85; --rule:#28322D;
   --grass:#245A3D; --grass2:#215437; --grass-deep:#1C4A31; --home:#86A9FF; --away:#FF8E72; --scrim:rgba(0,0,0,.6);
+  --faint:#56625B; --home-soft:#1A2644; --away-soft:#3A2018; --red:#FF5A4E;
   color-scheme:dark;
 }}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -63,7 +65,51 @@ input{font:inherit;color:inherit}
 .tbtn:active{background:var(--rule)}
 
 /* ---------- 主区 ---------- */
-.main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,350px) minmax(0,1fr);grid-template-areas:"home mid away";gap:14px;padding:4px 16px 84px;align-items:start}
+/* ---------- 时间轴（沿用 corner-log 的画法） ---------- */
+.tl{padding:0 16px 8px}
+.tl-head{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px}
+.tl-cap{margin:0;font-size:13px;font-weight:700;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:11.5px;color:var(--muted);flex:1 1 300px;min-width:0}
+.legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.legend svg{width:15px;height:15px;overflow:visible;flex:none}
+.tl-tools{display:flex;align-items:center;gap:2px;margin-left:auto;flex-wrap:wrap}
+.zoom{display:inline-flex;align-items:center}
+.zb{min-width:32px;height:30px;border:0;background:none;border-radius:8px;font:500 17px/1 var(--f-ui);color:var(--ink2);padding:0 6px}
+.zb:active{background:var(--rule)}
+.zb.t{font-size:12.5px}
+.zb[aria-pressed="true"]{background:var(--rule);color:var(--ink)}
+.zb:disabled{opacity:.35}
+.zl{font-size:11.5px;color:var(--muted);min-width:6.5em;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.legend{display:none;order:5;flex-basis:100%}
+.legend.open{display:flex}
+.legend svg.w2{width:24px}
+.tl-wrap{position:relative;min-width:0;touch-action:pan-y;-webkit-user-select:none;user-select:none;cursor:grab;margin-top:2px;background:var(--raise);border-radius:12px}
+.tl-wrap.drag{cursor:grabbing}
+.tl.fold .tl-wrap,.tl.fold .legend,.tl.fold .zoom,.tl.fold #curveBtn,.tl.fold .lgdbtn{display:none}
+#tl{display:block;width:100%}
+#tl text{font-family:var(--f-ui)}
+.tl .ax{stroke:var(--muted);stroke-width:1.2} .tl .ax.st2{stroke-dasharray:4 3}
+.tl .gd{stroke:var(--rule);stroke-width:1} .tl .mt{stroke:var(--faint);stroke-width:1}
+.tl .tk{fill:var(--muted);font-size:10.5px;text-anchor:middle;font-variant-numeric:tabular-nums} .tl .tk.ht{font-weight:700;letter-spacing:.08em}
+.tl .sd{font-size:11px;font-weight:700;text-anchor:middle;dominant-baseline:middle} .tl .sd.home{fill:var(--home)} .tl .sd.away{fill:var(--away)}
+.tl .uw{fill:var(--rule);opacity:.45} .tl .uwl{fill:var(--muted);font-size:11px;text-anchor:middle}
+.tl .mo.home{fill:var(--home);opacity:.14} .tl .mo.away{fill:var(--away);opacity:.14}
+.tl .sm{stroke-width:1.4;stroke-linecap:round} .tl .sm.home{stroke:var(--home)} .tl .sm.away{stroke:var(--away)}
+.tl .sm.l1{opacity:.5} .tl .sm.l2,.tl .sm.l3,.tl .sm.l4{stroke-width:2}
+.tl .hd.home.l1{fill:var(--home);opacity:.75} .tl .hd.away.l1{fill:var(--away);opacity:.75}
+.tl .hd.home.l2{fill:var(--home)} .tl .hd.away.l2{fill:var(--away)} .tl .hd.l2{stroke:var(--raise);stroke-width:1.2}
+.tl .hd.l0{fill:var(--raise);stroke-width:1.6} .tl .hd.home.l0{stroke:var(--home)} .tl .hd.away.l0{stroke:var(--away)}
+.tl .hd.dim{opacity:.55}
+.tl .fl{fill:var(--flag);stroke-width:1.2;stroke-linejoin:round} .tl .fl.home{stroke:var(--home)} .tl .fl.away{stroke:var(--away)}
+.tl .bl{fill:var(--raise);stroke:var(--ink);stroke-width:1.5} .tl .bc{fill:var(--ink)}
+.tl .rcd{fill:var(--red)}
+.tl .nw{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 3;opacity:.45}
+.tl .em{fill:var(--muted);font-size:13px;text-anchor:middle}
+@media (max-width:599px){
+  .tl{padding:0 10px 6px}
+  .zl{display:none}
+}
+.main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,350px) minmax(0,1fr);grid-template-areas:"home mid away";gap:14px;padding:4px 16px 84px;align-items:start}
 .pad[data-i="0"]{grid-area:home} .pad[data-i="1"]{grid-area:away} .mid{grid-area:mid}
 @media (max-width:899px){
   .main{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"home away" "mid mid";gap:10px;padding:4px 10px 84px}
@@ -97,7 +143,7 @@ input{font:inherit;color:inherit}
   background:repeating-linear-gradient(180deg,var(--grass) 0 56px,var(--grass2) 56px 112px);
   display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.3fr) minmax(0,1fr);
   grid-template-areas:"goal goal goal" "ckl box ckr" "wl box wr" "f3 f3 f3" "ex ex ex";
-  grid-template-rows:auto 54px auto 132px auto;padding:10px 10px 0}
+  grid-template-rows:auto 52px auto 116px auto;padding:10px 10px 0}
 .pitch::before{content:"";position:absolute;inset:10px 10px auto 10px;height:calc(100% - 10px);border:2px solid var(--line);border-radius:3px 3px 0 0;pointer-events:none}
 .z{position:relative;border:0;background:none;color:var(--chalk);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:6px 4px;border-radius:10px;z-index:1}
 .z:active{background:rgba(243,245,238,.16)}
@@ -125,12 +171,29 @@ input{font:inherit;color:inherit}
 .f3{grid-area:f3;margin-top:8px;border-bottom:2px dashed var(--line);border-radius:10px 10px 0 0}
 .f3 .l{font-size:19px} .f3 .c{font-size:30px}
 .f3 .tag{position:absolute;right:8px;bottom:6px;font-size:11px;color:var(--chalk2)}
-.extra{grid-area:ex;display:flex;justify-content:center;gap:8px;padding:12px 6px 14px;position:relative}
+.extra{grid-area:ex;display:flex;justify-content:center;gap:8px;padding:9px 6px 11px;position:relative}
 .extra::before{content:"";position:absolute;left:50%;bottom:-46px;width:92px;height:92px;margin-left:-46px;border:2px solid var(--line);border-radius:50%;pointer-events:none}
 .extra .z{flex:0 1 auto;flex-direction:row;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:18px;background:var(--grass-deep)}
 .extra .z .l{font-size:13px;font-weight:500}
 .extra .z .c{font-size:16px}
 .extra .z{white-space:nowrap}
+/* 横放、屏幕比较矮的 iPad：压缩球场，让整块球场不用滚动就看得到 */
+@media (min-width:900px) and (max-width:1100px){
+  .main{grid-template-columns:minmax(332px,1fr) minmax(270px,1fr) minmax(332px,1fr)}
+}
+@media (min-width:900px) and (max-height:860px){
+  .bar{padding:6px 16px 4px}
+  .pad-h{padding-bottom:4px}
+  .pitch{grid-template-rows:auto 44px auto 90px auto;padding:8px 8px 0}
+  .pitch::before{inset:8px 8px auto 8px}
+  .goalrow .z{min-height:46px}
+  .goalrow{padding:2px 6px 6px}
+  .wing .z{min-height:48px}
+  .f3{margin-top:4px}
+  .extra{padding:6px 6px 8px}
+  .extra .z{padding:6px 12px}
+  .tl{padding-bottom:4px}
+}
 @container (max-width:330px){
   .pitch{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"goal goal" "box box" "wl wl" "f3 f3" "ckl ckl" "ex ex";grid-template-rows:auto 76px auto 104px 54px auto;padding:6px 6px 0}
   .pitch::before{inset:6px 6px auto 6px}
@@ -296,6 +359,26 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
       <button class="tbtn" id="menuBtn" aria-label="菜单">菜单</button>
     </div>
   </header>
+
+  <section class="tl" id="tlSec" aria-label="时间轴">
+    <div class="tl-head">
+      <h2 class="tl-cap">时间轴</h2>
+      <div class="legend" id="legend"></div>
+      <div class="tl-tools">
+        <button class="zb t lgdbtn" id="lgdBtn" aria-pressed="false">图例</button>
+        <div class="zoom" role="group" aria-label="缩放">
+          <button class="zb" id="zOut" aria-label="缩小">−</button>
+          <span class="zl" id="zLabel">双指可放大</span>
+          <button class="zb" id="zIn" aria-label="放大">＋</button>
+          <button class="zb t" id="zAll">全场</button>
+          <button class="zb t" id="zNow">现在</button>
+        </div>
+        <button class="zb t" id="curveBtn">攻势曲线</button>
+        <button class="zb t" id="tlFold">收起</button>
+      </div>
+    </div>
+    <div class="tl-wrap" id="tlWrap"><svg id="tl" role="img" aria-label="两队进攻时间轴，主队在上，客队在下，越高越接近球门"></svg></div>
+  </section>
 
   <main class="main">
     <section class="pad" data-i="0" aria-label="主队进攻"></section>
@@ -567,7 +650,7 @@ document.addEventListener('visibilitychange', syncWake);
 /* ================= 事件 ================= */
 let undoStack = [];
 function addEv(i, c){
-  if (M.st === 2){ showToast('这场已经结束。要继续记录，请在菜单里重新打开。'); return; }
+  if (M.st === 2){ showToast('这场已经结束记录了。', startNew, '开始新比赛'); return; }
   if (M.tm.ht){ showToast('中场休息中。下半场开球后再记录，或点时间按“下半场开球”。'); return; }
   const e = { t: Math.floor(clockOf(M)), p: M.tm.p, i, c, k: ++seq };
   M.ev.push(e); sortEv(M); undoStack.push(e.k);
@@ -751,7 +834,12 @@ function startPanel(){
 }
 function renderPred(){
   const s = predState(), el = $('#pred'), mini = $('#minip');
-  if (s.msg){ el.innerHTML = `<div class="sec-h"><h2>半场角球预测</h2></div><p class="msg">${s.msg}</p>`; mini.textContent = ''; return; }
+  if (s.msg){
+    el.innerHTML = M.st === 2 ? `<div class="start"><h2>这场已经结束记录</h2>
+      <div class="grid2"><button class="pill green" data-pa="new">开始新比赛</button><button class="pill" data-pa="reopen">重新打开这场</button></div>
+      <p class="note" style="margin:0">这场的记录已经保存在“比赛列表”里，可以随时导出。</p></div>` : `<div class="sec-h"><h2>半场角球预测</h2></div><p class="msg">${s.msg}</p>`;
+    mini.textContent = ''; return;
+  }
   const r = predict(s), have = s.co[0] + s.co[1], over = mOver(r, have, s.line), half = PER[s.p][2];
   const lines = [s.line - 1, s.line, s.line + 1].filter(x => x > 0);
   const fx = (i) => { const m = s.mult[i], w = clamp(Math.log(m) / Math.log(2) * 50, -50, 50); return `<span class="nm ${i ? 'a' : 'h'}">${esc(teamName(i))}</span><span class="bar2"><i style="${w >= 0 ? `left:50%;width:${w.toFixed(1)}%` : `left:${(50 + w).toFixed(1)}%;width:${(-w).toFixed(1)}%`}"></i></span><span class="v">${m.toFixed(2)}×</span>`; };
@@ -787,6 +875,8 @@ $('#pred').addEventListener('click', ev => {
     case 'add0': M.add[p - 1] = null; break;
     case 'hd': M.hd[p - 1] = clamp(M.hd[p - 1] + d, -6, 6); break;
     case 'kick1': kick(1); saveNow(); syncWake(); renderAll(); showToast('上半场开球，从 0:00 开始计时'); return;
+    case 'new': startNew(); return;
+    case 'reopen': M.st = 1; M.stop = null; saveNow(); H = history(); renderAll(); showToast('已重新打开，可以继续记录'); return;
     case 'join': openJoin(); return;
   }
   save(); renderPred(); renderCounts();
@@ -819,7 +909,7 @@ function renderStrip(){
     : '<span class="empty">在球场上点击发生的事件，最近的会显示在这里</span>';
 }
 $('#recent').addEventListener('click', ev => { const b = ev.target.closest('[data-k]'); if (b) openSheet('edit', { k: +b.dataset.k }); });
-function renderAll(){ renderHeader(); renderNames(); renderPads(); renderPred(); renderCounts(); renderStrip(); if (!sheet.hidden && sheetKind === 'list') renderSheet(); }
+function renderAll(){ renderHeader(); renderNames(); renderPads(); renderPred(); renderCounts(); renderStrip(); if (typeof renderTimeline === 'function') renderTimeline(); if (!sheet.hidden && sheetKind === 'list') renderSheet(); }
 
 /* ================= 弹出视窗 ================= */
 const sheet = $('#sheet'), card = $('#card');
@@ -979,16 +1069,16 @@ card.addEventListener('click', ev => {
     case 'arch': openSheet('arch'); break;
     case 'import': openSheet('import'); break;
     case 'model': openSheet('model'); break;
-    case 'new': saveNow(); M = newMatch(M); undoStack = []; H = history(); saveNow(); closeSheet(); renderAll(); syncWake(); showToast('已开始新比赛'); break;
+    case 'new': closeSheet(); startNew(); break;
     case 'exp1': openExport([M]); break;
     case 'expall': openExport(Object.values(store).filter(m => m.ev.length || m.h || m.a)); break;
     case 'mexp': { const m = store[b.dataset.id]; if (m) openExport([m]); break; }
-    case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; H = history(); saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
+    case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; H = history(); tv.z = 1; tv.off = 0; saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
     case 'mdel': {
       const id = b.dataset.id;
       if (d.del !== id){ sheetData.del = id; renderSheet(); break; }
       delete store[id]; LS.set(KEY, store);
-      if (id === M.id){ M = newMatch(); }
+      if (id === M.id){ M = newMatch(); tv.z = 1; tv.off = 0; }
       H = history(); sheetData.del = null; renderSheet(); renderAll(); break;
     }
     case 'finish': { const st = finishMatch(); saveNow(); H = history(); closeSheet(); renderAll(); syncWake(); showToast(`已结束记录（记录到 ${fmtClock(st.p, st.t)}）`); break; }
@@ -1094,16 +1184,338 @@ $('#fileIn').addEventListener('change', ev => {
 
 /* ================= 提示 ================= */
 let toastT = 0, toastFn = null;
-function showToast(msg, undoFn){
-  $('#toastMsg').textContent = msg; toastFn = undoFn || null;
-  $('#toastUndo').hidden = !undoFn; $('#toast').hidden = false;
-  clearTimeout(toastT); toastT = setTimeout(() => { $('#toast').hidden = true; toastFn = null; }, undoFn ? 3500 : 2600);
+let toastLabel = '撤销';
+function showToast(msg, fn, label){
+  $('#toastMsg').textContent = msg; toastFn = fn || null; toastLabel = label || '撤销';
+  $('#toastUndo').textContent = toastLabel;
+  $('#toastUndo').hidden = !fn; $('#toast').hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { $('#toast').hidden = true; toastFn = null; }, fn ? 4000 : 2600);
 }
-$('#toastUndo').addEventListener('click', () => { if (toastFn){ const f = toastFn; toastFn = null; f(); showToast('已撤销'); } });
+$('#toastUndo').addEventListener('click', () => {
+  if (!toastFn) return;
+  const f = toastFn, undo = toastLabel === '撤销';
+  toastFn = null; $('#toast').hidden = true; f();
+  if (undo) showToast('已撤销');
+});
+function startNew(){
+  saveNow(); pauseOther();
+  M = newMatch(M); undoStack = []; H = history(); tv.z = 1; tv.off = 0;
+  saveNow(); renderAll(); syncWake(); showToast('已开始新比赛');
+}
+
+
+/* ================= 时间轴（沿用 corner-log 的画法：主队在上、客队在下，越高越接近球门） ================= */
+const tlWrap = $('#tlWrap'), tlSvg = $('#tl'), tlSec = $('#tlSec');
+const tlPref = Object.assign({ fold: false, curve: true, legend: false }, LS.get('corner-sb-tl', {}) || {});
+const tv = { z: 1, off: 0 };
+let tlHeads = [], tlLast = null;
+const Z_MAX = 12, PAD_L = 22, PAD_R = 8, GAP = 16;
+const LVL = { f3: 0, cf: 1, co: 1, bx: 2, sb: 3, ss: 3, so: 3, ck: 4, sg: 5, og: 5, rc: 5 };
+const STEM = { f3: 'l1', cf: 'l2', co: 'l2', bx: 'l2', sb: 'l2', ss: 'l2', so: 'l2', ck: 'l3', sg: 'l4', og: 'l4', rc: 'l3' };
+const WT = { f3: 1, cf: 1.5, co: 2, bx: 2, sb: 3, ss: 3, so: 3, sg: 3 };
+const phoneMQ = matchMedia('(max-width: 599px)');
+function fmtMin(p, t){
+  const E = PER[p][1];
+  if (t > E + 0.5){ const x = (t - E) / 60; return `${E / 60}+${Number.isInteger(x) ? x : x.toFixed(1)}'`; }
+  const m = t / 60; return `${Number.isInteger(m) ? m : m.toFixed(1)}'`;
+}
+function periodInfo(){
+  const live = M.st === 1, curP = M.tm.ht ? 1 : M.tm.p;
+  const clock = M.tm.ht ? (M.pe[1] || clockOf(M)) : clockOf(M);
+  const mt = {};
+  for (const e of M.ev) if (!e.b) mt[e.p] = Math.max(mt[e.p] || 0, e.t);
+  const list = [], by = {};
+  let off = 0;
+  for (const p of [1, 2]){
+    const [S, E] = PER[p];
+    let end;
+    if (!live && M.stop) end = p < M.stop.p ? (M.pe[p] || E) : p === M.stop.p ? M.stop.t : S;
+    else if (p === curP) end = live ? clock : (M.pe[p] || clock);
+    else if (p < curP) end = M.pe[p] || E;
+    else end = S;
+    if (mt[p] != null) end = Math.max(end, mt[p]);
+    end = Math.max(end, S);
+    const q = { p, S, E, end, dur: end - S, off, disp: Math.max(E - S, end - S) };
+    list.push(q); by[p] = q; off += q.dur;
+  }
+  const cq = by[curP];
+  return { list, by, curP, clock, curPos: cq.off + Math.max(0, Math.min(clock, cq.end) - cq.S), live };
+}
+const posOf = (info, p, t) => { const q = info.by[p]; return q ? q.off + Math.max(0, t - q.S) : 0; };
+function geometry(info, W, z){
+  const ps = info.list, inner = W - PAD_L - PAD_R;
+  const totalDisp = ps.reduce((a, q) => a + q.disp, 0);
+  const k = (inner - GAP * (ps.length - 1)) / totalDisp * z;
+  const starts = []; let c = 0;
+  for (const q of ps){ starts.push(c); c += q.disp * k + GAP; }
+  const contentW = c - GAP;
+  return { ps, inner, k, starts, contentW, maxOff: Math.max(0, contentW - inner), W };
+}
+function contentX(g, p, t){ const i = g.ps.findIndex(q => q.p === p); const j = i < 0 ? g.ps.length - 1 : i; const q = g.ps[j]; return g.starts[j] + clamp(t - q.S, 0, q.disp) * g.k; }
+function invContent(g, c){
+  for (let i = 0; i < g.ps.length; i++){
+    const q = g.ps[i], a = g.starts[i], b = a + q.disp * g.k;
+    if (c <= b + GAP / 2 || i === g.ps.length - 1) return { p: q.p, t: q.S + clamp(c - a, 0, q.disp * g.k) / g.k };
+  }
+  return { p: 1, t: 0 };
+}
+function headSVG(c, x, y, s){
+  const team = s ? 'away' : 'home', d = s ? 1 : -1, f = s ? -1 : 1;
+  switch (c){
+    case 'f3': return `<circle class="hd ${team} l1" cx="${x}" cy="${y}" r="3.2"/>`;
+    case 'co': case 'cf': { const r = 4.8; return `<path class="hd ${team} ${c === 'co' ? 'l2' : 'l0'}" d="M${x} ${(y - r).toFixed(1)}L${(x + r).toFixed(1)} ${y}L${x} ${(y + r).toFixed(1)}L${(x - r).toFixed(1)} ${y}Z"/>`; }
+    case 'bx': return `<circle class="hd ${team} l2" cx="${x}" cy="${y}" r="5.4"/>`;
+    case 'sb': case 'ss': case 'so': {
+      const r = 5.6;
+      return `<path class="hd ${team} ${c === 'ss' ? 'l2' : 'l0'}${c === 'so' ? ' dim' : ''}" d="M${x} ${(y + d * r).toFixed(1)}L${(x + r).toFixed(1)} ${(y - d * r * 0.7).toFixed(1)}L${(x - r).toFixed(1)} ${(y - d * r * 0.7).toFixed(1)}Z"/>`;
+    }
+    case 'ck': return `<path class="fl ${team}" d="M${x} ${y}L${x + 11} ${(y + f * 4).toFixed(1)}L${x} ${(y + f * 8).toFixed(1)}Z"/>`;
+    case 'sg': case 'og': return `<circle class="bl" cx="${x}" cy="${y}" r="7"/><circle class="bc" cx="${x}" cy="${y}" r="2.5"/>`;
+    case 'rc': return `<rect class="rcd" x="${(x - 3.5).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="7" height="10" rx="1.2"/>`;
+  }
+  return '';
+}
+const LGI = {
+  f3: '<svg viewBox="-8 -8 16 16"><circle class="hd home l1" r="3.2"/></svg>',
+  cr: '<svg class="w2" viewBox="-12 -8 24 16"><path class="hd home l2" d="M-6 -4.4L-1.6 0L-6 4.4L-10.4 0Z"/><path class="hd home l0" d="M6 -4.4L10.4 0L6 4.4L1.6 0Z"/></svg>',
+  bx: '<svg viewBox="-8 -8 16 16"><circle class="hd home l2" r="5.4"/></svg>',
+  sh: '<svg viewBox="-8 -8 16 16"><path class="hd home l2" d="M0 -5.6L5.6 3.9L-5.6 3.9Z"/></svg>',
+  ck: '<svg viewBox="-8 -8 16 16"><path class="fl home" d="M-3 -7L8 -3L-3 1Z"/></svg>',
+  gl: '<svg viewBox="-8 -8 16 16"><circle class="bl" r="6.5"/><circle class="bc" r="2.4"/></svg>',
+  rc: '<svg viewBox="-8 -8 16 16"><rect class="rcd" x="-3.5" y="-5" width="7" height="10" rx="1.2"/></svg>',
+  mo: '<svg viewBox="-8 -8 16 16"><path class="mo home" d="M-8 6L-3 -2L2 2L8 -6L8 6Z"/></svg>',
+};
+function renderLegend(){
+  $('#legend').innerHTML = `<span>${LGI.f3}进入前场</span><span>${LGI.cr}传中 到人／没到人</span><span>${LGI.bx}进入禁区</span><span>${LGI.sh}射门（实心＝被扑，空心＝被挡／偏出）</span><span>${LGI.ck}角球</span><span>${LGI.gl}进球</span><span>${LGI.rc}红牌</span><span>${LGI.mo}攻势曲线（前后 5 分钟加权）</span>`;
+  $('#legend').classList.toggle('open', !!tlPref.legend);
+  tlSec.classList.toggle('fold', !!tlPref.fold);
+  $('#tlFold').textContent = tlPref.fold ? '展开' : '收起';
+  $('#tlFold').setAttribute('aria-expanded', String(!tlPref.fold));
+  $('#curveBtn').setAttribute('aria-pressed', String(!!tlPref.curve));
+  $('#lgdBtn').setAttribute('aria-pressed', String(!!tlPref.legend));
+}
+function renderTimeline(){
+  if (tlPref.fold) return;
+  const compact = phoneMQ.matches, short = !compact && innerHeight < 860;
+  const W = Math.max(280, Math.round(tlWrap.clientWidth || 300));
+  const info = periodInfo();
+  const g = geometry(info, W, tv.z);
+  tv.off = clamp(tv.off, 0, g.maxOff);
+  const off = tv.off;
+  tlLast = { info, g, W };
+  const SX = c => PAD_L + c - off;
+  const X = (p, t) => SX(contentX(g, p, t));
+  const XP = pos => {
+    for (let i = 0; i < g.ps.length; i++){
+      const q = g.ps[i], next = g.ps[i + 1];
+      if (pos <= q.off + q.dur || !next || next.dur <= 0) return SX(g.starts[i] + clamp(pos - q.off, 0, q.disp) * g.k);
+    }
+    return PAD_L;
+  };
+  const LV = compact ? [6, 13, 20, 27, 34, 43] : short ? [5, 11, 17, 23, 29, 37] : [8, 16, 24, 33, 42, 52];
+  const x0v = PAD_L - 12, x1v = W - PAD_R + 12;
+  const evs = M.ev.filter(e => !e.b);
+  const items = [[], []];
+  for (const e of evs){ const x = +X(e.p, e.t).toFixed(1); if (x >= x0v && x <= x1v) items[e.i].push({ e, x, y: LV[LVL[e.c]] }); }
+  const top = LV[5] + 12, bot = LV[5] + 12;
+  const axisY = top + 2, H = axisY + bot + 18, base = H - 5;
+  let gx = '';
+  // 加入前（没看到）的时段
+  const o = M.obs || { p: 1, t: 0 };
+  const oPos = posOf(info, o.p, o.t);
+  if (oPos > 1){
+    const xa = SX(g.starts[0]), xb = XP(oPos);
+    if (xb - xa > 0.5){
+      gx += `<rect class="uw" x="${xa.toFixed(1)}" y="2" width="${(xb - xa).toFixed(1)}" height="${base - 14}" rx="4"/>`;
+      if (xb - xa > 56) gx += `<text class="uwl" x="${((xa + xb) / 2).toFixed(1)}" y="${axisY - 6}">加入前</text>`;
+    }
+  }
+  // 刻度（随缩放自动变细）
+  const ppm = g.k * 60;
+  const major = [1, 2, 5, 10, 15].find(m => m * ppm >= 46) || 15;
+  const minor = { 1: 0.5, 2: 1, 5: 1, 10: 5, 15: 5 }[major];
+  for (let i = 0; i < g.ps.length; i++){
+    const q = g.ps[i], step = minor * 60, mstep = major * 60;
+    for (let t = Math.ceil(q.S / step) * step; t - q.S <= q.disp + 0.1; t += step){
+      const x = SX(g.starts[i] + (t - q.S) * g.k);
+      if (x < PAD_L - 2 || x > W - PAD_R + 2) continue;
+      const xs = x.toFixed(1);
+      if (Math.abs(t % mstep) < 0.01){
+        gx += `<line class="gd" x1="${xs}" y1="4" x2="${xs}" y2="${base - 12}"/>`;
+        if (!(t === q.S && q.p > 1)) gx += `<text class="tk" x="${xs}" y="${base}">${fmtMin(q.p, t)}</text>`;
+      } else gx += `<line class="mt" x1="${xs}" y1="${axisY - 3}" x2="${xs}" y2="${axisY + 3}"/>`;
+    }
+    const xa = SX(g.starts[i]), xe = SX(g.starts[i] + (q.E - q.S) * g.k), xend = SX(g.starts[i] + q.disp * g.k);
+    gx += `<line class="ax" x1="${xa.toFixed(1)}" y1="${axisY}" x2="${xe.toFixed(1)}" y2="${axisY}"/>`;
+    if (q.disp > q.E - q.S){
+      gx += `<line class="ax st2" x1="${xe.toFixed(1)}" y1="${axisY}" x2="${xend.toFixed(1)}" y2="${axisY}"/>`;
+      if (major >= 5 && xend - xe >= 30) gx += `<text class="tk" x="${((xe + xend) / 2 + 6).toFixed(1)}" y="${base}">+${Math.round((q.dur - (q.E - q.S)) / 60)}</text>`;
+    }
+    if (i < g.ps.length - 1){ const xm = (xend + GAP / 2).toFixed(1); gx += `<text class="tk ht" x="${xm}" y="${axisY + 4}">HT</text>`; }
+  }
+  // 攻势曲线
+  if (tlPref.curve && evs.length){
+    const STEP = tv.z > 4 ? 15 : 30, KR = 300;
+    const pos = [0, 1].map(s => evs.filter(e => e.i === s && WT[e.c]).map(e => [posOf(info, e.p, e.t), WT[e.c], e.p]));
+    const series = [[], []]; let maxV = 0.0001;
+    g.ps.forEach((q, i) => {
+      if (q.dur <= 0) return;
+      for (let t = 0; t <= q.dur + 0.1; t += STEP){
+        const Pp = q.off + Math.min(t, q.dur);
+        for (const s of [0, 1]){
+          let v = 0; for (const [ep, w, epP] of pos[s]){ if (epP !== q.p) continue; const dd = Math.abs(Pp - ep); if (dd < KR) v += w * (1 - dd / KR); }
+          series[s].push({ i, t: Math.min(t, q.dur), v }); maxV = Math.max(maxV, v);
+        }
+      }
+    });
+    const HM = compact ? 40 : short ? 34 : 58;
+    for (const s of [0, 1]){
+      const team = s ? 'away' : 'home', dir = s ? 1 : -1;
+      g.ps.forEach((q, i) => {
+        const pts = series[s].filter(p => p.i === i); if (pts.length < 2) return;
+        let d = `M${SX(g.starts[i]).toFixed(1)} ${axisY}`;
+        for (const p of pts) d += `L${SX(g.starts[i] + p.t * g.k).toFixed(1)} ${(axisY + dir * p.v / maxV * HM).toFixed(1)}`;
+        d += `L${SX(g.starts[i] + pts[pts.length - 1].t * g.k).toFixed(1)} ${axisY}Z`;
+        gx += `<path class="mo ${team}" d="${d}"/>`;
+      });
+    }
+  }
+  // 事件
+  tlHeads = [];
+  for (const s of [0, 1]){
+    const team = s ? 'away' : 'home', dir = s ? 1 : -1;
+    for (const it of items[s]){
+      const e = it.e, ys = +(axisY + dir * it.y).toFixed(1);
+      gx += `<line class="sm ${team} ${STEM[e.c]}" x1="${it.x}" y1="${axisY + dir * 2}" x2="${it.x}" y2="${ys}"/>`;
+      gx += headSVG(e.c, it.x, ys, s);
+      tlHeads.push({ x: it.x, y: e.c === 'ck' ? ys + (s ? -4 : 4) : ys, k: e.k });
+    }
+  }
+  // 现在
+  if (info.live && (M.tm.r || M.tm.b > 0) && !M.tm.ht){
+    const q = info.by[info.curP];
+    if (q && info.clock >= q.S){ const x = X(info.curP, info.clock); if (x >= PAD_L - 1 && x <= W - PAD_R + 1) gx += `<line class="nw" x1="${x.toFixed(1)}" y1="2" x2="${x.toFixed(1)}" y2="${base - 12}"/>`; }
+  }
+  let svg = `<defs><clipPath id="tlc"><rect x="${PAD_L - 10}" y="0" width="${W - PAD_L - PAD_R + 20}" height="${H}"/></clipPath></defs><g clip-path="url(#tlc)">${gx}</g>`;
+  svg += `<text class="sd home" x="9" y="${(axisY - top / 2).toFixed(1)}">主</text><text class="sd away" x="9" y="${(axisY + bot / 2).toFixed(1)}">客</text>`;
+  if (!evs.length) svg += `<text class="em" x="${(W / 2).toFixed(0)}" y="${axisY - (compact ? 16 : 22)}">还没有事件　在下面的球场上点击开始记录</text><text class="em" x="${(W / 2).toFixed(0)}" y="${axisY + (compact ? 26 : 30)}">主队在上、客队在下，越高代表越接近球门</text>`;
+  tlSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  tlSvg.setAttribute('width', W); tlSvg.setAttribute('height', H);
+  tlSvg.innerHTML = svg;
+  const zl = $('#zLabel');
+  if (tv.z > 1.02){
+    const a = invContent(g, off), b = invContent(g, off + g.inner);
+    zl.textContent = `×${tv.z.toFixed(1)}　${fmtMin(a.p, Math.round(a.t / 60) * 60)}–${fmtMin(b.p, Math.round(b.t / 60) * 60)}`;
+  } else zl.textContent = '双指可放大';
+  $('#zOut').disabled = tv.z <= 1.001; $('#zAll').disabled = tv.z <= 1.001;
+  $('#zNow').hidden = !(info.live && tv.z > 1.02);
+}
+let tlRaf = 0;
+const scheduleTL = () => { if (!tlRaf) tlRaf = requestAnimationFrame(() => { tlRaf = 0; renderTimeline(); }); };
+function setZoom(z, fx, focus){
+  if (!tlLast) return;
+  tv.z = clamp(z, 1, Z_MAX);
+  const g = geometry(tlLast.info, tlLast.W, tv.z);
+  const c = focus ? contentX(g, focus.p, focus.t) : 0;
+  tv.off = clamp(c - (fx - PAD_L), 0, g.maxOff);
+  scheduleTL();
+}
+function focusAt(fx){ return tlLast ? invContent(tlLast.g, fx - PAD_L + tv.off) : null; }
+function zoomBy(f){ if (!tlLast) return; const fx = PAD_L + tlLast.g.inner / 2; setZoom(tv.z * f, fx, focusAt(fx)); }
+$('#zIn').addEventListener('click', () => zoomBy(1.6));
+$('#zOut').addEventListener('click', () => zoomBy(1 / 1.6));
+$('#zAll').addEventListener('click', () => { tv.z = 1; tv.off = 0; renderTimeline(); });
+$('#zNow').addEventListener('click', () => {
+  if (!tlLast) return; const { info, g } = tlLast;
+  tv.off = clamp(contentX(g, info.curP, info.clock) - g.inner * 0.8, 0, g.maxOff); renderTimeline();
+});
+const saveTlPref = () => LS.set('corner-sb-tl', tlPref);
+$('#curveBtn').addEventListener('click', () => { tlPref.curve = !tlPref.curve; saveTlPref(); renderLegend(); renderTimeline(); });
+$('#tlFold').addEventListener('click', () => { tlPref.fold = !tlPref.fold; saveTlPref(); renderLegend(); renderTimeline(); });
+$('#lgdBtn').addEventListener('click', () => { tlPref.legend = !tlPref.legend; saveTlPref(); renderLegend(); });
+/* 手势：单指左右拖动（含惯性）、双指缩放、点一下打开事件 */
+const tg = { pts: new Map(), pan: null, pinch: null, moved: false, vx: 0, lx: 0, lt: 0, inert: 0 };
+const local = e => { const r = tlWrap.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+tlWrap.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  cancelAnimationFrame(tg.inert); tg.inert = 0;
+  try { tlWrap.setPointerCapture(e.pointerId); } catch(_){}
+  const p = local(e); tg.pts.set(e.pointerId, p);
+  if (tg.pts.size === 1){ tg.pan = { x: p.x, off: tv.off }; tg.moved = false; tg.vx = 0; tg.lx = p.x; tg.lt = performance.now(); }
+  else if (tg.pts.size === 2){
+    const [a, b] = [...tg.pts.values()];
+    tg.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: tv.z, focus: focusAt((a.x + b.x) / 2) };
+    tg.moved = true; tg.pan = null;
+  }
+});
+tlWrap.addEventListener('pointermove', e => {
+  if (!tg.pts.has(e.pointerId)) return;
+  const p = local(e); tg.pts.set(e.pointerId, p);
+  if (tg.pinch && tg.pts.size >= 2){
+    const [a, b] = [...tg.pts.values()];
+    setZoom(tg.pinch.z * (Math.hypot(a.x - b.x, a.y - b.y) || 1) / tg.pinch.d, (a.x + b.x) / 2, tg.pinch.focus);
+    return;
+  }
+  if (tg.pan){
+    const dx = p.x - tg.pan.x;
+    if (!tg.moved && Math.abs(dx) > 6){ tg.moved = true; tlWrap.classList.add('drag'); }
+    if (tg.moved){
+      tv.off = tg.pan.off - dx;
+      const now = performance.now(), dt = now - tg.lt;
+      if (dt > 0) tg.vx = 0.7 * ((p.x - tg.lx) / dt) + 0.3 * tg.vx;
+      tg.lx = p.x; tg.lt = now; scheduleTL();
+    }
+  }
+});
+function tlUp(e){
+  if (!tg.pts.has(e.pointerId)) return;
+  tg.pts.delete(e.pointerId);
+  try { tlWrap.releasePointerCapture(e.pointerId); } catch(_){}
+  if (tg.pinch){
+    if (tg.pts.size < 2){ tg.pinch = null; const rest = [...tg.pts.values()][0]; tg.pan = rest ? { x: rest.x, off: tv.off } : null; tg.lx = rest ? rest.x : 0; tg.lt = performance.now(); tg.vx = 0; }
+    return;
+  }
+  if (tg.pts.size === 0){
+    tlWrap.classList.remove('drag');
+    tg.wasDrag = tg.moved;
+    if (tg.moved && Math.abs(tg.vx) > 0.25 && performance.now() - tg.lt < 90) inertia(tg.vx);
+    tg.pan = null;
+  }
+}
+tlWrap.addEventListener('pointerup', tlUp);
+tlWrap.addEventListener('pointercancel', tlUp);
+tlWrap.addEventListener('click', e => {
+  if (tg.wasDrag){ tg.wasDrag = false; return; }
+  const p = local(e);
+  let best = null, bd = 24 * 24;
+  for (const h of tlHeads){ const d = (h.x - p.x) ** 2 + (h.y - p.y) ** 2; if (d < bd){ bd = d; best = h; } }
+  if (best) openSheet('edit', { k: best.k });
+});
+function inertia(v0){
+  let v = v0, last = performance.now();
+  const step = now => {
+    const dt = Math.min(40, now - last); last = now;
+    tv.off -= v * dt; v *= Math.pow(0.93, dt / 16);
+    const max = tlLast ? tlLast.g.maxOff : 0;
+    if (tv.off <= 0 || tv.off >= max){ tv.off = clamp(tv.off, 0, max); v = 0; }
+    renderTimeline();
+    tg.inert = Math.abs(v) > 0.02 ? requestAnimationFrame(step) : 0;
+  };
+  tg.inert = requestAnimationFrame(step);
+}
+tlWrap.addEventListener('wheel', e => {
+  if (e.ctrlKey || e.metaKey){ e.preventDefault(); const p = local(e); setZoom(tv.z * Math.exp(-e.deltaY * 0.01), p.x, focusAt(p.x)); return; }
+  if (tv.z > 1.001 && Math.abs(e.deltaX) > Math.abs(e.deltaY)){ e.preventDefault(); tv.off += e.deltaX; scheduleTL(); }
+}, { passive: false });
+['gesturestart', 'gesturechange', 'gestureend'].forEach(t => tlWrap.addEventListener(t, e => e.preventDefault()));
+let tlW = 0;
+new ResizeObserver(() => { const w = Math.round(tlWrap.clientWidth); if (w && w !== tlW){ tlW = w; renderTimeline(); } }).observe(tlWrap);
+phoneMQ.addEventListener && phoneMQ.addEventListener('change', () => renderTimeline());
+renderLegend();
 
 /* ================= 按钮与更新 ================= */
 $('#runBtn').addEventListener('click', () => {
-  if (M.st === 2){ showToast('这场已经结束'); return; }
+  if (M.st === 2){ showToast('这场已经结束记录了。', startNew, '开始新比赛'); return; }
   if (M.tm.ht){ kick(2); showToast('下半场开球，从 45:00 开始计时'); }
   else M.tm.r ? pauseClock() : startClock();
   saveNow(); syncWake(); renderAll();
@@ -1113,10 +1525,11 @@ $('#menuBtn').addEventListener('click', () => openSheet('menu'));
 $('#defBtn').addEventListener('click', () => openSheet('defs'));
 $('#listBtn').addEventListener('click', () => openSheet('list'));
 $('#undoBtn').addEventListener('click', undoLast);
-let lastPred = 0;
+let lastPred = 0, lastTL = 0;
 setInterval(() => {
   tickClock(false);
   if (M.tm.r && Date.now() - lastPred > 10000){ lastPred = Date.now(); renderPred(); renderCounts(); }
+  if (M.tm.r && Date.now() - lastTL > 5000 && !tg.pts.size && !tg.inert){ lastTL = Date.now(); renderTimeline(); }
 }, 500);
 
 let offline = '离线使用：请从主屏幕的图示打开，联网时打开一次后就能离线使用。';
