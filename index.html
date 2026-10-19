@@ -195,6 +195,26 @@ input{font:inherit;color:inherit}
 .tbl td.m{text-align:center}
 .tbl td.m small{display:block;font-size:11.5px;color:var(--muted)}
 .src{font-size:11px;color:var(--muted);margin:0}
+.start{background:var(--raise);border-radius:14px;padding:12px 14px;margin-bottom:14px;display:grid;gap:10px}
+.start h2{margin:0;font-size:15px}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.tmv{border-radius:12px;padding:8px 12px;box-shadow:inset 0 0 0 1px var(--rule);display:flex;flex-direction:column;min-width:0}
+.tmv span{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tmv.h span{color:var(--home)} .tmv.a span{color:var(--away)}
+.tmv b{font:600 30px/1.1 var(--f-num);font-variant-numeric:tabular-nums}
+.tmv small{font-size:12px;color:var(--muted)}
+.hcr{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;text-align:center}
+.hcr div{background:var(--raise);border-radius:10px;padding:6px 4px;display:flex;flex-direction:column}
+.hcr b{font:600 22px/1.1 var(--f-num);font-variant-numeric:tabular-nums}
+.hcr span{font-size:12px;color:var(--ink2)}
+.hcr .hw.best,.hcr .aw.best{background:var(--flag);color:var(--on-flag)} .hcr .best span{color:var(--on-flag)}
+.stp{display:grid;grid-template-columns:1fr 38px 2.6em 38px;align-items:center;gap:6px;font-size:14px}
+.stp span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stp .h{color:var(--home)} .stp .a{color:var(--away)}
+.stp button{height:38px;border:0;border-radius:19px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule);font-size:18px;font-weight:600}
+.stp b{text-align:center;font:600 20px var(--f-num)}
+.jgrp{display:grid;gap:6px}
+.jgrp h4{margin:4px 0 0;font-size:13px;color:var(--muted);font-weight:600}
 
 /* ---------- 底部事件列 ---------- */
 .strip{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--raise);border-top:1px solid var(--rule);
@@ -304,7 +324,7 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
    每队每分钟角球率 = 时段基准 × 主场 × 比分状态 × 人数 × 刚有角球 × 攻势系数。
    攻势系数由本场到目前为止的“进入前场、进入禁区、传中”相对平均水准算出。
    阵列里 0 = 主队，1 = 客队。 */
-const MODEL = {"base":{"bin":[0.034936,0.046015,0.043645,0.045262,0.043231,0.042883,0.042359,0.045899,0.045682,0.063527,0.041233,0.050224,0.052769,0.049025,0.047032,0.046438,0.048075,0.047778,0.048937,0.053657],"home":1.2998,"state":[1.0859,1.124,1.0,0.76832,0.73417],"clu":1.3596,"cluSec":180,"man":[0.59119,1.0,1.3596],"goal":[[0.010869,0.014283],[0.012811,0.017279]]},"rates":{"f3":0.45911,"bx":0.13775,"cr":0.12044,"sh":0.13031,"sbs":0.063222,"ck":0.053594},"groups":{"f3":["f3"],"bx":["bx","co"],"cr":["co","cf"],"sh":["sb","ss","so","sg"],"ck":["ck"]},"meanTotal":10.2,"features":["so_own_f3","so_own_bx","so_own_cr","so_opp_f3","so_opp_bx"],"coefNoPrior":[0.017398,0.18637,0.21596,0.047979,-0.20657,0.0098398],"coefPrior":[0.0091673,0.17322,0.19579,0.042472,-0.22221,-0.011137,1.0316],"pseudo":15.0,"addDef":[4,6]};
+const MODEL = {"base":{"bin":[0.034936,0.046015,0.043645,0.045262,0.043231,0.042883,0.042359,0.045899,0.045682,0.063527,0.041233,0.050224,0.052769,0.049025,0.047032,0.046438,0.048075,0.047778,0.048937,0.053657],"home":1.2998,"state":[1.0859,1.124,1.0,0.76832,0.73417],"clu":1.3596,"cluSec":180,"man":[0.59119,1.0,1.3596],"goal":[[0.010869,0.014283],[0.012811,0.017279]]},"rates":[{"f3":0.48969,"bx":0.15325,"cr":0.13576,"sh":0.14456,"sbs":0.069653,"ck":0.060136},{"f3":0.42852,"bx":0.12225,"cr":0.10512,"sh":0.11605,"sbs":0.056791,"ck":0.047052}],"groups":{"f3":["f3"],"bx":["bx","co"],"cr":["co","cf"],"sh":["sb","ss","so","sg"],"ck":["ck"]},"meanTotal":10.2,"features":["so_own_f3","so_own_bx","so_own_cr","so_opp_f3","so_opp_bx"],"coefNoPrior":[0.020412,0.19561,0.22284,0.063025,-0.21812,-0.00057652],"coefPrior":[0.012304,0.18287,0.20249,0.057136,-0.23356,-0.021107,1.0266],"pseudo":15.0,"addDef":[4,6]};
 
 function mRng(seed){
   let a = seed >>> 0;
@@ -316,7 +336,7 @@ function mPois(lam, rnd){
   do { k++; p *= rnd(); } while (p > L);
   return k - 1;
 }
-/* 攻势系数：cnt[i][group] 本场到目前为止的次数；elapsed 已比赛分钟；rates 每队每分钟的平均次数；exp 赛前全场预期（可为 null） */
+/* 攻势系数：cnt[i][group] 本场看到的次数；elapsed 看到的分钟数；rates[i][group] 主队／客队每分钟的平均次数；exp 赛前全场预期（可为 null） */
 function mMultipliers(cnt, elapsed, rates, exp){
   const useP = exp != null && exp > 0;
   const coef = useP ? MODEL.coefPrior : MODEL.coefNoPrior;
@@ -329,9 +349,11 @@ function mMultipliers(cnt, elapsed, rates, exp){
       let x;
       if (kind === 'pr') x = Math.log(exp / MODEL.meanTotal);
       else {
-        const n = who === 'own' ? cnt[i][g] : cnt[1 - i][g];
-        const a = rates[g] * MODEL.pseudo;
-        x = Math.log((n + a) / (rates[g] * elapsed + a));
+        // 主队跟主队的平均比、客队跟客队的平均比（rates[0] 主队、rates[1] 客队）
+        const j = who === 'own' ? i : 1 - i;
+        const n = cnt[j][g], r = rates[j][g];
+        const a = r * MODEL.pseudo;
+        x = Math.log((n + a) / (r * elapsed + a));
       }
       z += coef[j + 1] * x;
       parts[i].push(coef[j + 1] * x);
@@ -341,14 +363,15 @@ function mMultipliers(cnt, elapsed, rates, exp){
   return { mult: out, parts };
 }
 /* half 1/2；t0 本半场已过秒数；score/reds/last/mult 都是 [主, 客]；last 为本半场最后一个角球的秒数或 null；
-   end 本半场预计总秒数。回传剩余角球总数的分布 dist[k] 与平均。 */
+   end 本半场预计总秒数。回传剩余角球总数的分布 dist[k]、平均，
+   以及两队各自的平均 meanT 和“主队剩余 − 客队剩余”的分布 diff（键为差值）。 */
 function mSimulate(half, t0, score, reds, last, end, mult, n, seed){
-  const P = MODEL.base, rnd = mRng(seed), dist = [];
+  const P = MODEL.base, rnd = mRng(seed), dist = [], diff = {};
   const man = [Math.sign(reds[1] - reds[0]), Math.sign(reds[0] - reds[1])];
   const gH = P.goal[half - 1][1], gA = P.goal[half - 1][0];
-  let sum = 0;
+  let sum = 0, sumH = 0, sumA = 0;
   for (let s = 0; s < n; s++){
-    let g0 = score[0], g1 = score[1], l0 = last[0] == null ? -1e9 : last[0], l1 = last[1] == null ? -1e9 : last[1], tot = 0, t = t0;
+    let g0 = score[0], g1 = score[1], l0 = last[0] == null ? -1e9 : last[0], l1 = last[1] == null ? -1e9 : last[1], tot = 0, t = t0, c0 = 0;
     while (t < end - 1e-9){
       const mi = Math.floor(t / 60), step = Math.min(60 - (t - mi * 60), end - t), dt = step / 60;
       const b = P.bin[(half - 1) * 10 + Math.min(Math.floor(mi / 5), 9)];
@@ -359,21 +382,35 @@ function mSimulate(half, t0, score, reds, last, end, mult, n, seed){
         const lam = b * (i === 0 ? P.home : 1) * P.man[man[i] + 1] * st * (t - lc <= P.cluSec ? P.clu : 1) * mult[i] * dt;
         const k = mPois(lam, rnd);
         tot += k;
+        if (i === 0) c0 += k;
         if (k > 0){ if (i === 0) l0 = t + step / 2; else l1 = t + step / 2; }
         const g = mPois((i === 0 ? gH : gA) * dt, rnd);
         if (i === 0) g0 += g; else g1 += g;
       }
       t += step;
     }
-    dist[tot] = (dist[tot] || 0) + 1; sum += tot;
+    dist[tot] = (dist[tot] || 0) + 1; sum += tot; sumH += c0; sumA += tot - c0;
+    const d = 2 * c0 - tot;
+    diff[d] = (diff[d] || 0) + 1;
   }
   for (let k = 0; k < dist.length; k++) dist[k] = (dist[k] || 0) / n;
-  return { dist, mean: sum / n };
+  for (const d in diff) diff[d] /= n;
+  return { dist, mean: sum / n, meanT: [sumH / n, sumA / n], diff };
 }
 function mOver(res, have, line){
   let p = 0;
   for (let k = 0; k < res.dist.length; k++) if (have + k > line) p += res.dist[k];
   return p;
+}
+/* 角球让球（以主队为准）：hd 为主队让球数，例如 -1.5 表示主队让 1.5 个。
+   have = [主, 客] 本半场已有角球。回传主队赢盘、走盘、客队赢盘的机率。 */
+function mHandicap(res, have, hd){
+  let w = 0, p = 0, l = 0;
+  for (const k in res.diff){
+    const v = have[0] - have[1] + (+k) + hd;
+    if (v > 1e-9) w += res.diff[k]; else if (v < -1e-9) l += res.diff[k]; else p += res.diff[k];
+  }
+  return { home: w, push: p, away: l };
 }
 
 </script>
@@ -407,14 +444,18 @@ function newMatch(prev){
   const d = new Date();
   return { id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), c: nowSec(), u: nowSec(),
     d: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, lg: prev ? prev.lg : '', h: '', a: '', st: 1,
-    exp: null, line: prev ? prev.line.slice() : [4.5, 4.5], add: [null, null], pe: {}, tm: { p: 1, b: 0, r: 0, at: 0, ht: 0 }, ev: [] };
+    exp: null, line: prev ? prev.line.slice() : [4.5, 4.5], hd: prev && prev.hd ? prev.hd.slice() : [-0.5, -0.5], add: [null, null], pe: {},
+    obs: { p: 1, t: 0 }, stop: null, tm: { p: 1, b: 0, r: 0, at: 0, ht: 0 }, ev: [] };
 }
 function fixMatch(m){
   m.line = Array.isArray(m.line) && m.line.length === 2 ? m.line : [4.5, 4.5];
   m.add = Array.isArray(m.add) && m.add.length === 2 ? m.add : [null, null];
   m.pe = m.pe && typeof m.pe === 'object' ? m.pe : {};
   m.tm = m.tm && PER[m.tm.p] ? m.tm : { p: 1, b: 0, r: 0, at: 0, ht: 0 };
-  m.ev = (m.ev || []).filter(e => e && LABEL[e.c] && PER[e.p]).map(e => ({ t: Math.max(0, +e.t || 0), p: +e.p, i: e.i ? 1 : 0, c: e.c, k: ++seq }));
+  m.hd = Array.isArray(m.hd) && m.hd.length === 2 ? m.hd : [-0.5, -0.5];
+  m.obs = m.obs && PER[m.obs.p] ? { p: +m.obs.p, t: +m.obs.t || 0 } : { p: 1, t: 0 };
+  m.stop = m.stop && PER[m.stop.p] ? { p: +m.stop.p, t: +m.stop.t || 0 } : null;
+  m.ev = (m.ev || []).filter(e => e && LABEL[e.c] && PER[e.p]).map(e => ({ t: Math.max(0, +e.t || 0), p: +e.p, i: e.i ? 1 : 0, c: e.c, b: e.b ? 1 : 0, k: ++seq }));
   sortEv(m);
   return m;
 }
@@ -441,12 +482,17 @@ function fmtClock(p, t){
   if (t > end){ const x = t - end; return `${end / 60}+${Math.floor(x / 60)}:${pad2(x % 60)}`; }
   return `${pad2(Math.floor(t / 60))}:${pad2(t % 60)}`;
 }
-const maxT = (m, p) => m.ev.reduce((a, e) => e.p === p ? Math.max(a, e.t) : a, 0);
+const maxT = (m, p) => m.ev.reduce((a, e) => e.p === p && !e.b ? Math.max(a, e.t) : a, 0);
+const observed = m => m.ev.filter(e => !e.b);
 function startClock(){ if (!M.tm.r){ M.tm.r = 1; M.tm.at = Date.now(); } M.tm.ht = 0; }
 function pauseClock(){ if (M.tm.r){ M.tm.b = Math.round(clockOf(M)); M.tm.r = 0; } }
 function setClock(sec){ M.tm.b = Math.max(PER[M.tm.p][0], Math.round(sec)); if (M.tm.r) M.tm.at = Date.now(); }
 function kick(p){
-  if (p === 2 && !M.pe[1]){ const c = clockOf(M); M.pe[1] = M.tm.p === 1 && c >= 2700 && c <= 3900 ? Math.round(c) : Math.max(2700, maxT(M, 1)); }
+  if (p === 1) M.obs = { p: 1, t: 0 };
+  if (p === 2){
+    if (!M.pe[1] && (M.obs.p === 1 && observed(M).some(e => e.p === 1))){ const c = clockOf(M); M.pe[1] = M.tm.p === 1 && c >= 2700 && c <= 3900 ? Math.round(c) : Math.max(2700, maxT(M, 1)); }
+    if (!observed(M).some(e => e.p === 1)) M.obs = { p: 2, t: PER[2][0] };
+  }
   M.tm = { p, b: PER[p][0], r: 1, at: Date.now(), ht: 0 };
 }
 function endFirstHalf(){
@@ -455,11 +501,59 @@ function endFirstHalf(){
   M.tm.ht = 1;
 }
 function finishMatch(){
+  const ht = M.tm.ht;
   pauseClock();
-  const p = M.tm.p;
-  M.pe[p] = Math.max(Math.round(clockOf(M)), maxT(M, p), PER[p][1]);
-  if (p === 1) M.pe[2] = M.pe[2] || 5400;
+  const p = ht ? 1 : M.tm.p;
+  const t = Math.max(ht && M.pe[1] ? M.pe[1] : Math.round(clockOf(M)), maxT(M, p));
+  M.stop = { p, t };
+  if (p === 2 && t >= PER[2][1] && t <= PER[2][1] + 1200) M.pe[2] = t;
   M.st = 2; M.tm.ht = 0;
+  return M.stop;
+}
+/* 时间输入：支持 23:40、67、45+2、90+3:30；pSel 为选定的半场（可为 null） */
+function parseClock(str, pSel){
+  const x = String(str || '').trim().replace(/＋/g, '+').replace(/：/g, ':').replace(/\s+/g, '');
+  let m = x.match(/^(45|90)\+(\d{1,2})(?::(\d{1,2}))?$/);
+  if (m){ const base = +m[1]; return { p: base === 45 ? 1 : 2, v: base * 60 + (+m[2]) * 60 + (+(m[3] || 0)) }; }
+  m = x.match(/^(\d{1,3})(?::(\d{1,2}))?$/);
+  if (!m || +(m[2] || 0) > 59) return null;
+  let v = (+m[1]) * 60 + (+(m[2] || 0));
+  const p = pSel || (v >= PER[2][0] ? 2 : 1);
+  if (p === 2 && v < PER[2][0]) v += PER[2][0];
+  if (v > 140 * 60) return null;
+  return { p, v };
+}
+/* 中途加入／校正：设定比分、本半场角球、红牌（补录的事件 b=1，时间不详） */
+function curCounts(p){
+  const sc = [0, 0], ck = [0, 0], rc = [0, 0];
+  for (const e of M.ev){ if (GOALC.includes(e.c)) sc[e.i]++; if (e.c === 'rc') rc[e.i]++; if (e.c === 'ck' && e.p === p) ck[e.i]++; }
+  return { sc, ck, rc };
+}
+function applyJoin(j){
+  let p = j.p, v = null;
+  if (j.mode === 'join'){
+    const r = parseClock(j.tIn, j.pAuto ? null : j.p);
+    if (!r){ showToast('请输入电视上的比赛时间，例如 67:30 或 45+2'); return false; }
+    p = r.p; v = r.v;
+  }
+  M.ev = M.ev.filter(e => !e.b);
+  const base = curCounts(p);
+  let short = false;
+  const addB = (n, c, ep, et, i) => { for (let k = 0; k < n; k++) M.ev.push({ t: et, p: ep, i, c, b: 1, k: ++seq }); };
+  for (const i of [0, 1]){
+    if (j.sc[i] < base.sc[i] || j.ck[i] < base.ck[i] || j.rc[i] < base.rc[i]) short = true;
+    addB(Math.max(0, j.sc[i] - base.sc[i]), 'sg', 1, 0, i);
+    addB(Math.max(0, j.rc[i] - base.rc[i]), 'rc', 1, 0, i);
+    addB(Math.max(0, j.ck[i] - base.ck[i]), 'ck', p, PER[p][0], i);
+  }
+  if (j.mode === 'join'){
+    M.obs = { p, t: v };
+    M.tm = { p, b: v, r: 1, at: Date.now(), ht: 0 };
+    M.st = 1; M.stop = null;
+  }
+  sortEv(M); saveNow(); syncWake(); renderAll();
+  showToast(short ? '有些数字比已经记录的还少，以已经记录的为准' : j.mode === 'join' ? `已从 ${fmtClock(p, v)} 开始记录` : '已更新比分和角球');
+  return true;
 }
 let wake = null;
 async function syncWake(){
@@ -496,22 +590,39 @@ function undoLast(){
 const teamName = i => ((i ? M.a : M.h) || '').trim() || (i ? '客队' : '主队');
 
 /* ================= 预测 ================= */
+function windows(m){
+  const o = m.obs || { p: 1, t: 0 };
+  const s = m.stop || (m.pe && m.pe[2] ? { p: 2, t: m.pe[2] } : null);
+  if (!s) return [];
+  const w = [];
+  const end1 = s.p === 1 ? s.t : (m.pe && m.pe[1] ? m.pe[1] : Math.max(PER[1][1], maxT(m, 1)));
+  if (o.p === 1) w.push([1, o.t, end1]);
+  if (s.p === 2) w.push([2, o.p === 2 ? o.t : PER[2][0], s.t]);
+  return w.filter(x => x[2] > x[1]);
+}
 function history(){
-  const done = Object.values(store).filter(m => m.st === 2 && m.id !== M.id && m.pe && m.pe[1] && m.pe[2]);
-  const cnt = {}, add = [[], []];
-  let tmin = 0;
-  for (const g in G) cnt[g] = 0;
+  const done = Object.values(store).filter(m => m.st === 2 && m.id !== M.id);
+  const cnt = [{}, {}], add = [[], []];
+  let tmin = 0, n = 0;
+  for (const g in G){ cnt[0][g] = 0; cnt[1][g] = 0; }
   for (const m of done){
-    const len = (m.pe[1] - PER[1][0] + m.pe[2] - PER[2][0]) / 60;
-    if (len < 60 || len > 130) continue;
-    tmin += 2 * len;
-    for (const e of m.ev) for (const g in G) if (G[g].includes(e.c)) cnt[g]++;
-    for (const p of [1, 2]){ const x = (m.pe[p] - PER[p][1]) / 60; if (x >= 0 && x <= 20) add[p - 1].push(x); }
+    const w = windows(m);
+    const mins = w.reduce((a, x) => a + (x[2] - x[1]) / 60, 0);
+    if (mins < 20 || mins > 140) continue;
+    n++; tmin += mins;
+    for (const e of m.ev){
+      if (e.b || !w.some(x => x[0] === e.p && e.t >= x[1] && e.t <= x[2])) continue;
+      for (const g in G) if (G[g].includes(e.c)) cnt[e.i][g]++;
+    }
+    const o = m.obs || { p: 1, t: 0 }, s = m.stop || { p: 2, t: m.pe && m.pe[2] };
+    if (o.p === 1 && m.pe && m.pe[1]){ const x = (m.pe[1] - PER[1][1]) / 60; if (x >= 0 && x <= 20) add[0].push(x); }
+    if (s.p === 2 && s.t >= PER[2][1]){ const x = (s.t - PER[2][1]) / 60; if (x >= 0 && x <= 20) add[1].push(x); }
   }
-  const K = 600, rates = {};
-  for (const g in MODEL.rates) rates[g] = g in cnt ? (MODEL.rates[g] * K + cnt[g]) / (K + tmin) : MODEL.rates[g];
+  // 每队每分钟的平均次数：StatsBomb 平均和你自己的记录按看过的时间加权（K = 300 分钟的先验）
+  const K = 300, rates = [{}, {}];
+  for (const i of [0, 1]) for (const g in MODEL.rates[i]) rates[i][g] = g in cnt[i] ? (MODEL.rates[i][g] * K + cnt[i][g]) / (K + tmin) : MODEL.rates[i][g];
   const addDef = add.map((a, j) => a.length >= 3 ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : MODEL.addDef[j]);
-  return { rates, addDef, n: done.length };
+  return { rates, addDef, n };
 }
 let H = history();
 function halfLen1(){ return M.pe[1] ? M.pe[1] : Math.max(2700 + 60 * (M.add[0] == null ? H.addDef[0] : M.add[0]), maxT(M, 1)); }
@@ -526,18 +637,22 @@ function predState(){
   for (const e of M.ev){
     const inHalf = e.p === p;
     if (e.p > p || (inHalf && e.t - S > t + 1)) continue;
-    for (const g in G) if (G[g].includes(e.c)){ cnt[e.i][g]++; if (inHalf) hc[e.i][g]++; }
+    if (!e.b) for (const g in G) if (G[g].includes(e.c)){ cnt[e.i][g]++; if (inHalf) hc[e.i][g]++; }
+    if (e.b && inHalf && e.c === 'ck') hc[e.i].ck++;
     if (GOALC.includes(e.c)) gl[e.i]++;
     if (e.c === 'rc') rd[e.i]++;
-    if (inHalf && e.c === 'ck'){ co[e.i]++; const x = e.t - S; if (last[e.i] == null || x > last[e.i]) last[e.i] = x; }
+    if (inHalf && e.c === 'ck'){ co[e.i]++; if (!e.b){ const x = e.t - S; if (last[e.i] == null || x > last[e.i]) last[e.i] = x; } }
   }
-  for (const e of M.ev) if (e.p === p && e.c === 'ck') t = Math.max(t, e.t - S);
+  for (const e of M.ev) if (e.p === p && e.c === 'ck' && !e.b) t = Math.max(t, e.t - S);
   const add = M.add[p - 1] == null ? H.addDef[p - 1] : M.add[p - 1];
   let end = (45 + add) * 60;
   if (t > end - 15) end = t + 30;
-  const elapsed = (p === 2 ? halfLen1() / 60 : 0) + t / 60;
+  const o = M.obs || { p: 1, t: 0 };
+  let elapsed = 0, obsHalf = t / 60;
+  if (o.p === p){ elapsed = Math.max(0, S + t - o.t) / 60; obsHalf = elapsed; }
+  else if (o.p < p) elapsed = Math.max(0, halfLen1() - o.t) / 60 + t / 60;
   const mm = mMultipliers(cnt, elapsed, H.rates, M.exp);
-  return { p, t, end, add, cnt, hc, co, gl, rd, last, elapsed, mult: mm.mult, line: M.line[p - 1], halfMin: t / 60 };
+  return { p, t, end, add, cnt, hc, co, gl, rd, last, elapsed, obsHalf, mult: mm.mult, line: M.line[p - 1], hd: M.hd[p - 1], halfMin: t / 60 };
 }
 let cache = { key: '', res: null };
 function predict(s){
@@ -602,8 +717,8 @@ function renderPads(){
     const el = $(`.pad[data-i="${i}"]`), n = {};
     for (const c of ORDER) n[c] = 0;
     let tot = 0;
-    for (const e of M.ev) if (e.i === i && (e.p === p || e.c === 'rc' || e.c === 'og')){ if (e.p === p || e.c === 'rc') n[e.c]++; if (e.p === p) tot++; }
-    n.og = M.ev.filter(e => e.i === i && e.c === 'og').length;
+    for (const e of M.ev) if (e.i === i && e.p === p && (!e.b || e.c === 'ck')){ n[e.c]++; if (!e.b) tot++; }
+    n.og = M.ev.filter(e => e.i === i && e.c === 'og' && !e.b).length;
     n.rc = M.ev.filter(e => e.i === i && e.c === 'rc').length;
     $$('[data-n]', el).forEach(s => { s.textContent = n[s.dataset.n]; });
     $(`[data-tot="${i}"]`).textContent = `${PER[p][2]} ${tot} 笔`;
@@ -627,6 +742,13 @@ function distSVG(res, have, line){
   if (lx > 0 && lx < W) s += `<line x1="${lx.toFixed(1)}" x2="${lx.toFixed(1)}" y1="2" y2="${Hh - bot}" stroke="var(--ink2)" stroke-dasharray="3 3" stroke-width="1.2"/>`;
   return s + '</svg>';
 }
+const hdText = h => h === 0 ? '平手' : `主 ${h < 0 ? '−' : '+'}${fmtLine(Math.abs(h))}`;
+function startPanel(){
+  if (M.st !== 1 || M.tm.r || M.tm.b || observed(M).length || M.ev.length) return '';
+  return `<div class="start"><h2>开始记录</h2>
+    <div class="grid2"><button class="pill green" data-pa="kick1">比赛刚开球</button><button class="pill" data-pa="join">比赛已经开始了</button></div>
+    <p class="note" style="margin:0">中途加入时，输入电视上的比赛时间、目前比分和本半场角球，就能接着预测。</p></div>`;
+}
 function renderPred(){
   const s = predState(), el = $('#pred'), mini = $('#minip');
   if (s.msg){ el.innerHTML = `<div class="sec-h"><h2>半场角球预测</h2></div><p class="msg">${s.msg}</p>`; mini.textContent = ''; return; }
@@ -634,15 +756,20 @@ function renderPred(){
   const lines = [s.line - 1, s.line, s.line + 1].filter(x => x > 0);
   const fx = (i) => { const m = s.mult[i], w = clamp(Math.log(m) / Math.log(2) * 50, -50, 50); return `<span class="nm ${i ? 'a' : 'h'}">${esc(teamName(i))}</span><span class="bar2"><i style="${w >= 0 ? `left:50%;width:${w.toFixed(1)}%` : `left:${(50 + w).toFixed(1)}%;width:${(-w).toFixed(1)}%`}"></i></span><span class="v">${m.toFixed(2)}×</span>`; };
   const addAuto = M.add[s.p - 1] == null;
-  el.innerHTML = `<div class="sec-h"><h2>${half}角球</h2><span class="sp"></span><small>${M.tm.ht ? '下半场还没开始　' : ''}本半场 <b class="h">${s.co[0]}</b>–<b class="a">${s.co[1]}</b></small></div>
+  const hc = mHandicap(r, s.co, s.hd), exT = [s.co[0] + r.meanT[0], s.co[1] + r.meanT[1]];
+  const hasPush = Math.abs(s.hd - Math.round(s.hd)) < 1e-9;
+  el.innerHTML = startPanel() + `<div class="sec-h"><h2>${half}角球</h2><span class="sp"></span><small>${M.tm.ht ? '下半场还没开始　' : ''}本半场 <b class="h">${s.co[0]}</b>–<b class="a">${s.co[1]}</b></small></div>
     <div class="pred-top"><div class="pv over"><b>${pct(over)}</b><span>大 ${fmtLine(s.line)}</span></div><div class="pv"><b>${pct(1 - over)}</b><span>小 ${fmtLine(s.line)}</span></div></div>
     <p class="pred-line">预计${half}共 <b>${(have + r.mean).toFixed(1)}</b> 个，还会有 <b>${r.mean.toFixed(1)}</b> 个</p>
     <div class="dist">${distSVG(r, have, s.line)}</div>
     <div class="lines">${lines.map(x => `<span class="${x === s.line ? 'on' : ''}">大 ${fmtLine(x)}<b>${pct(mOver(r, have, x))}</b></span>`).join('')}</div>
+    <div class="teams">${[0, 1].map(i => `<div class="tmv ${i ? 'a' : 'h'}"><span>${esc(teamName(i))}</span><b>${exT[i].toFixed(1)}</b><small>已有 ${s.co[i]}，还会有 ${r.meanT[i].toFixed(1)}</small></div>`).join('')}</div>
+    <div class="hcr"><div class="hw ${hc.home > hc.away ? 'best' : ''}"><b>${pct(hc.home)}</b><span>主队赢盘</span></div><div><b>${hasPush ? pct(hc.push) : '—'}</b><span>走盘</span></div><div class="aw ${hc.away > hc.home ? 'best' : ''}"><b>${pct(hc.away)}</b><span>客队赢盘</span></div></div>
     <div class="factor" title="攻势系数">${fx(0)}${fx(1)}</div>
-    <p class="note">攻势系数：根据本场到目前为止的进入前场、进入禁区和传中，这队接下来的角球节奏是平均的几倍。</p>
+    <p class="note">攻势系数：根据你看到的这段时间里的进入前场、进入禁区和传中，这队接下来的角球节奏是平均的几倍。</p>
     <div class="ctls">
-      <div class="ctl"><span>${half}盘口</span><button data-pa="line" data-d="-1" aria-label="盘口减一">−</button><b>${fmtLine(s.line)}</b><button data-pa="line" data-d="1" aria-label="盘口加一">＋</button><i></i></div>
+      <div class="ctl"><span>${half}大小盘</span><button data-pa="line" data-d="-1" aria-label="盘口减一">−</button><b>${fmtLine(s.line)}</b><button data-pa="line" data-d="1" aria-label="盘口加一">＋</button><i></i></div>
+      <div class="ctl"><span>${half}让球</span><button data-pa="hd" data-d="-0.5" aria-label="主队多让半个">−</button><b style="white-space:nowrap">${hdText(s.hd)}</b><button data-pa="hd" data-d="0.5" aria-label="主队少让半个">＋</button><i></i></div>
       <div class="ctl"><span>全场预期</span><button data-pa="exp" data-d="-0.5" aria-label="全场预期减少">−</button><b>${M.exp == null ? '未填' : fmtLine(M.exp)}</b><button data-pa="exp" data-d="0.5" aria-label="全场预期增加">＋</button>${M.exp == null ? '<i></i>' : '<button class="x" data-pa="exp0">清除</button>'}</div>
       <div class="ctl"><span>${half}补时</span><button data-pa="add" data-d="-1" aria-label="补时减一分钟">−</button><b>${s.add} 分</b><button data-pa="add" data-d="1" aria-label="补时加一分钟">＋</button>${addAuto ? '<i></i>' : '<button class="x" data-pa="add0">默认</button>'}</div>
     </div>
@@ -658,6 +785,9 @@ $('#pred').addEventListener('click', ev => {
     case 'exp0': M.exp = null; break;
     case 'add': { const cur = M.add[p - 1] == null ? H.addDef[p - 1] : M.add[p - 1]; M.add[p - 1] = clamp(cur + d, 0, 20); break; }
     case 'add0': M.add[p - 1] = null; break;
+    case 'hd': M.hd[p - 1] = clamp(M.hd[p - 1] + d, -6, 6); break;
+    case 'kick1': kick(1); saveNow(); syncWake(); renderAll(); showToast('上半场开球，从 0:00 开始计时'); return;
+    case 'join': openJoin(); return;
   }
   save(); renderPred(); renderCounts();
 });
@@ -665,15 +795,18 @@ function renderCounts(){
   const s = predState(), el = $('#counts');
   if (s.msg){ el.innerHTML = ''; return; }
   const rows = [['f3', '进入前场'], ['bx', '进入禁区', '含传中到人'], ['cr', '传中'], ['sh', '射门'], ['ck', '角球']];
-  let mins = s.halfMin, half = PER[s.p][2];
+  let mins = s.obsHalf, half = PER[s.p][2], halfMins = s.halfMin;
+  const o = M.obs || { p: 1, t: 0 };
   if (M.tm.ht){
     // 中场休息时显示上半场的记录
-    half = PER[1][2]; mins = (halfLen1() - PER[1][0]) / 60;
-    for (const i of [0, 1]) for (const g in G) s.hc[i][g] = M.ev.filter(e => e.p === 1 && e.i === i && G[g].includes(e.c)).length;
+    half = PER[1][2]; halfMins = (halfLen1() - PER[1][0]) / 60;
+    mins = o.p === 1 ? (halfLen1() - o.t) / 60 : 0;
+    for (const i of [0, 1]) for (const g in G) s.hc[i][g] = M.ev.filter(e => e.p === 1 && e.i === i && G[g].includes(e.c) && (!e.b || e.c === 'ck')).length;
   }
-  el.innerHTML = `<div class="sec-h"><h2>${half}记录</h2><span class="sp"></span><small>${mins >= 0.5 ? Math.round(mins) + ' 分钟' : '还没开始'}</small></div>
+  const joined = o.t > PER[o.p][0] && (M.tm.ht ? o.p === 1 : o.p === s.p);
+  el.innerHTML = `<div class="sec-h"><h2>${half}记录</h2><span class="sp"></span><small>${mins >= 0.5 ? (joined ? `从 ${fmtClock(o.p, o.t)} 开始看，` : '') + Math.round(mins) + ' 分钟' : '还没开始'}</small></div>
     <table class="tbl"><tbody>${rows.map(([g, l, sub]) => {
-      const avg = H.rates[g] * mins;
+      const avg = (H.rates[0][g] + H.rates[1][g]) / 2 * (g === 'ck' ? halfMins : mins);
       return `<tr><td class="n h">${s.hc[0][g]}</td><td class="m">${l}${sub ? `<small>${sub}</small>` : ''}<small>平均每队 ${avg < 9.95 ? avg.toFixed(1) : Math.round(avg)}</small></td><td class="n a">${s.hc[1][g]}</td></tr>`;
     }).join('')}</tbody></table>
     <p class="note">“平均每队”是同样比赛时间里，StatsBomb 数据${H.n >= 3 ? '和你过去的记录' : ''}的平均次数。</p>
@@ -682,7 +815,7 @@ function renderCounts(){
 function renderStrip(){
   const el = $('#recent');
   const ev = M.ev.slice().sort((a, b) => b.p - a.p || b.t - a.t || b.k - a.k).slice(0, 4);
-  el.innerHTML = ev.length ? ev.map(e => `<button data-k="${e.k}"><span class="t">${fmtClock(e.p, e.t)}</span><span class="d${e.i}">${esc(teamName(e.i))}</span><span>${LABEL[e.c]}</span></button>`).join('')
+  el.innerHTML = ev.length ? ev.map(e => `<button data-k="${e.k}"><span class="t">${e.b ? '加入前' : fmtClock(e.p, e.t)}</span><span class="d${e.i}">${esc(teamName(e.i))}</span><span>${LABEL[e.c]}</span></button>`).join('')
     : '<span class="empty">在球场上点击发生的事件，最近的会显示在这里</span>';
 }
 $('#recent').addEventListener('click', ev => { const b = ev.target.closest('[data-k]'); if (b) openSheet('edit', { k: +b.dataset.k }); });
@@ -696,6 +829,7 @@ function closeSheet(){ sheet.hidden = true; sheetKind = null; card.innerHTML = '
 sheet.addEventListener('click', ev => { if (ev.target === sheet) closeSheet(); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !sheet.hidden) closeSheet(); });
 const DEFS = [
+  ['“队友接到”是什么意思', '只要本队队友第一个碰到球就算接到：头球点一下、停球没停稳、直接射门都算，之后被对方解围也不影响。如果是对方先碰到（解围、拦截、门将没收），才算没接到。'],
   ['进入前场', '本队在运动战中把球推进前场三分之一：传球而且队友接到，或者自己带球过线。把球场长度分成三等份，最靠近对方球门的那一份就是前场三分之一，大约是对方半场靠近球门的三分之二。球又被打回去、再推进一次，就再点一次。如果这一下直接进了禁区，只点“进入禁区”。'],
   ['进入禁区', '本队在运动战中从禁区外把球送进对方禁区：传球而且队友在禁区里接到，或者自己带球进禁区。传中另外点，不要重复点这个。定位球（角球、任意球、界外球）不算。'],
   ['传中到人／没到人', '运动战中从边路往禁区传的球（地面或高空都算）。队友接到、头球或射门碰到算“到人”；被挡出、被解围、门将没收或直接出界算“没到人”。角球和任意球的传中不算。两边都有按键，球从哪边传就点哪边，结果一样。'],
@@ -703,6 +837,7 @@ const DEFS = [
   ['角球', '裁判判给本队的角球。两个角旗都可以点，结果一样。'],
   ['对方乌龙', '对方球员把球打进自己的球门，算本队得分。'],
   ['本队红牌', '本队有球员被罚下，直接红牌或两黄变一红都算。少一人的球队，角球大约只剩平均的六成。'],
+  ['中途加入', '比赛已经开始才打开时，点“比赛已经开始了”（或菜单里的“中途加入／校正比分”），输入电视上的时间、目前比分、本半场角球和红牌。加入前的推进没法补，模型只用你看到的这段时间计算攻势系数。'],
 ];
 function renderSheet(){
   const d = sheetData;
@@ -712,13 +847,15 @@ function renderSheet(){
       const n = Object.values(store).filter(m => m.ev.length || m.h || m.a).length;
       h = `<div class="card-h"><h3>${esc(teamName(0))} vs ${esc(teamName(1))}</h3><button class="pill" data-a="close">关闭</button></div>
         <div class="menu">
+          ${M.st === 2 ? '' : '<button data-a="finish">结束记录<span>比赛中途也可以，之后不再预测</span></button>'}
           <button data-a="clock">比赛时间<span>${M.tm.ht ? '中场休息' : PER[M.tm.p][2]} ${fmtClock(M.tm.p, clockOf(M))}</span></button>
+          <button data-a="join">中途加入／校正比分<span>补录比分、本半场角球和红牌</span></button>
           <button data-a="list">全部事件<span>${M.ev.length} 笔</span></button>
           <button data-a="arch">比赛列表<span>${n} 场</span></button>
           <button data-a="new">新比赛<span>目前这场会保留在列表里</span></button>
           <button data-a="exp1">导出这场</button>
           <button data-a="import">导入文件或文字</button>
-          ${M.st === 2 ? '<button data-a="reopen">重新打开这场<span>已结束</span></button>' : '<button data-a="finish">结束比赛<span>停止预测，存成完整记录</span></button>'}
+          ${M.st === 2 ? '<button data-a="reopen">重新打开这场<span>已结束</span></button>' : ''}
           <button data-a="model">预测模型怎么算</button>
         </div>
         <p class="hint">${offline}</p>`;
@@ -733,20 +870,42 @@ function renderSheet(){
         <div class="grid2"><button class="pill" data-a="toggle">${M.tm.r ? '暂停' : '继续计时'}</button><button class="pill" data-a="endh">上半场结束</button></div>
         <div class="lbl">微调</div>
         <div class="row"><button class="chip" data-a="nudge" data-d="-60">−1 分</button><button class="chip" data-a="nudge" data-d="-10">−10 秒</button><button class="chip" data-a="nudge" data-d="10">＋10 秒</button><button class="chip" data-a="nudge" data-d="60">＋1 分</button></div>
-        <div class="lbl">直接输入（分:秒，下半场从 45:00 起算）</div>
-        <div class="row"><input class="fi" id="setIn" inputmode="numeric" placeholder="例如 23:40" style="flex:1"><button class="pill dark" data-a="setin">设定</button></div>
-        <p class="hint">开球时按“上半场开球”或“下半场开球”，计时会从 0:00 或 45:00 开始。上半场吹哨时按“上半场结束”，预测会换成下半场。</p>`;
+        <div class="lbl">直接输入电视上的时间（例如 23:40、67:30、45+2）</div>
+        <div class="chips">${[1, 2].map(q => `<button class="chip" data-a="cper" data-p="${q}" aria-pressed="${(d.cp || p) === q}">${PER[q][2]}</button>`).join('')}</div>
+        <div class="row"><input class="fi" id="setIn" inputmode="text" autocomplete="off" placeholder="例如 67:30" style="flex:1"><button class="pill dark" data-a="setin">设定</button></div>
+        <div class="grid2"><button class="pill" data-a="join">中途加入／校正比分</button>${M.st === 2 ? '' : '<button class="pill danger" data-a="finish">结束记录</button>'}</div>
+        <p class="hint">开球时按“上半场开球”或“下半场开球”，计时会从 0:00 或 45:00 开始。上半场吹哨时按“上半场结束”，预测会换成下半场。看到一半不看了，按“结束记录”。</p>`;
+      break;
+    }
+    case 'join': {
+      const stp = (f, i) => `<div class="stp"><span class="${i ? 'a' : 'h'}">${esc(teamName(i))}</span><button data-a="js" data-f="${f}" data-i="${i}" data-d="-1" aria-label="减少">−</button><b>${d[f][i]}</b><button data-a="js" data-f="${f}" data-i="${i}" data-d="1" aria-label="增加">＋</button></div>`;
+      const ph = PER[d.p][2];
+      h = `<div class="card-h"><h3>${d.mode === 'join' ? '中途加入' : '校正比分和角球'}</h3><button class="pill" data-a="close">取消</button></div>
+        ${d.mode === 'join' ? `<div class="jgrp"><h4>电视上现在的比赛时间</h4>
+          <input class="fi" id="joinT" inputmode="text" autocomplete="off" placeholder="例如 67:30 或 45+2" value="${esc(d.tIn)}">
+          <div class="chips">${[1, 2].map(q => `<button class="chip" data-a="jper" data-p="${q}" aria-pressed="${d.p === q}">${PER[q][2]}</button>`).join('')}</div></div>` : ''}
+        <div class="jgrp"><h4>目前比分</h4>${stp('sc', 0)}${stp('sc', 1)}</div>
+        <div class="jgrp"><h4 id="jckH">${ph}已有的角球</h4>${stp('ck', 0)}${stp('ck', 1)}</div>
+        <div class="jgrp"><h4>红牌（全场）</h4>${stp('rc', 0)}${stp('rc', 1)}</div>
+        <button class="pill green" data-a="jgo">${d.mode === 'join' ? '从这个时间开始记录' : '保存'}</button>
+        <p class="hint">${d.mode === 'join' ? '加入前的进入前场、禁区和传中没办法补，模型会只用你看到的这段时间来算攻势系数。' : '只会调整补录的数字，你已经点过的事件不会被删除。'}</p>`;
       break;
     }
     case 'list': {
       const groups = [2, 1].map(p => [p, M.ev.filter(e => e.p === p).sort((a, b) => b.t - a.t || b.k - a.k)]).filter(([, a]) => a.length);
       h = `<div class="card-h"><h3>全部事件</h3><button class="pill" data-a="close">关闭</button></div>
-        ${groups.length ? `<div class="list">${groups.map(([p, a]) => `<h4>${PER[p][2]}　${a.length} 笔</h4>` + a.map(e => `<button data-a="edit" data-k="${e.k}"><span class="t">${fmtClock(e.p, e.t)}</span><span><span class="who d${e.i}">${esc(teamName(e.i))}</span>　${LABEL[e.c]}</span><span class="hint">修改</span></button>`).join('')).join('')}</div>` : '<p class="hint">还没有事件。</p>'}`;
+        ${groups.length ? `<div class="list">${groups.map(([p, a]) => `<h4>${PER[p][2]}　${a.length} 笔</h4>` + a.map(e => `<button data-a="edit" data-k="${e.k}"><span class="t">${e.b ? '加入前' : fmtClock(e.p, e.t)}</span><span><span class="who d${e.i}">${esc(teamName(e.i))}</span>　${LABEL[e.c]}</span><span class="hint">修改</span></button>`).join('')).join('')}</div>` : '<p class="hint">还没有事件。</p>'}`;
       break;
     }
     case 'edit': {
       const e = M.ev.find(x => x.k === d.k);
       if (!e){ closeSheet(); return; }
+      if (e.b){
+        h = `<div class="card-h"><h3>加入前　${esc(teamName(e.i))} ${LABEL[e.c]}</h3><button class="pill" data-a="close">完成</button></div>
+          <p class="hint">这是中途加入时补录的，只知道发生在加入之前，没有确切时间。要改数字，请用菜单里的“中途加入／校正比分”。</p>
+          <button class="pill danger" data-a="edel">删除这个事件</button>`;
+        break;
+      }
       h = `<div class="card-h"><h3>${fmtClock(e.p, e.t)}　${esc(teamName(e.i))} ${LABEL[e.c]}</h3><button class="pill" data-a="close">完成</button></div>
         <div class="lbl">哪一队</div>
         <div class="chips">${[0, 1].map(i => `<button class="chip" data-a="eteam" data-i="${i}" aria-pressed="${e.i === i}">${esc(teamName(i))}</button>`).join('')}</div>
@@ -800,7 +959,8 @@ function renderSheet(){
           <div><h4>基本节奏</h4><p>每队每分钟拿到角球的概率，会随比赛时段、主客场、比分（落后的一方角球多）、人数（少一人角球大减）和“刚拿到角球”而变化。</p></div>
           <div><h4>攻势系数</h4><p>本队进入前场和进入禁区越多，接下来的角球越多；对方进入前场越多，本队的角球越少。传中的影响比较小。这些记录换算成每队一个倍数，乘在基本节奏上。比赛刚开始时记录少，系数会接近 1；记录越多，影响越大。</p></div>
           <div><h4>算法</h4><p>用目前的时间、比分、人数和攻势系数，把本半场剩下的时间模拟 4,000 次（包括之后可能的进球），统计最后角球数超过盘口的比例。</p></div>
-          <div><h4>准确度</h4><p>用“三个联赛训练、拿第四个联赛测试”的方式轮流验证。和只用时间、比分、人数和角球的基本模型相比，加上这些记录后，下半场大小判断的误差（Brier 分数）降低约 1.4%，下半场开球时约 1.8%；上半场几乎没有差别，因为上半场的记录还太少。再填上全场预期，下半场的误差降低约 2.7%（开球时约 3.4%），上半场约 0.6%。概率本身是准的：模型说 55% 左右的情况，实际大约 53%。提升幅度不大，因为半场角球本身的随机性很高。</p></div>
+          <div><h4>准确度</h4><p>用“三个联赛训练、拿第四个联赛测试”的方式轮流验证。和只用时间、比分、人数和角球的基本模型相比，加上这些记录后，下半场大小判断的误差（Brier 分数）降低约 1.3%；上半场几乎没有差别，因为上半场的记录还太少。再填上全场预期，下半场降低约 2.5%，上半场约 0.8%。概率本身是准的：模型说 50% 左右的情况，实际大约 50%；说 70% 左右，实际约 68%。提升幅度不大，因为半场角球本身的随机性很高。</p></div>
+          <div><h4>两队各自的角球和让球</h4><p>模型会分别算出两队还会有几个角球，再算出让球盘的赢盘、走盘概率（走盘只在整数让球时出现）。让球比大小更受益于你的记录：加上进入前场、进入禁区和传中后，让球判断的误差降低约 3%，上下半场都是，因为这些记录能看出哪一队在压着打。全场预期对让球几乎没有帮助。概率同样验证过：模型说 70% 左右的情况，实际约 69%。</p></div>
           <div><h4>你的记录</h4><p>你结束的比赛越多，“平均”会越来越接近你自己的记录习惯，攻势系数也会跟着校准。${H.n ? `目前已用到你 ${H.n} 场已结束的比赛。` : '目前还没有已结束的比赛。'}</p></div>
           <div><h4>来源</h4><p>模型数据：StatsBomb Open Data（github.com/statsbomb/open-data）。</p></div>
         </div>`;
@@ -809,10 +969,6 @@ function renderSheet(){
   card.innerHTML = h;
 }
 const findEv = k => M.ev.find(e => e.k === k);
-function parseClock(s){
-  const m = String(s).trim().match(/^(\d{1,3})(?::(\d{1,2}))?$/);
-  return m ? (+m[1]) * 60 + (+(m[2] || 0)) : null;
-}
 card.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b) return;
   const a = b.dataset.a, d = sheetData;
@@ -835,17 +991,21 @@ card.addEventListener('click', ev => {
       if (id === M.id){ M = newMatch(); }
       H = history(); sheetData.del = null; renderSheet(); renderAll(); break;
     }
-    case 'finish': finishMatch(); saveNow(); H = history(); closeSheet(); renderAll(); syncWake(); showToast('比赛已结束并保存'); break;
-    case 'reopen': M.st = 1; saveNow(); H = history(); closeSheet(); renderAll(); break;
+    case 'finish': { const st = finishMatch(); saveNow(); H = history(); closeSheet(); renderAll(); syncWake(); showToast(`已结束记录（记录到 ${fmtClock(st.p, st.t)}）`); break; }
+    case 'reopen': M.st = 1; M.stop = null; saveNow(); H = history(); closeSheet(); renderAll(); break;
+    case 'join': openJoin(); break;
+    case 'jper': { sheetData.p = +b.dataset.p; sheetData.pAuto = false; sheetData.tIn = $('#joinT') ? $('#joinT').value : sheetData.tIn; refreshJoinCk(); renderSheet(); break; }
+    case 'js': { const f = b.dataset.f, i = +b.dataset.i; if ($('#joinT')) sheetData.tIn = $('#joinT').value; sheetData[f][i] = clamp(sheetData[f][i] + (+b.dataset.d), 0, 30); renderSheet(); break; }
+    case 'jgo': { if ($('#joinT')) sheetData.tIn = $('#joinT').value; if (applyJoin(sheetData)) closeSheet(); break; }
+    case 'cper': sheetData.cp = +b.dataset.p; renderSheet(); break;
     case 'kick': kick(+b.dataset.p); saveNow(); syncWake(); renderAll(); renderSheet(); break;
     case 'toggle': M.tm.r ? pauseClock() : startClock(); saveNow(); syncWake(); renderAll(); renderSheet(); break;
     case 'endh': if (M.tm.p === 1){ endFirstHalf(); saveNow(); syncWake(); renderAll(); renderSheet(); showToast('上半场结束，预测已换成下半场'); } else showToast('现在已经是下半场'); break;
     case 'nudge': setClock(clockOf(M) + (+b.dataset.d)); saveNow(); renderAll(); renderSheet(); break;
     case 'setin': {
-      const v = parseClock($('#setIn').value);
-      if (v == null){ showToast('请输入像 23:40 这样的时间'); break; }
-      if (M.tm.p === 1 && v >= 2700 + 1200) M.tm.p = 2;
-      setClock(v); M.tm.ht = 0; saveNow(); renderAll(); renderSheet(); break;
+      const r = parseClock($('#setIn').value, d.cp || null);
+      if (!r){ showToast('请输入像 23:40、67:30 或 45+2 这样的时间'); break; }
+      M.tm.p = r.p; setClock(r.v); M.tm.ht = 0; saveNow(); renderAll(); renderSheet(); showToast(`已设定为 ${fmtClock(r.p, r.v)}`); break;
     }
     case 'edit': openSheet('edit', { k: +b.dataset.k }); break;
     case 'eteam': { const e = findEv(d.k); if (e){ e.i = +b.dataset.i; saveNow(); renderAll(); renderSheet(); } break; }
@@ -860,13 +1020,35 @@ card.addEventListener('click', ev => {
   }
 });
 function pauseOther(){ if (M.tm.r){ pauseClock(); } }
+function openJoin(){
+  const mode = observed(M).length || M.tm.r || M.tm.b ? 'fix' : 'join';
+  const p = M.tm.ht ? 1 : M.tm.p;
+  const c = curCounts(p);
+  openSheet('join', { mode, p, pAuto: true, tIn: '', sc: c.sc.slice(), ck: c.ck.slice(), rc: c.rc.slice() });
+}
+function refreshJoinCk(){
+  const c = curCounts(sheetData.p);
+  sheetData.ck = c.ck.slice();
+}
+card.addEventListener('input', ev => {
+  if (ev.target.id !== 'joinT' || sheetKind !== 'join') return;
+  sheetData.tIn = ev.target.value;
+  if (!sheetData.pAuto) return;
+  const r = parseClock(sheetData.tIn, null);
+  if (r && r.p !== sheetData.p){
+    sheetData.p = r.p; refreshJoinCk();
+    $$('[data-a="jper"]', card).forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.p === r.p)));
+    const hd = $('#jckH'); if (hd) hd.textContent = `${PER[r.p][2]}已有的角球`;
+    $$('[data-a="js"][data-f="ck"]', card).forEach(x => { const bEl = x.parentElement.querySelector('b'); if (bEl) bEl.textContent = sheetData.ck[+x.dataset.i]; });
+  }
+});
 
 /* ================= 导出与导入 ================= */
-const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、pe 各半场结束时的比赛时钟秒数、ev 事件阵列。'
-  + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码]。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
+const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、hd 上下半场角球让球(主队，负数=主队让)、pe 各半场结束时的比赛时钟秒数、obs 开始观看的位置{p 半场, t 比赛时钟秒数}、stop 结束记录的位置(未结束为 null)、ev 事件阵列。只有 obs 到 stop 之间是实际观看的时间。'
+  + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码, b(可省略；1=中途加入时补录、时间不详)]。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
 function openExport(list){
   const ds = new Date().toISOString().slice(0, 10);
-  const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, line: m.line, add: m.add, pe: m.pe, ev: m.ev.map(e => [e.t, e.p, e.i, e.c]) }));
+  const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, line: m.line, hd: m.hd, add: m.add, pe: m.pe, obs: m.obs, stop: m.stop, ev: m.ev.map(e => e.b ? [e.t, e.p, e.i, e.c, 1] : [e.t, e.p, e.i, e.c]) }));
   const codes = {}; for (const c of ORDER) codes[c] = LABEL[c];
   const obj = { app: '角球数据记录', fmt: 1, exported: new Date().toISOString().slice(0, 16), readme: README, codes, matches };
   const name = list.length === 1 ? `角球数据_${list[0].d}_${(list[0].h || '主队').replace(/[\\/:*?"<>|\s]+/g, '')}vs${(list[0].a || '客队').replace(/[\\/:*?"<>|\s]+/g, '')}.json` : `角球数据_全部${list.length}场_${ds}.json`;
@@ -895,8 +1077,8 @@ function importText(txt){
   for (const r of o.matches){
     if (!r || !r.id) continue;
     const m = fixMatch({ id: String(r.id), c: nowSec(), u: nowSec(), d: String(r.d || ''), lg: String(r.lg || ''), h: String(r.h || ''), a: String(r.a || ''),
-      st: r.st === 1 ? 1 : 2, exp: typeof r.exp === 'number' ? r.exp : null, line: r.line, add: r.add, pe: r.pe || {},
-      tm: null, ev: (r.ev || []).map(x => ({ t: x[0], p: x[1], i: x[2], c: x[3] })) });
+      st: r.st === 1 ? 1 : 2, exp: typeof r.exp === 'number' ? r.exp : null, line: r.line, hd: r.hd, add: r.add, pe: r.pe || {}, obs: r.obs, stop: r.stop,
+      tm: null, ev: (r.ev || []).map(x => ({ t: x[0], p: x[1], i: x[2], c: x[3], b: x[4] })) });
     if (m.id === M.id) continue;
     const last = m.ev[m.ev.length - 1];
     m.tm = { p: last ? last.p : 1, b: last ? last.t : 0, r: 0, at: 0, ht: 0 };
