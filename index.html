@@ -50,6 +50,9 @@ input{font:inherit;color:inherit}
 .tn.h input{text-align:right;color:var(--home)} .tn.a input{color:var(--away)}
 .tn input::placeholder{color:inherit;opacity:.55}
 .tn small{font-size:12px;color:var(--muted)}
+.cks{border:0;background:none;padding:3px 0;font-size:12px;color:var(--muted);text-decoration:underline dotted;text-underline-offset:3px;white-space:nowrap}
+button.gl{border:0;background:none;padding:0 3px;border-radius:8px}
+button.gl:active,.cks:active{background:var(--rule)}
 .gl{font-size:40px;line-height:1;font-weight:600;min-width:.7em;text-align:center}
 .gl.h{color:var(--home)} .gl.a{color:var(--away)}
 .clk{display:flex;align-items:center;gap:8px}
@@ -82,7 +85,7 @@ input{font:inherit;color:inherit}
 .zl{font-size:11.5px;color:var(--muted);min-width:6.5em;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
 .legend{display:none;order:5;flex-basis:100%}
 .legend.open{display:flex}
-.legend svg.w2{width:24px}
+.legend svg.w2{width:24px} .legend svg.w3{width:36px}
 .tl-wrap{position:relative;min-width:0;touch-action:pan-y;-webkit-user-select:none;user-select:none;cursor:grab;margin-top:2px;background:var(--raise);border-radius:12px}
 .tl-wrap.drag{cursor:grabbing}
 .tl.fold .tl-wrap,.tl.fold .legend,.tl.fold .zoom,.tl.fold #curveBtn,.tl.fold .lgdbtn{display:none}
@@ -93,14 +96,18 @@ input{font:inherit;color:inherit}
 .tl .tk{fill:var(--muted);font-size:10.5px;text-anchor:middle;font-variant-numeric:tabular-nums} .tl .tk.ht{font-weight:700;letter-spacing:.08em}
 .tl .sd{font-size:11px;font-weight:700;text-anchor:middle;dominant-baseline:middle} .tl .sd.home{fill:var(--home)} .tl .sd.away{fill:var(--away)}
 .tl .uw{fill:var(--rule);opacity:.45} .tl .uwl{fill:var(--muted);font-size:11px;text-anchor:middle}
-.tl .mo.home{fill:var(--home);opacity:.14} .tl .mo.away{fill:var(--away);opacity:.14}
-.tl .sm{stroke-width:1.4;stroke-linecap:round} .tl .sm.home{stroke:var(--home)} .tl .sm.away{stroke:var(--away)}
-.tl .sm.l1{opacity:.5} .tl .sm.l2,.tl .sm.l3,.tl .sm.l4{stroke-width:2}
-.tl .hd.home.l1{fill:var(--home);opacity:.75} .tl .hd.away.l1{fill:var(--away);opacity:.75}
+.tl .mo.home{fill:var(--home);opacity:.12} .tl .mo.away{fill:var(--away);opacity:.12}
+.tl .mi.home{fill:var(--home);opacity:.3} .tl .mi.away{fill:var(--away);opacity:.3}
+.tl .sm{stroke-linecap:round} .tl .sm.home{stroke:var(--home)} .tl .sm.away{stroke:var(--away)}
+.tl .sm.s0{stroke-width:1.1;opacity:.35} .tl .sm.s1{stroke-width:1.4;opacity:.6} .tl .sm.s2{stroke-width:2.6} .tl .sm.s3{stroke-width:2.2} .tl .sm.s4{stroke-width:3}
+.tl .ckb{stroke:var(--flag);stroke-width:9;stroke-linecap:round;opacity:.4}
+.tl .hd.home.l1{fill:var(--home);opacity:.5} .tl .hd.away.l1{fill:var(--away);opacity:.5}
+.tl .hd.home.l1b{fill:var(--home);opacity:.75} .tl .hd.away.l1b{fill:var(--away);opacity:.75}
 .tl .hd.home.l2{fill:var(--home)} .tl .hd.away.l2{fill:var(--away)} .tl .hd.l2{stroke:var(--raise);stroke-width:1.2}
-.tl .hd.l0{fill:var(--raise);stroke-width:1.6} .tl .hd.home.l0{stroke:var(--home)} .tl .hd.away.l0{stroke:var(--away)}
-.tl .hd.dim{opacity:.55}
-.tl .fl{fill:var(--flag);stroke-width:1.2;stroke-linejoin:round} .tl .fl.home{stroke:var(--home)} .tl .fl.away{stroke:var(--away)}
+.tl .hd.l0{fill:var(--raise);stroke-width:1.8} .tl .hd.home.l0{stroke:var(--home)} .tl .hd.away.l0{stroke:var(--away)}
+.tl .hd.cr.l0{stroke-width:2.4}
+.tl .wall{stroke-width:2.2;stroke-linecap:round} .tl .wall.home{stroke:var(--home)} .tl .wall.away{stroke:var(--away)}
+.tl .fl{fill:var(--flag);stroke-width:1.4;stroke-linejoin:round} .tl .fl.home{stroke:var(--home)} .tl .fl.away{stroke:var(--away)}
 .tl .bl{fill:var(--raise);stroke:var(--ink);stroke-width:1.5} .tl .bc{fill:var(--ink)}
 .tl .rcd{fill:var(--red)}
 .tl .nw{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 3;opacity:.45}
@@ -258,6 +265,45 @@ input{font:inherit;color:inherit}
 .tbl td.m{text-align:center}
 .tbl td.m small{display:block;font-size:11.5px;color:var(--muted)}
 .src{font-size:11px;color:var(--muted);margin:0}
+.sec-h.ph{flex-wrap:wrap;align-items:center;row-gap:6px}
+.seg{display:inline-flex;background:var(--paper);border-radius:10px;padding:2px;box-shadow:inset 0 0 0 1px var(--rule)}
+.seg button{border:0;background:none;height:30px;padding:0 10px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.fixb{border:0;background:none;height:30px;padding:0 4px;font-size:12.5px;color:var(--ink2);text-decoration:underline;text-underline-offset:3px}
+.sub2{margin:-2px 0 8px;font-size:12.5px;color:var(--muted)}
+.sub2 b{font:600 15px var(--f-num)} .sub2 .h{color:var(--home)} .sub2 .a{color:var(--away)}
+.lnc{margin-top:8px}
+.lnh{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.lnr{display:flex;gap:4px;align-items:center}
+.lnr button{flex:1 1 0;min-width:0;height:36px;border:0;border-radius:10px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule);font:600 15px var(--f-num);font-variant-numeric:tabular-nums;color:var(--ink2);padding:0 2px;white-space:nowrap}
+.lnr .lnb{flex:0 0 34px;font:600 17px var(--f-ui)}
+.lnr .lnv[aria-pressed="true"]{background:var(--ink);color:var(--paper);box-shadow:none}
+.lnr button:active{background:var(--rule)}
+.abx:empty{display:none}
+.abx{display:grid;gap:10px;border-top:1px solid var(--rule);padding-top:14px}
+.abx .sec-h{margin:0}
+.abon{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.abon i{width:10px;height:10px;border-radius:50%;background:var(--grass);box-shadow:0 0 0 4px rgba(47,108,75,.2);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(47,108,75,0)}}
+@media (prefers-reduced-motion:reduce){.abon i{animation:none}}
+.prog{display:flex;flex-wrap:wrap;gap:6px}
+.prog span{background:var(--raise);border-radius:8px;padding:4px 8px;font-size:12.5px;color:var(--ink2)}
+.prog b{font-weight:500;color:var(--muted);margin-left:6px;font-variant-numeric:tabular-nums}
+.hold{gap:6px}
+.hold .chip{height:30px;padding:0 10px;font-size:12.5px}
+.abt{width:100%;border-collapse:collapse;font-size:13px}
+.abt td{padding:6px 4px 6px 0;border-top:1px solid var(--rule);vertical-align:baseline}
+.abt .t{font:600 13px var(--f-num);color:var(--muted);white-space:nowrap;width:4.2em}
+.abt .pr{font:600 14px var(--f-num);white-space:nowrap;text-align:right}
+.abt .pr small{font:500 11px var(--f-ui);color:var(--muted);margin-left:3px}
+.abt td:last-child{text-align:right;white-space:nowrap;padding-right:0}
+.win{color:var(--grass);font-weight:700} .lose{color:var(--warn);font-weight:700} .push{color:var(--ink2)} .pend{color:var(--muted)}
+@media (prefers-color-scheme:dark){.win{color:#6FCB97}.lose{color:#FF8A80}}
+.sts{width:100%;border-collapse:collapse;font-size:13px;text-align:center}
+.sts th{font-size:11.5px;font-weight:600;color:var(--muted);padding:4px 2px}
+.sts td{padding:7px 2px;border-top:1px solid var(--rule);font:600 15px var(--f-num);font-variant-numeric:tabular-nums}
+.sts td small{font:400 11px var(--f-ui);color:var(--muted)}
+.sts td.hr{font-size:18px}
 .start{background:var(--raise);border-radius:14px;padding:12px 14px;margin-bottom:14px;display:grid;gap:10px}
 .start h2{margin:0;font-size:15px}
 .teams{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
@@ -278,6 +324,17 @@ input{font:inherit;color:inherit}
 .stp b{text-align:center;font:600 20px var(--f-num)}
 .jgrp{display:grid;gap:6px}
 .jgrp h4{margin:4px 0 0;font-size:13px;color:var(--muted);font-weight:600}
+.jgrp h4 small{font-weight:400;margin-left:8px;font-size:12px}
+.tp{display:grid;gap:8px}
+.tpv{font:600 44px/1 var(--f-num);font-variant-numeric:tabular-nums;text-align:center}
+.tpr{-webkit-appearance:none;appearance:none;width:100%;height:36px;margin:0;background:transparent;touch-action:pan-y}
+.tpr::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--rule)}
+.tpr::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:var(--grass);margin-top:-12px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.tpr::-moz-range-track{height:6px;border-radius:3px;background:var(--rule)}
+.tpr::-moz-range-thumb{width:30px;height:30px;border:0;border-radius:50%;background:var(--grass)}
+.tps{position:relative;height:14px;margin:-6px 15px 0;font-size:11px;color:var(--muted)}
+.tps span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.tpb{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 
 /* ---------- 底部事件列 ---------- */
 .strip{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--raise);border-top:1px solid var(--rule);
@@ -345,14 +402,14 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
       <span class="sub" id="mDate"></span>
     </div>
     <div class="score">
-      <div class="tn h"><input id="fH" placeholder="主队" maxlength="20" autocomplete="off" aria-label="主队名称"><small id="ckH">角球 0</small></div>
-      <b class="gl h num" id="glH" aria-label="主队进球">0</b>
+      <div class="tn h"><input id="fH" placeholder="主队" maxlength="20" autocomplete="off" aria-label="主队名称"><button class="cks" id="ckH" aria-label="补录或校正角球">角球 0</button></div>
+      <button class="gl h num" id="glH" aria-label="主队进球，点一下补录或校正">0</button>
       <div class="clk idle" id="clk">
         <button class="clkbtn" id="clkBtn" aria-label="调整比赛时间"><span id="perL">上半场</span><b id="clkT">00:00</b></button>
         <button class="run" id="runBtn" aria-label="开始计时"></button>
       </div>
-      <b class="gl a num" id="glA" aria-label="客队进球">0</b>
-      <div class="tn a"><input id="fA" placeholder="客队" maxlength="20" autocomplete="off" aria-label="客队名称"><small id="ckA">角球 0</small></div>
+      <button class="gl a num" id="glA" aria-label="客队进球，点一下补录或校正">0</button>
+      <div class="tn a"><input id="fA" placeholder="客队" maxlength="20" autocomplete="off" aria-label="客队名称"><button class="cks" id="ckA" aria-label="补录或校正角球">角球 0</button></div>
     </div>
     <div class="tools">
       <button class="tbtn" id="defBtn">按键定义</button>
@@ -373,7 +430,7 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
           <button class="zb t" id="zAll">全场</button>
           <button class="zb t" id="zNow">现在</button>
         </div>
-        <button class="zb t" id="curveBtn">攻势曲线</button>
+        <button class="zb t" id="curveBtn">密度曲线</button>
         <button class="zb t" id="tlFold">收起</button>
       </div>
     </div>
@@ -384,6 +441,7 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
     <section class="pad" data-i="0" aria-label="主队进攻"></section>
     <section class="mid">
       <div id="pred" aria-live="polite"></div>
+      <div id="ab" class="abx"></div>
       <div id="counts"></div>
     </section>
     <section class="pad" data-i="1" aria-label="客队进攻"></section>
@@ -446,31 +504,37 @@ function mMultipliers(cnt, elapsed, rates, exp){
   return { mult: out, parts };
 }
 /* half 1/2；t0 本半场已过秒数；score/reds/last/mult 都是 [主, 客]；last 为本半场最后一个角球的秒数或 null；
-   end 本半场预计总秒数。回传剩余角球总数的分布 dist[k]、平均，
-   以及两队各自的平均 meanT 和“主队剩余 − 客队剩余”的分布 diff（键为差值）。 */
-function mSimulate(half, t0, score, reds, last, end, mult, n, seed){
+   end 本半场预计总秒数。more（可省略）是之后要接着模拟的半场，例如 [{ half: 2, end: 2880 }]，用来算全场盘。
+   回传剩余角球总数的分布 dist[k]、平均，以及两队各自的平均 meanT 和“主队剩余 − 客队剩余”的分布 diff（键为差值）。 */
+function mSimulate(half, t0, score, reds, last, end, mult, n, seed, more){
   const P = MODEL.base, rnd = mRng(seed), dist = [], diff = {};
   const man = [Math.sign(reds[1] - reds[0]), Math.sign(reds[0] - reds[1])];
-  const gH = P.goal[half - 1][1], gA = P.goal[half - 1][0];
+  const segs = [[half, t0, end]].concat((more || []).map(x => [x.half, 0, x.end]));
   let sum = 0, sumH = 0, sumA = 0;
   for (let s = 0; s < n; s++){
-    let g0 = score[0], g1 = score[1], l0 = last[0] == null ? -1e9 : last[0], l1 = last[1] == null ? -1e9 : last[1], tot = 0, t = t0, c0 = 0;
-    while (t < end - 1e-9){
-      const mi = Math.floor(t / 60), step = Math.min(60 - (t - mi * 60), end - t), dt = step / 60;
-      const b = P.bin[(half - 1) * 10 + Math.min(Math.floor(mi / 5), 9)];
-      for (let i = 0; i < 2; i++){
-        const diff = i === 0 ? g0 - g1 : g1 - g0;
-        const st = P.state[diff <= -2 ? 0 : diff === -1 ? 1 : diff === 0 ? 2 : diff === 1 ? 3 : 4];
-        const lc = i === 0 ? l0 : l1;
-        const lam = b * (i === 0 ? P.home : 1) * P.man[man[i] + 1] * st * (t - lc <= P.cluSec ? P.clu : 1) * mult[i] * dt;
-        const k = mPois(lam, rnd);
-        tot += k;
-        if (i === 0) c0 += k;
-        if (k > 0){ if (i === 0) l0 = t + step / 2; else l1 = t + step / 2; }
-        const g = mPois((i === 0 ? gH : gA) * dt, rnd);
-        if (i === 0) g0 += g; else g1 += g;
+    let g0 = score[0], g1 = score[1], l0 = last[0] == null ? -1e9 : last[0], l1 = last[1] == null ? -1e9 : last[1], tot = 0, c0 = 0;
+    for (let si = 0; si < segs.length; si++){
+      const hf = segs[si][0], se = segs[si][2];
+      const gH = P.goal[hf - 1][1], gA = P.goal[hf - 1][0];
+      let t = segs[si][1];
+      if (si > 0){ l0 = -1e9; l1 = -1e9; }
+      while (t < se - 1e-9){
+        const mi = Math.floor(t / 60), step = Math.min(60 - (t - mi * 60), se - t), dt = step / 60;
+        const b = P.bin[(hf - 1) * 10 + Math.min(Math.floor(mi / 5), 9)];
+        for (let i = 0; i < 2; i++){
+          const diff = i === 0 ? g0 - g1 : g1 - g0;
+          const st = P.state[diff <= -2 ? 0 : diff === -1 ? 1 : diff === 0 ? 2 : diff === 1 ? 3 : 4];
+          const lc = i === 0 ? l0 : l1;
+          const lam = b * (i === 0 ? P.home : 1) * P.man[man[i] + 1] * st * (t - lc <= P.cluSec ? P.clu : 1) * mult[i] * dt;
+          const k = mPois(lam, rnd);
+          tot += k;
+          if (i === 0) c0 += k;
+          if (k > 0){ if (i === 0) l0 = t + step / 2; else l1 = t + step / 2; }
+          const g = mPois((i === 0 ? gH : gA) * dt, rnd);
+          if (i === 0) g0 += g; else g1 += g;
+        }
+        t += step;
       }
-      t += step;
     }
     dist[tot] = (dist[tot] || 0) + 1; sum += tot; sumH += c0; sumA += tot - c0;
     const d = 2 * c0 - tot;
@@ -483,6 +547,11 @@ function mSimulate(half, t0, score, reds, last, end, mult, n, seed){
 function mOver(res, have, line){
   let p = 0;
   for (let k = 0; k < res.dist.length; k++) if (have + k > line) p += res.dist[k];
+  return p;
+}
+function mUnder(res, have, line){
+  let p = 0;
+  for (let k = 0; k < res.dist.length; k++) if (have + k < line) p += res.dist[k] || 0;
   return p;
 }
 /* 角球让球（以主队为准）：hd 为主队让球数，例如 -1.5 表示主队让 1.5 个。
@@ -510,6 +579,8 @@ const PER = { 1: [0, 2700, '上半场'], 2: [2700, 5400, '下半场'] };
 const LABEL = { f3: '进入前场', bx: '进入禁区', co: '传中到人', cf: '传中没到人', sb: '射门被挡', ss: '射门被扑', so: '射门偏出', sg: '射门进球', og: '对方乌龙', ck: '角球', rc: '红牌' };
 const ORDER = ['f3', 'bx', 'co', 'cf', 'sb', 'ss', 'so', 'sg', 'ck', 'og', 'rc'];
 const GOALC = ['sg', 'og'];
+const MKT = { h1: '上半场', h2: '下半场', ft: '全场' };
+const TIERS = [60, 70, 80];
 const G = MODEL.groups;
 const FLAG = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 17V1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4.8 2h10l-3 3.2 3 3.2h-10z" fill="currentColor"/></svg>';
 const PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg>';
@@ -528,9 +599,17 @@ function newMatch(prev){
   return { id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), c: nowSec(), u: nowSec(),
     d: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, lg: prev ? prev.lg : '', h: '', a: '', st: 1,
     exp: null, line: prev ? prev.line.slice() : [4.5, 4.5], hd: prev && prev.hd ? prev.hd.slice() : [-0.5, -0.5], add: [null, null], pe: {},
+    mk: ['h', 'f'], fl: null, fh: null, ab: { on: null, bets: [] }, res: null,
     obs: { p: 1, t: 0 }, stop: null, tm: { p: 1, b: 0, r: 0, at: 0, ht: 0 }, ev: [] };
 }
+const numOr = (v, d) => typeof v === 'number' && isFinite(v) ? v : d;
+const pair = v => Array.isArray(v) && v.length === 2 && v.every(x => Number.isInteger(x) && x >= 0) ? v.slice() : null;
 function fixMatch(m){
+  m.mk = Array.isArray(m.mk) && m.mk.length === 2 ? m.mk.map((x, j) => x === 'h' || x === 'f' ? x : (j ? 'f' : 'h')) : ['h', 'f'];
+  m.fl = numOr(m.fl, null); m.fh = numOr(m.fh, null);
+  const ab = m.ab && typeof m.ab === 'object' ? m.ab : {};
+  m.ab = { on: ab.on && MKT[ab.on.mt] ? { mt: ab.on.mt } : null, bets: (Array.isArray(ab.bets) ? ab.bets : []).filter(b => b && MKT[b.mt] && (b.mk === 'ou' || b.mk === 'hd') && TIERS.includes(b.tier)) };
+  m.res = m.res && typeof m.res === 'object' ? { h1: pair(m.res.h1), ft: pair(m.res.ft) } : null;
   m.line = Array.isArray(m.line) && m.line.length === 2 ? m.line : [4.5, 4.5];
   m.add = Array.isArray(m.add) && m.add.length === 2 ? m.add : [null, null];
   m.pe = m.pe && typeof m.pe === 'object' ? m.pe : {};
@@ -593,41 +672,55 @@ function finishMatch(){
   M.st = 2; M.tm.ht = 0;
   return M.stop;
 }
-/* 时间输入：支持 23:40、67、45+2、90+3:30；pSel 为选定的半场（可为 null） */
-function parseClock(str, pSel){
-  const x = String(str || '').trim().replace(/＋/g, '+').replace(/：/g, ':').replace(/\s+/g, '');
-  let m = x.match(/^(45|90)\+(\d{1,2})(?::(\d{1,2}))?$/);
-  if (m){ const base = +m[1]; return { p: base === 45 ? 1 : 2, v: base * 60 + (+m[2]) * 60 + (+(m[3] || 0)) }; }
-  m = x.match(/^(\d{1,3})(?::(\d{1,2}))?$/);
-  if (!m || +(m[2] || 0) > 59) return null;
-  let v = (+m[1]) * 60 + (+(m[2] || 0));
-  const p = pSel || (v >= PER[2][0] ? 2 : 1);
-  if (p === 2 && v < PER[2][0]) v += PER[2][0];
-  if (v > 140 * 60) return null;
-  return { p, v };
+/* 选时间（不用打字）：半场按钮＋拖动条＋加减按钮。tp = { p 半场, v 比赛时钟秒数 } */
+const TPR = { 1: [0, 3600], 2: [2700, 6300] };
+const TPL = { 1: ["0'", "15'", "30'", "45'", '+15'], 2: ["45'", "60'", "75'", "90'", '+15'] };
+function tpHTML(tp){
+  const [a, b] = TPR[tp.p];
+  return `<div class="tp">
+    <div class="chips">${[1, 2].map(q => `<button class="chip" data-a="tpp" data-p="${q}" aria-pressed="${tp.p === q}">${PER[q][2]}</button>`).join('')}</div>
+    <div class="tpv" id="tpV">${fmtClock(tp.p, tp.v)}</div>
+    <input type="range" class="tpr" id="tpR" min="${a}" max="${b}" step="60" value="${tp.v}" aria-label="比赛时间">
+    <div class="tps" aria-hidden="true">${TPL[tp.p].map((x, j) => `<span style="left:${j * 25}%">${x}</span>`).join('')}</div>
+    <div class="tpb">${[-5, -1, 1, 5].map(x => `<button class="chip" data-a="tpn" data-d="${x * 60}">${x > 0 ? '＋' : '−'}${Math.abs(x)} 分</button>`).join('')}<button class="chip" data-a="tpn" data-d="30">＋30 秒</button></div>
+  </div>`;
+}
+function tpShow(tp){
+  const v = $('#tpV'), r = $('#tpR'), g = $('#jgoT');
+  if (v) v.textContent = fmtClock(tp.p, tp.v);
+  if (r && +r.value !== tp.v) r.value = tp.v;
+  if (g) g.textContent = fmtClock(tp.p, tp.v);
+}
+function tpHalf(tp, q){
+  if (q === tp.p) return;
+  tp.v = q === 2 ? tp.v + PER[2][0] : tp.v - PER[2][0];
+  tp.p = q; tp.v = clamp(tp.v, TPR[q][0], TPR[q][1]);
 }
 /* 中途加入／校正：设定比分、本半场角球、红牌（补录的事件 b=1，时间不详） */
-function curCounts(p){
-  const sc = [0, 0], ck = [0, 0], rc = [0, 0];
-  for (const e of M.ev){ if (GOALC.includes(e.c)) sc[e.i]++; if (e.c === 'rc') rc[e.i]++; if (e.c === 'ck' && e.p === p) ck[e.i]++; }
-  return { sc, ck, rc };
-}
-function applyJoin(j){
-  let p = j.p, v = null;
-  if (j.mode === 'join'){
-    const r = parseClock(j.tIn, j.pAuto ? null : j.p);
-    if (!r){ showToast('请输入电视上的比赛时间，例如 67:30 或 45+2'); return false; }
-    p = r.p; v = r.v;
+function curCounts(onlyObserved){
+  const sc = [0, 0], rc = [0, 0], ck = { 1: [0, 0], 2: [0, 0] };
+  for (const e of M.ev){
+    if (onlyObserved && e.b) continue;
+    if (GOALC.includes(e.c)) sc[e.i]++; if (e.c === 'rc') rc[e.i]++; if (e.c === 'ck') ck[e.p][e.i]++;
   }
+  return { sc, rc, ck1: ck[1], ck2: ck[2], ft: [ck[1][0] + ck[2][0], ck[1][1] + ck[2][1]] };
+}
+/* j：mode（join／fix）、p 半场、v 比赛时钟秒数、sc 比分、rc 红牌、ck1 上半场角球；
+   下半场时另有 ft 全场角球和 lk（true＝不知道上半场各几个，没看到的都算在上半场） */
+function applyJoin(j){
+  const p = j.p, v = j.v;
   M.ev = M.ev.filter(e => !e.b);
-  const base = curCounts(p);
+  const base = curCounts(true);
   let short = false;
   const addB = (n, c, ep, et, i) => { for (let k = 0; k < n; k++) M.ev.push({ t: et, p: ep, i, c, b: 1, k: ++seq }); };
   for (const i of [0, 1]){
-    if (j.sc[i] < base.sc[i] || j.ck[i] < base.ck[i] || j.rc[i] < base.rc[i]) short = true;
+    let h1 = j.ck1[i], h2 = base.ck2[i];
+    if (p === 2){ h1 = j.lk ? Math.max(base.ck1[i], j.ft[i] - base.ck2[i]) : j.ck1[i]; h2 = j.ft[i] - h1; }
+    if (j.sc[i] < base.sc[i] || h1 < base.ck1[i] || h2 < base.ck2[i] || j.rc[i] < base.rc[i]) short = true;
     addB(Math.max(0, j.sc[i] - base.sc[i]), 'sg', 1, 0, i);
     addB(Math.max(0, j.rc[i] - base.rc[i]), 'rc', 1, 0, i);
-    addB(Math.max(0, j.ck[i] - base.ck[i]), 'ck', p, PER[p][0], i);
+    addB(Math.max(0, h1 - base.ck1[i]), 'ck', 1, PER[1][0], i);
+    addB(Math.max(0, h2 - base.ck2[i]), 'ck', 2, PER[2][0], i);
   }
   if (j.mode === 'join'){
     M.obs = { p, t: v };
@@ -715,7 +808,7 @@ function predState(){
   const clock = clockOf(M);
   if (M.tm.ht){ p = 2; t = 0; } else t = Math.max(0, clock - PER[p][0]);
   const S = PER[p][0];
-  const cnt = [{}, {}], hc = [{}, {}], co = [0, 0], gl = [0, 0], rd = [0, 0], last = [null, null];
+  const cnt = [{}, {}], hc = [{}, {}], co = [0, 0], cf = [0, 0], gl = [0, 0], rd = [0, 0], last = [null, null];
   for (const i of [0, 1]) for (const g in G){ cnt[i][g] = 0; hc[i][g] = 0; }
   for (const e of M.ev){
     const inHalf = e.p === p;
@@ -724,6 +817,7 @@ function predState(){
     if (e.b && inHalf && e.c === 'ck') hc[e.i].ck++;
     if (GOALC.includes(e.c)) gl[e.i]++;
     if (e.c === 'rc') rd[e.i]++;
+    if (e.c === 'ck') cf[e.i]++;
     if (inHalf && e.c === 'ck'){ co[e.i]++; if (!e.b){ const x = e.t - S; if (last[e.i] == null || x > last[e.i]) last[e.i] = x; } }
   }
   for (const e of M.ev) if (e.p === p && e.c === 'ck' && !e.b) t = Math.max(t, e.t - S);
@@ -735,12 +829,18 @@ function predState(){
   if (o.p === p){ elapsed = Math.max(0, S + t - o.t) / 60; obsHalf = elapsed; }
   else if (o.p < p) elapsed = Math.max(0, halfLen1() - o.t) / 60 + t / 60;
   const mm = mMultipliers(cnt, elapsed, H.rates, M.exp);
-  return { p, t, end, add, cnt, hc, co, gl, rd, last, elapsed, obsHalf, mult: mm.mult, line: M.line[p - 1], hd: M.hd[p - 1], halfMin: t / 60 };
+  // 盘：本半场（h）或全场（f）。上半场看全场盘时，接着模拟整个下半场
+  const scope = M.mk[p - 1], full = scope === 'f';
+  const add2 = M.add[1] == null ? H.addDef[1] : M.add[1];
+  const more = full && p === 1 ? [{ half: 2, end: (45 + add2) * 60 }] : null;
+  return { p, t, end, add, add2, cnt, hc, co, cf, gl, rd, last, elapsed, obsHalf, mult: mm.mult, halfMin: t / 60,
+    scope, more, mt: full ? 'ft' : 'h' + p, have: full ? cf : co,
+    line: full ? M.fl : M.line[p - 1], hd: full ? M.fh : M.hd[p - 1] };
 }
 let cache = { key: '', res: null };
 function predict(s){
-  const key = [M.id, s.p, Math.floor(s.t / 10), s.end, s.gl, s.rd, s.last, s.co, s.mult.map(x => x.toFixed(3))].join('|');
-  if (cache.key !== key) cache = { key, res: mSimulate(s.p, s.t, s.gl, s.rd, s.last, s.end, s.mult, 4000, 2015) };
+  const key = [M.id, s.p, Math.floor(s.t / 10), s.end, s.gl, s.rd, s.last, s.co, s.mult.map(x => x.toFixed(3)), s.more ? s.more[0].end : 0].join('|');
+  if (cache.key !== key) cache = { key, res: mSimulate(s.p, s.t, s.gl, s.rd, s.last, s.end, s.mult, 4000, 2015, s.more) };
   return cache.res;
 }
 const pct = v => Math.round(v * 100) + '%';
@@ -807,13 +907,13 @@ function renderPads(){
     $(`[data-tot="${i}"]`).textContent = `${PER[p][2]} ${tot} 笔`;
   }
 }
-function distSVG(res, have, line){
+function distSVG(res, have, line, name){
   let K = 0;
   for (let k = 0; k < res.dist.length; k++) if (res.dist[k] >= 0.004) K = k;
   K = Math.max(K, Math.ceil(line - have) + 2, 6);
   const W = 320, Hh = 96, top = 14, bot = 18, n = K + 1, bw = W / n;
   const mx = Math.max(...res.dist.slice(0, n).map(x => x || 0), 0.01);
-  let s = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="本半场最后角球数的概率分布">`;
+  let s = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${name}最后角球数的概率分布">`;
   for (let k = 0; k <= K; k++){
     const v = res.dist[k] || 0, h = (Hh - top - bot) * v / mx, x = k * bw, tot = have + k;
     const over = tot > line;
@@ -826,54 +926,89 @@ function distSVG(res, have, line){
   return s + '</svg>';
 }
 const hdText = h => h === 0 ? '平手' : `主 ${h < 0 ? '−' : '+'}${fmtLine(Math.abs(h))}`;
+const hdShort = h => h === 0 ? '0' : `${h < 0 ? '−' : '+'}${fmtLine(Math.abs(h))}`;
 function startPanel(){
   if (M.st !== 1 || M.tm.r || M.tm.b || observed(M).length || M.ev.length) return '';
   return `<div class="start"><h2>开始记录</h2>
     <div class="grid2"><button class="pill green" data-pa="kick1">比赛刚开球</button><button class="pill" data-pa="join">比赛已经开始了</button></div>
-    <p class="note" style="margin:0">中途加入时，输入电视上的比赛时间、目前比分和本半场角球，就能接着预测。</p></div>`;
+    <p class="note" style="margin:0">中途加入：拖动选电视上的时间，再补录目前的比分和角球，就能接着预测。</p></div>`;
 }
+/* 盘口快选：以预计结果为中心的几个常见盘口，一点就设定；两端的 −／＋ 微调 */
+function chipVals(cur, center, step, pos){
+  const vals = [-2, -1, 0, 1, 2].map(k => +(center + k * step).toFixed(2)).filter(v => !pos || v > 0);
+  if (cur != null && !vals.some(v => Math.abs(v - cur) < 1e-9)){ vals.push(cur); vals.sort((a, b) => a - b); }
+  return vals;
+}
+function lineRow(title, kind, cur, vals, step, fmt){
+  return `<div class="lnc"><div class="lnh">${title}</div><div class="lnr">
+    <button class="lnb" data-pa="${kind}" data-d="${-step}" aria-label="${title}往下调">−</button>
+    ${vals.map(v => `<button class="lnv" data-pa="${kind}v" data-v="${v}" aria-pressed="${cur != null && Math.abs(v - cur) < 1e-9}">${fmt(v)}</button>`).join('')}
+    <button class="lnb" data-pa="${kind}" data-d="${step}" aria-label="${title}往上调">＋</button></div></div>`;
+}
+let abView = null;
 function renderPred(){
   const s = predState(), el = $('#pred'), mini = $('#minip');
   if (s.msg){
     el.innerHTML = M.st === 2 ? `<div class="start"><h2>这场已经结束记录</h2>
       <div class="grid2"><button class="pill green" data-pa="new">开始新比赛</button><button class="pill" data-pa="reopen">重新打开这场</button></div>
-      <p class="note" style="margin:0">这场的记录已经保存在“比赛列表”里，可以随时导出。</p></div>` : `<div class="sec-h"><h2>半场角球预测</h2></div><p class="msg">${s.msg}</p>`;
-    mini.textContent = ''; return;
+      <p class="note" style="margin:0">这场的记录已经保存在“比赛列表”里，可以随时导出。</p></div>` : `<div class="sec-h"><h2>角球预测</h2></div><p class="msg">${s.msg}</p>`;
+    mini.textContent = ''; abView = null; renderAB(); return;
   }
-  const r = predict(s), have = s.co[0] + s.co[1], over = mOver(r, have, s.line), half = PER[s.p][2];
-  const lines = [s.line - 1, s.line, s.line + 1].filter(x => x > 0);
+  const r = predict(s), full = s.scope === 'f', half = PER[s.p][2], hv = s.have, have = hv[0] + hv[1];
+  // 全场盘还没设定时，先用最接近预计结果的盘口
+  const E = have + r.mean, dE = hv[0] - hv[1] + r.meanT[0] - r.meanT[1];
+  const cT = Math.max(0.5, Math.floor(E) + 0.5), cH = -(Math.floor(dE) + 0.5);
+  if (full && M.fl == null){ M.fl = cT; s.line = cT; save(); }
+  if (full && M.fh == null){ M.fh = cH; s.hd = cH; save(); }
+  const line = s.line, hd = s.hd;
+  const over = mOver(r, have, line), under = mUnder(r, have, line);
+  const hc = mHandicap(r, hv, hd), exT = [hv[0] + r.meanT[0], hv[1] + r.meanT[1]];
+  const hasPush = Math.abs(hd - Math.round(hd)) < 1e-9, pushT = Math.max(0, 1 - over - under);
+  const mName = full ? '全场' : half;
   const fx = (i) => { const m = s.mult[i], w = clamp(Math.log(m) / Math.log(2) * 50, -50, 50); return `<span class="nm ${i ? 'a' : 'h'}">${esc(teamName(i))}</span><span class="bar2"><i style="${w >= 0 ? `left:50%;width:${w.toFixed(1)}%` : `left:${(50 + w).toFixed(1)}%;width:${(-w).toFixed(1)}%`}"></i></span><span class="v">${m.toFixed(2)}×</span>`; };
   const addAuto = M.add[s.p - 1] == null;
-  const hc = mHandicap(r, s.co, s.hd), exT = [s.co[0] + r.meanT[0], s.co[1] + r.meanT[1]];
-  const hasPush = Math.abs(s.hd - Math.round(s.hd)) < 1e-9;
-  el.innerHTML = startPanel() + `<div class="sec-h"><h2>${half}角球</h2><span class="sp"></span><small>${M.tm.ht ? '下半场还没开始　' : ''}本半场 <b class="h">${s.co[0]}</b>–<b class="a">${s.co[1]}</b></small></div>
-    <div class="pred-top"><div class="pv over"><b>${pct(over)}</b><span>大 ${fmtLine(s.line)}</span></div><div class="pv"><b>${pct(1 - over)}</b><span>小 ${fmtLine(s.line)}</span></div></div>
-    <p class="pred-line">预计${half}共 <b>${(have + r.mean).toFixed(1)}</b> 个，还会有 <b>${r.mean.toFixed(1)}</b> 个</p>
-    <div class="dist">${distSVG(r, have, s.line)}</div>
-    <div class="lines">${lines.map(x => `<span class="${x === s.line ? 'on' : ''}">大 ${fmtLine(x)}<b>${pct(mOver(r, have, x))}</b></span>`).join('')}</div>
-    <div class="teams">${[0, 1].map(i => `<div class="tmv ${i ? 'a' : 'h'}"><span>${esc(teamName(i))}</span><b>${exT[i].toFixed(1)}</b><small>已有 ${s.co[i]}，还会有 ${r.meanT[i].toFixed(1)}</small></div>`).join('')}</div>
-    <div class="hcr"><div class="hw ${hc.home > hc.away ? 'best' : ''}"><b>${pct(hc.home)}</b><span>主队赢盘</span></div><div><b>${hasPush ? pct(hc.push) : '—'}</b><span>走盘</span></div><div class="aw ${hc.away > hc.home ? 'best' : ''}"><b>${pct(hc.away)}</b><span>客队赢盘</span></div></div>
+  const lines = [line - 1, line, line + 1].filter(x => x > 0);
+  el.innerHTML = startPanel() + `<div class="sec-h ph"><h2>${mName}角球</h2>
+      <div class="seg" role="group" aria-label="预测哪一个盘"><button data-pa="scope" data-v="h" aria-pressed="${!full}">${half}</button><button data-pa="scope" data-v="f" aria-pressed="${full}">全场</button></div>
+      <span class="sp"></span><button class="fixb" data-pa="join">补录／校正</button></div>
+    <p class="sub2">${M.tm.ht ? '中场休息　' : ''}${full ? `全场已有 <b class="h">${hv[0]}</b>–<b class="a">${hv[1]}</b>　${s.p === 2 || M.tm.ht ? '下' : '上'}半场 ${s.co[0]}–${s.co[1]}` : `本半场已有 <b class="h">${hv[0]}</b>–<b class="a">${hv[1]}</b>`}</p>
+    <div class="pred-top"><div class="pv over"><b>${pct(over)}</b><span>大 ${fmtLine(line)}</span></div><div class="pv"><b>${pct(under)}</b><span>小 ${fmtLine(line)}${pushT >= 0.005 ? `　走 ${pct(pushT)}` : ''}</span></div></div>
+    ${lineRow(`${mName}大小盘`, 'line', line, chipVals(line, cT, 1, true), 1, fmtLine)}
+    <p class="pred-line">预计${mName}共 <b>${E.toFixed(1)}</b> 个，还会有 <b>${r.mean.toFixed(1)}</b> 个</p>
+    <div class="dist">${distSVG(r, have, line, mName)}</div>
+    <div class="lines">${lines.map(x => `<span class="${x === line ? 'on' : ''}">大 ${fmtLine(x)}<b>${pct(mOver(r, have, x))}</b></span>`).join('')}</div>
+    <div class="teams">${[0, 1].map(i => `<div class="tmv ${i ? 'a' : 'h'}"><span>${esc(teamName(i))}</span><b>${exT[i].toFixed(1)}</b><small>已有 ${hv[i]}，还会有 ${r.meanT[i].toFixed(1)}</small></div>`).join('')}</div>
+    <div class="hcr"><div class="hw ${hc.home > hc.away ? 'best' : ''}"><b>${pct(hc.home)}</b><span>主 ${hdShort(hd)} 赢盘</span></div><div><b>${hasPush ? pct(hc.push) : '—'}</b><span>走盘</span></div><div class="aw ${hc.away > hc.home ? 'best' : ''}"><b>${pct(hc.away)}</b><span>客 ${hdShort(-hd)} 赢盘</span></div></div>
+    ${lineRow(`${mName}让球（以主队为准）`, 'hd', hd, chipVals(hd, cH, 0.5, false), 0.5, hdShort)}
     <div class="factor" title="攻势系数">${fx(0)}${fx(1)}</div>
-    <p class="note">攻势系数：根据你看到的这段时间里的进入前场、进入禁区和传中，这队接下来的角球节奏是平均的几倍。</p>
+    <p class="note">攻势系数：根据你看到的这段时间里的进入前场、进入禁区和传中，这队接下来的角球节奏是平均的几倍。${full && s.p === 1 ? `全场盘＝上半场剩下的时间＋整个下半场（下半场补时按 ${s.add2} 分钟算），下半场也先用目前的攻势系数。` : ''}</p>
     <div class="ctls">
-      <div class="ctl"><span>${half}大小盘</span><button data-pa="line" data-d="-1" aria-label="盘口减一">−</button><b>${fmtLine(s.line)}</b><button data-pa="line" data-d="1" aria-label="盘口加一">＋</button><i></i></div>
-      <div class="ctl"><span>${half}让球</span><button data-pa="hd" data-d="-0.5" aria-label="主队多让半个">−</button><b style="white-space:nowrap">${hdText(s.hd)}</b><button data-pa="hd" data-d="0.5" aria-label="主队少让半个">＋</button><i></i></div>
       <div class="ctl"><span>全场预期</span><button data-pa="exp" data-d="-0.5" aria-label="全场预期减少">−</button><b>${M.exp == null ? '未填' : fmtLine(M.exp)}</b><button data-pa="exp" data-d="0.5" aria-label="全场预期增加">＋</button>${M.exp == null ? '<i></i>' : '<button class="x" data-pa="exp0">清除</button>'}</div>
       <div class="ctl"><span>${half}补时</span><button data-pa="add" data-d="-1" aria-label="补时减一分钟">−</button><b>${s.add} 分</b><button data-pa="add" data-d="1" aria-label="补时加一分钟">＋</button>${addAuto ? '<i></i>' : '<button class="x" data-pa="add0">默认</button>'}</div>
     </div>
-    <p class="note">“全场预期”填赛前的全场角球盘口或两队平均角球，预测会更准。补时默认 ${H.addDef[s.p - 1]} 分钟${H.n >= 3 ? '（根据你已结束的比赛）' : ''}，第四官员举牌后再调整。</p>`;
-  mini.innerHTML = `大 ${fmtLine(s.line)} <b>${pct(over)}</b>`;
+    <p class="note">盘口直接点博彩 app 上看到的数字；下半场博彩 app 换成全场盘时，这里默认也是全场。“全场预期”填赛前的全场角球盘口或两队平均角球，预测会更准。补时默认 ${H.addDef[s.p - 1]} 分钟${H.n >= 3 ? '（根据你已结束的比赛）' : ''}，第四官员举牌后再调整。</p>`;
+  mini.innerHTML = `${full ? '全场' : ''}大 ${fmtLine(line)} <b>${pct(over)}</b>`;
+  abView = abEval(s, [
+    { mk: 'ou', sd: 'o', ln: line, pr: over, done: have > line },
+    { mk: 'ou', sd: 'u', ln: line, pr: under, done: have > line },
+    { mk: 'hd', sd: 'h', ln: hd, pr: hc.home, done: false },
+    { mk: 'hd', sd: 'a', ln: hd, pr: hc.away, done: false },
+  ]);
+  renderAB();
 }
 $('#pred').addEventListener('click', ev => {
   const b = ev.target.closest('[data-pa]'); if (!b) return;
-  const p = M.tm.ht ? 2 : M.tm.p, d = +b.dataset.d || 0;
+  const p = M.tm.ht ? 2 : M.tm.p, d = +b.dataset.d || 0, v = +b.dataset.v, full = M.mk[p - 1] === 'f';
   switch (b.dataset.pa){
-    case 'line': M.line[p - 1] = clamp(M.line[p - 1] + d, 0.5, 15.5); break;
+    case 'scope': M.mk[p - 1] = b.dataset.v; break;
+    case 'line': if (full) M.fl = clamp((M.fl == null ? 9.5 : M.fl) + d, 0.5, 30.5); else M.line[p - 1] = clamp(M.line[p - 1] + d, 0.5, 15.5); break;
+    case 'linev': if (full) M.fl = v; else M.line[p - 1] = v; break;
+    case 'hd': if (full) M.fh = clamp((M.fh == null ? -0.5 : M.fh) + d, -10, 10); else M.hd[p - 1] = clamp(M.hd[p - 1] + d, -6, 6); break;
+    case 'hdv': if (full) M.fh = v; else M.hd[p - 1] = v; break;
     case 'exp': M.exp = clamp(M.exp == null ? (d > 0 ? 10.5 : 9.5) : M.exp + d, 3, 25); break;
     case 'exp0': M.exp = null; break;
     case 'add': { const cur = M.add[p - 1] == null ? H.addDef[p - 1] : M.add[p - 1]; M.add[p - 1] = clamp(cur + d, 0, 20); break; }
     case 'add0': M.add[p - 1] = null; break;
-    case 'hd': M.hd[p - 1] = clamp(M.hd[p - 1] + d, -6, 6); break;
     case 'kick1': kick(1); saveNow(); syncWake(); renderAll(); showToast('上半场开球，从 0:00 开始计时'); return;
     case 'new': startNew(); return;
     case 'reopen': M.st = 1; M.stop = null; saveNow(); H = history(); renderAll(); showToast('已重新打开，可以继续记录'); return;
@@ -881,6 +1016,116 @@ $('#pred').addEventListener('click', ev => {
   }
   save(); renderPred(); renderCounts();
 });
+
+/* ================= 自动投注（模拟，只看命中率，不管赔率） =================
+   监控画面上现在的大小盘两边和让球两边。任一边的赢盘率连续 hold 秒（比赛时间）都在某个档位以上，
+   就记一笔；中间只要掉到档位以下，就从头算。同一个盘口、同一边、同一档位每场只记一次。 */
+const AB = Object.assign({ hold: 180 }, LS.get('corner-sb-ab', {}) || {});
+let abTrack = {};
+const SIDE = { o: '大', u: '小', h: '主', a: '客' };
+function betLabel(b){
+  return b.mk === 'ou' ? `${MKT[b.mt]} ${SIDE[b.sd]} ${fmtLine(b.ln)}` : `${MKT[b.mt]} 让球 ${SIDE[b.sd]} ${hdShort(b.sd === 'h' ? b.ln : -b.ln)}`;
+}
+const fmtHold = s => s % 60 ? `${Math.floor(s / 60)}:${pad2(s % 60)}` : `${s / 60} 分钟`;
+function abEval(s, mkts){
+  const on = M.ab.on;
+  if (!on || M.st !== 1) return null;
+  if (on.mt !== s.mt){ abTrack = {}; return { paused: true, mt: s.mt }; }
+  // 计时器停着时不累积时间、也不开始新的计时，但掉到档位以下照样重新算
+  const run = !!M.tm.r && !M.tm.ht, now = Math.floor(clockOf(M)), next = {}, prog = [], placed = [];
+  for (const m of mkts){
+    if (m.ln == null) continue;
+    for (const tier of TIERS){
+      const key = [s.mt, m.mk, m.sd, m.ln, tier].join('|');
+      if (M.ab.bets.some(b => b.key === key) || m.done || m.pr * 100 < tier) continue;
+      let since = abTrack[key];
+      if (!run){ if (since != null){ next[key] = since; prog.push({ m, tier, left: Math.max(0, AB.hold - (now - since)) }); } continue; }
+      if (since == null || since > now) since = now;
+      if (now - since >= AB.hold){
+        placed.push({ key, mt: s.mt, mk: m.mk, sd: m.sd, ln: m.ln, pr: +m.pr.toFixed(3), tier, p: s.p, t: now, hold: AB.hold,
+          sc: s.gl.slice(), ck: s.have.slice(), r: null });
+      } else { next[key] = since; prog.push({ m, tier, left: AB.hold - (now - since) }); }
+    }
+  }
+  abTrack = next;
+  if (placed.length){
+    M.ab.bets.push(...placed); save();
+    const top = placed.reduce((a, b) => b.tier > a.tier ? b : a);
+    showToast(`自动投注 ${placed.length} 笔：${betLabel(top)}（${pct(top.pr)}）`);
+  }
+  // 同一边只显示最高的那一档进度
+  const best = {};
+  for (const x of prog){ const k = x.m.mk + x.m.sd; if (!best[k] || x.tier > best[k].tier) best[k] = x; }
+  return { mt: s.mt, prog: Object.values(best), idle: !run };
+}
+const resTxt = r => r == null ? '<span class="pend">待结算</span>' : r === 1 ? '<span class="win">命中</span>' : r === 0 ? '<span class="lose">没中</span>' : '<span class="push">走盘</span>';
+function renderAB(){
+  const el = $('#ab'), bets = M.ab.bets, v = abView, live = M.st === 1;
+  if (!live && !bets.length){ el.innerHTML = ''; return; }
+  const pend = bets.filter(b => b.r == null).length;
+  let ctl = '';
+  if (live){
+    const s = predState(), mt = s.msg ? null : s.mt;
+    if (!M.ab.on) ctl = `<button class="pill green" data-ab="on" ${mt ? '' : 'disabled'}>开始自动投注</button>
+      <div class="row hold"><span class="lbl" style="margin:0">需要稳定</span>${[60, 120, 180, 300].map(x => `<button class="chip" data-ab="hold" data-v="${x}" aria-pressed="${AB.hold === x}">${x / 60} 分钟</button>`).join('')}</div>
+      <p class="note" style="margin:0">开始后，监控画面上现在的${mt ? MKT[mt] : ''}大小盘两边和让球两边：任一边的赢盘率连续 ${fmtHold(AB.hold)}（比赛时间）都在 60%、70% 或 80% 以上，就在那一档记一笔。中间掉下去就重新计时，所以在档位上下波动不会算。</p>`;
+    else if (v && v.paused) ctl = `<p class="msg">${MKT[M.ab.on.mt]}的自动投注已经暂停：现在显示的是${MKT[v.mt]}的盘。盘口设好后点开始。</p>
+      <div class="grid2"><button class="pill green" data-ab="on">开始（${MKT[v.mt]}）</button><button class="pill" data-ab="off">停止</button></div>`;
+    else ctl = `<div class="abon"><i></i><span>自动投注中（${MKT[M.ab.on.mt]}）</span><span class="sp"></span><button class="pill" data-ab="off">停止</button></div>
+      ${v && v.idle ? `<p class="note" style="margin:0">计时器没在走，暂停计算稳定时间。</p>` : ''}
+      ${v && v.prog && v.prog.length ? `<div class="prog">${v.prog.map(x => `<span>${x.m.mk === 'ou' ? SIDE[x.m.sd] + ' ' + fmtLine(x.m.ln) : SIDE[x.m.sd] + ' ' + hdShort(x.m.sd === 'h' ? x.m.ln : -x.m.ln)} ≥${x.tier}%<b>还差 ${Math.floor(x.left / 60)}:${pad2(x.left % 60)}</b></span>`).join('')}</div>` : ''}`;
+  }
+  const list = bets.slice().reverse().map(b => `<tr><td class="t">${fmtClock(b.p, b.t)}</td><td>${betLabel(b)}</td><td class="pr">${pct(b.pr)}<small>≥${b.tier}</small></td><td>${resTxt(b.r)}</td></tr>`).join('');
+  el.innerHTML = `<div class="sec-h"><h2>自动投注（模拟）</h2><span class="sp"></span><small>${bets.length ? `这场 ${bets.length} 笔` : '只算命中率'}</small></div>
+    ${ctl}
+    ${bets.length ? `<table class="abt"><tbody>${list}</tbody></table>` : ''}
+    <div class="row">${pend ? `<button class="pill dark" data-ab="settle">结算 ${pend} 笔</button>` : ''}<button class="pill" data-ab="stats">命中率统计</button></div>`;
+}
+$('#ab').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-ab]'); if (!b) return;
+  switch (b.dataset.ab){
+    case 'on': { const s = predState(); if (s.msg) return; M.ab.on = { mt: s.mt }; abTrack = {}; saveNow(); renderPred(); showToast(`开始自动投注：${MKT[s.mt]} 大小 ${fmtLine(s.line)}、让球 ${hdText(s.hd)}`); return; }
+    case 'off': M.ab.on = null; abTrack = {}; saveNow(); renderPred(); showToast('已停止自动投注'); return;
+    case 'hold': AB.hold = +b.dataset.v; LS.set('corner-sb-ab', AB); abTrack = {}; renderAB(); return;
+    case 'settle': openSettle(M.id); return;
+    case 'stats': openSheet('abstats'); return;
+  }
+});
+/* 结算：用最后的角球数（上半场、全场）算出每一笔的结果 */
+function needRes(m){
+  const n = { h1: false, ft: false };
+  for (const b of m.ab.bets){ if (b.mt !== 'ft') n.h1 = true; if (b.mt !== 'h1') n.ft = true; }
+  return n;
+}
+function settleBet(b, res){
+  let c = null;
+  if (b.mt === 'h1') c = res.h1;
+  else if (b.mt === 'ft') c = res.ft;
+  else if (res.h1 && res.ft) c = [res.ft[0] - res.h1[0], res.ft[1] - res.h1[1]];
+  if (!c) return null;
+  const x = b.mk === 'ou' ? (b.sd === 'o' ? c[0] + c[1] - b.ln : b.ln - c[0] - c[1]) : (b.sd === 'h' ? 1 : -1) * (c[0] - c[1] + b.ln);
+  return x > 1e-9 ? 1 : x < -1e-9 ? 0 : 0.5;
+}
+function openSettle(id){
+  const m = store[id] || M;
+  const h1 = [0, 0], ft = [0, 0];
+  for (const e of m.ev) if (e.c === 'ck'){ ft[e.i]++; if (e.p === 1) h1[e.i]++; }
+  openSheet('settle', { id: m.id, h1: (m.res && m.res.h1 || h1).slice(), ft: (m.res && m.res.ft || ft).slice() });
+}
+function abStats(){
+  const t = {}, mk = {}, pend = [];
+  for (const tier of TIERS){ t[tier] = { w: 0, l: 0, p: 0, sp: 0, n: 0 }; mk[tier] = { ou: { w: 0, l: 0 }, hd: { w: 0, l: 0 } }; }
+  for (const m of Object.values(store)){
+    const k = m.ab.bets.filter(b => b.r == null).length;
+    if (k) pend.push([m, k]);
+    for (const b of m.ab.bets){
+      if (b.r == null) continue;
+      const x = t[b.tier]; x.n++; x.sp += b.pr;
+      if (b.r === 1){ x.w++; mk[b.tier][b.mk].w++; } else if (b.r === 0){ x.l++; mk[b.tier][b.mk].l++; } else x.p++;
+    }
+  }
+  return { t, mk, pend };
+}
 function renderCounts(){
   const s = predState(), el = $('#counts');
   if (s.msg){ el.innerHTML = ''; return; }
@@ -924,11 +1169,12 @@ const DEFS = [
   ['进入前场', '本队在运动战中把球推进前场三分之一：传球而且队友接到，或者自己带球过线。把球场长度分成三等份，最靠近对方球门的那一份就是前场三分之一，大约是对方半场靠近球门的三分之二。球又被打回去、再推进一次，就再点一次。如果这一下直接进了禁区，只点“进入禁区”。'],
   ['进入禁区', '本队在运动战中从禁区外把球送进对方禁区：传球而且队友在禁区里接到，或者自己带球进禁区。传中另外点，不要重复点这个。定位球（角球、任意球、界外球）不算。'],
   ['传中到人／没到人', '运动战中从边路往禁区传的球（地面或高空都算）。队友接到、头球或射门碰到算“到人”；被挡出、被解围、门将没收或直接出界算“没到人”。角球和任意球的传中不算。两边都有按键，球从哪边传就点哪边，结果一样。'],
+  ['传中被挡、第二点', '传中一出脚就被挡，也算传中，点“没到人”；挡出底线的话，再点“角球”，挡在场内就不用再点别的。“到人”只看第一下碰到球的是谁：第一点被对方碰到就是没到人，之后本队在禁区里把球抢回来也不改。抢回来以后本队射门就点“射门”，从禁区外再传进或带进禁区就点“进入禁区”，在禁区里直接捡到不用点。'],
   ['射门', '所有射门都算，包括头球、任意球和点球。“被挡”是被防守球员挡下；“被扑”是门将扑到或碰到（包括扑出底线、扑到门柱）；“偏出”是没有打在门框以内，打中门柱或横梁也算偏出；射进就点“进球”。'],
   ['角球', '裁判判给本队的角球。两个角旗都可以点，结果一样。'],
   ['对方乌龙', '对方球员把球打进自己的球门，算本队得分。'],
   ['本队红牌', '本队有球员被罚下，直接红牌或两黄变一红都算。少一人的球队，角球大约只剩平均的六成。'],
-  ['中途加入', '比赛已经开始才打开时，点“比赛已经开始了”（或菜单里的“中途加入／校正比分”），输入电视上的时间、目前比分、本半场角球和红牌。加入前的推进没法补，模型只用你看到的这段时间计算攻势系数。'],
+  ['中途加入', '比赛已经开始才打开时，点“比赛已经开始了”：拖动选电视上的时间（不用打字），再补录目前比分、角球和红牌。下半场才加入的话，角球直接填博彩 app 上的全场数字。之后要改，直接点上方的比分或“角球”数字。加入前的推进没法补，模型只用你看到的这段时间计算攻势系数。'],
 ];
 function renderSheet(){
   const d = sheetData;
@@ -940,8 +1186,9 @@ function renderSheet(){
         <div class="menu">
           ${M.st === 2 ? '' : '<button data-a="finish">结束记录<span>比赛中途也可以，之后不再预测</span></button>'}
           <button data-a="clock">比赛时间<span>${M.tm.ht ? '中场休息' : PER[M.tm.p][2]} ${fmtClock(M.tm.p, clockOf(M))}</span></button>
-          <button data-a="join">中途加入／校正比分<span>补录比分、本半场角球和红牌</span></button>
+          <button data-a="join">补录／校正比分和角球<span>也可以直接点上方的比分或“角球”数字</span></button>
           <button data-a="list">全部事件<span>${M.ev.length} 笔</span></button>
+          <button data-a="abstats">自动投注命中率<span>${(() => { const k = Object.values(store).reduce((a, m) => a + m.ab.bets.filter(b => b.r == null).length, 0); return k ? `${k} 笔待结算` : '全部比赛'; })()}</span></button>
           <button data-a="arch">比赛列表<span>${n} 场</span></button>
           <button data-a="new">新比赛<span>目前这场会保留在列表里</span></button>
           <button data-a="exp1">导出这场</button>
@@ -961,25 +1208,54 @@ function renderSheet(){
         <div class="grid2"><button class="pill" data-a="toggle">${M.tm.r ? '暂停' : '继续计时'}</button><button class="pill" data-a="endh">上半场结束</button></div>
         <div class="lbl">微调</div>
         <div class="row"><button class="chip" data-a="nudge" data-d="-60">−1 分</button><button class="chip" data-a="nudge" data-d="-10">−10 秒</button><button class="chip" data-a="nudge" data-d="10">＋10 秒</button><button class="chip" data-a="nudge" data-d="60">＋1 分</button></div>
-        <div class="lbl">直接输入电视上的时间（例如 23:40、67:30、45+2）</div>
-        <div class="chips">${[1, 2].map(q => `<button class="chip" data-a="cper" data-p="${q}" aria-pressed="${(d.cp || p) === q}">${PER[q][2]}</button>`).join('')}</div>
-        <div class="row"><input class="fi" id="setIn" inputmode="text" autocomplete="off" placeholder="例如 67:30" style="flex:1"><button class="pill dark" data-a="setin">设定</button></div>
-        <div class="grid2"><button class="pill" data-a="join">中途加入／校正比分</button>${M.st === 2 ? '' : '<button class="pill danger" data-a="finish">结束记录</button>'}</div>
+        <div class="lbl">跳到电视上的时间（拖动或按加减，不用打字）</div>
+        ${tpHTML(d.tp)}
+        <button class="pill dark" data-a="tpset">设定为 <span id="jgoT">${fmtClock(d.tp.p, d.tp.v)}</span></button>
+        <div class="grid2"><button class="pill" data-a="join">补录／校正比分和角球</button>${M.st === 2 ? '' : '<button class="pill danger" data-a="finish">结束记录</button>'}</div>
         <p class="hint">开球时按“上半场开球”或“下半场开球”，计时会从 0:00 或 45:00 开始。上半场吹哨时按“上半场结束”，预测会换成下半场。看到一半不看了，按“结束记录”。</p>`;
       break;
     }
     case 'join': {
-      const stp = (f, i) => `<div class="stp"><span class="${i ? 'a' : 'h'}">${esc(teamName(i))}</span><button data-a="js" data-f="${f}" data-i="${i}" data-d="-1" aria-label="减少">−</button><b>${d[f][i]}</b><button data-a="js" data-f="${f}" data-i="${i}" data-d="1" aria-label="增加">＋</button></div>`;
-      const ph = PER[d.p][2];
-      h = `<div class="card-h"><h3>${d.mode === 'join' ? '中途加入' : '校正比分和角球'}</h3><button class="pill" data-a="close">取消</button></div>
-        ${d.mode === 'join' ? `<div class="jgrp"><h4>电视上现在的比赛时间</h4>
-          <input class="fi" id="joinT" inputmode="text" autocomplete="off" placeholder="例如 67:30 或 45+2" value="${esc(d.tIn)}">
-          <div class="chips">${[1, 2].map(q => `<button class="chip" data-a="jper" data-p="${q}" aria-pressed="${d.p === q}">${PER[q][2]}</button>`).join('')}</div></div>` : ''}
+      const stp = (f, i) => `<div class="stp"><span class="${i ? 'a' : 'h'}">${esc(teamName(i))}</span><button data-a="js" data-f="${f}" data-i="${i}" data-d="-1" aria-label="${esc(teamName(i))}减少">−</button><b>${d[f][i]}</b><button data-a="js" data-f="${f}" data-i="${i}" data-d="1" aria-label="${esc(teamName(i))}增加">＋</button></div>`;
+      const join = d.mode === 'join', p = join ? d.tp.p : d.p;
+      let ck;
+      if (p === 1) ck = `<div class="jgrp"><h4>上半场已有的角球</h4>${stp('ck1', 0)}${stp('ck1', 1)}</div>`;
+      else ck = `<div class="jgrp"><h4>全场已有的角球<small>跟博彩 app 上的全场数字一样</small></h4>${stp('ft', 0)}${stp('ft', 1)}</div>
+        <div class="jgrp"><h4>其中上半场<small>${d.lk ? '不知道可以不填，只有“下半场单独”的盘才用得到' : `下半场到现在 ${d.ft[0] - d.ck1[0]}–${d.ft[1] - d.ck1[1]}`}</small></h4>
+          ${d.lk ? '<button class="pill" data-a="jlk">我知道上半场各几个</button>' : stp('ck1', 0) + stp('ck1', 1)}</div>`;
+      h = `<div class="card-h"><h3>${join ? '中途加入' : '补录／校正比分和角球'}</h3><button class="pill" data-a="close">取消</button></div>
+        ${join ? `<div class="jgrp"><h4>电视上现在的比赛时间</h4>${tpHTML(d.tp)}</div>` : ''}
         <div class="jgrp"><h4>目前比分</h4>${stp('sc', 0)}${stp('sc', 1)}</div>
-        <div class="jgrp"><h4 id="jckH">${ph}已有的角球</h4>${stp('ck', 0)}${stp('ck', 1)}</div>
+        ${ck}
         <div class="jgrp"><h4>红牌（全场）</h4>${stp('rc', 0)}${stp('rc', 1)}</div>
-        <button class="pill green" data-a="jgo">${d.mode === 'join' ? '从这个时间开始记录' : '保存'}</button>
-        <p class="hint">${d.mode === 'join' ? '加入前的进入前场、禁区和传中没办法补，模型会只用你看到的这段时间来算攻势系数。' : '只会调整补录的数字，你已经点过的事件不会被删除。'}</p>`;
+        <button class="pill green" data-a="jgo">${join ? `从 <span id="jgoT">${fmtClock(d.tp.p, d.tp.v)}</span> 开始记录` : '保存'}</button>
+        <p class="hint">${join ? '加入前的进入前场、禁区和传中没办法补，模型会只用你看到的这段时间来算攻势系数。之后要改比分或角球，直接点上方的比分或“角球”数字。' : '只会调整补录的数字，你已经点过的事件不会被删除。'}</p>`;
+      break;
+    }
+    case 'settle': {
+      const m = store[d.id] || M, need = needRes(m);
+      const stp = (f, i) => `<div class="stp"><span class="${i ? 'a' : 'h'}">${esc(i ? m.a || '客队' : m.h || '主队')}</span><button data-a="ss" data-f="${f}" data-i="${i}" data-d="-1" aria-label="减少">−</button><b>${d[f][i]}</b><button data-a="ss" data-f="${f}" data-i="${i}" data-d="1" aria-label="增加">＋</button></div>`;
+      const res = { h1: need.h1 ? d.h1 : null, ft: need.ft ? d.ft : null };
+      h = `<div class="card-h"><h3>结算自动投注</h3><button class="pill" data-a="close">取消</button></div>
+        <p class="hint">${esc(m.h || '主队')} vs ${esc(m.a || '客队')}。输入最后的角球数（看完的话就是你记录的数字，已经先填好；没看完的话，照比分网或博彩 app 的结果改）。</p>
+        ${need.h1 ? `<div class="jgrp"><h4>上半场角球</h4>${stp('h1', 0)}${stp('h1', 1)}</div>` : ''}
+        ${need.ft ? `<div class="jgrp"><h4>全场角球</h4>${stp('ft', 0)}${stp('ft', 1)}</div>` : ''}
+        <table class="abt"><tbody>${m.ab.bets.map(b => `<tr><td class="t">${fmtClock(b.p, b.t)}</td><td>${betLabel(b)}</td><td class="pr">${pct(b.pr)}<small>≥${b.tier}</small></td><td>${resTxt(settleBet(b, res))}</td></tr>`).join('')}</tbody></table>
+        <button class="pill green" data-a="sgo">结算</button>`;
+      break;
+    }
+    case 'abstats': {
+      const st = abStats(), rate = (w, l) => w + l ? pct(w / (w + l)) : '—';
+      const any = TIERS.some(k => st.t[k].n);
+      h = `<div class="card-h"><h3>自动投注命中率</h3><button class="pill" data-a="close">关闭</button></div>
+        ${any ? `<table class="sts"><thead><tr><th>档位</th><th>笔数</th><th>命中</th><th>没中</th><th>走盘</th><th>命中率</th><th>平均预测</th></tr></thead><tbody>
+          ${TIERS.map(k => { const x = st.t[k]; return `<tr><td>≥${k}%</td><td>${x.n}</td><td>${x.w}</td><td>${x.l}</td><td>${x.p}</td><td class="hr">${rate(x.w, x.l)}</td><td>${x.n ? pct(x.sp / x.n) : '—'}</td></tr>`; }).join('')}</tbody></table>
+          <table class="sts"><thead><tr><th>档位</th><th>大小盘命中率</th><th>让球命中率</th></tr></thead><tbody>
+          ${TIERS.map(k => { const x = st.mk[k]; return `<tr><td>≥${k}%</td><td>${rate(x.ou.w, x.ou.l)}<small> ${x.ou.w + x.ou.l} 笔</small></td><td>${rate(x.hd.w, x.hd.l)}<small> ${x.hd.w + x.hd.l} 笔</small></td></tr>`; }).join('')}</tbody></table>` : '<p class="hint">还没有已结算的自动投注。</p>'}
+        <p class="hint">命中率＝命中 ÷（命中＋没中），走盘不算。“平均预测”是投注当下模型给的赢盘率：命中率跟它差不多，代表模型的概率可信；明显偏低，代表模型在这一档太乐观。每一档少于 30 笔时，命中率会跳动得很厉害，先别下结论。</p>
+        ${st.pend.length ? `<div class="lbl">待结算</div>${st.pend.map(([m, k]) => `<div class="mrow"><div class="t1">${esc(m.h || '主队')} vs ${esc(m.a || '客队')}</div><div class="t2">${esc(m.d)}，${k} 笔待结算</div><div class="row"><button class="pill dark" data-a="msettle" data-id="${esc(m.id)}">结算</button></div></div>`).join('')}` : ''}
+        <div class="lbl">需要稳定多久才投注（比赛时间）</div>
+        <div class="chips">${[60, 120, 180, 300].map(x => `<button class="chip" data-a="abhold" data-v="${x}" aria-pressed="${AB.hold === x}">${x / 60} 分钟</button>`).join('')}</div>`;
       break;
     }
     case 'list': {
@@ -1017,8 +1293,8 @@ function renderSheet(){
           const c = [0, 0], g = [0, 0];
           for (const e of m.ev){ if (e.c === 'ck') c[e.i]++; if (GOALC.includes(e.c)) g[e.i]++; }
           return `<div class="mrow"><div class="t1">${esc(m.h || '主队')} ${g[0]}–${g[1]} ${esc(m.a || '客队')}${m.id === M.id ? '（目前这场）' : ''}</div>
-            <div class="t2">${esc(m.d)}${m.lg ? '，' + esc(m.lg) : ''}，事件 ${m.ev.length} 笔，角球 ${c[0]}–${c[1]}${m.st === 2 ? '，已结束' : ''}</div>
-            <div class="row">${m.id === M.id ? '' : `<button class="pill" data-a="mopen" data-id="${esc(m.id)}">打开</button>`}<button class="pill" data-a="mexp" data-id="${esc(m.id)}">导出</button><button class="pill ${d.del === m.id ? 'danger' : ''}" data-a="mdel" data-id="${esc(m.id)}">${d.del === m.id ? '确定删除' : '删除'}</button></div></div>`;
+            <div class="t2">${esc(m.d)}${m.lg ? '，' + esc(m.lg) : ''}，事件 ${m.ev.length} 笔，角球 ${c[0]}–${c[1]}${m.st === 2 ? '，已结束' : ''}${m.ab.bets.length ? `，自动投注 ${m.ab.bets.length} 笔${m.ab.bets.some(b => b.r == null) ? '（有待结算）' : ''}` : ''}</div>
+            <div class="row">${m.ab.bets.some(b => b.r == null) ? `<button class="pill dark" data-a="msettle" data-id="${esc(m.id)}">结算</button>` : ''}${m.id === M.id ? '' : `<button class="pill" data-a="mopen" data-id="${esc(m.id)}">打开</button>`}<button class="pill" data-a="mexp" data-id="${esc(m.id)}">导出</button><button class="pill ${d.del === m.id ? 'danger' : ''}" data-a="mdel" data-id="${esc(m.id)}">${d.del === m.id ? '确定删除' : '删除'}</button></div></div>`;
         }).join('') || '<p class="hint">还没有比赛。</p>'}`;
       break;
     }
@@ -1052,6 +1328,8 @@ function renderSheet(){
           <div><h4>算法</h4><p>用目前的时间、比分、人数和攻势系数，把本半场剩下的时间模拟 4,000 次（包括之后可能的进球），统计最后角球数超过盘口的比例。</p></div>
           <div><h4>准确度</h4><p>用“三个联赛训练、拿第四个联赛测试”的方式轮流验证。和只用时间、比分、人数和角球的基本模型相比，加上这些记录后，下半场大小判断的误差（Brier 分数）降低约 1.3%；上半场几乎没有差别，因为上半场的记录还太少。再填上全场预期，下半场降低约 2.5%，上半场约 0.8%。概率本身是准的：模型说 50% 左右的情况，实际大约 50%；说 70% 左右，实际约 68%。提升幅度不大，因为半场角球本身的随机性很高。</p></div>
           <div><h4>两队各自的角球和让球</h4><p>模型会分别算出两队还会有几个角球，再算出让球盘的赢盘、走盘概率（走盘只在整数让球时出现）。让球比大小更受益于你的记录：加上进入前场、进入禁区和传中后，让球判断的误差降低约 3%，上下半场都是，因为这些记录能看出哪一队在压着打。全场预期对让球几乎没有帮助。概率同样验证过：模型说 70% 左右的情况，实际约 69%。</p></div>
+          <div><h4>本半场盘和全场盘</h4><p>预测上方可以切换“本半场／全场”。全场盘＝已经发生的角球（包括上半场和中途加入时补录的）＋模拟出来的剩余角球；在上半场看全场盘时，会接着把整个下半场也模拟进去，下半场先沿用目前的攻势系数。下半场默认就是全场盘，跟博彩 app 一样。</p></div>
+          <div><h4>自动投注（模拟）</h4><p>按“开始自动投注”后，监控画面上现在的大小盘两边和让球两边。任一边的赢盘率连续一段比赛时间（默认 3 分钟，可改 1、2、5 分钟）都在 60%、70% 或 80% 以上，就在那一档记一笔；中间只要掉到档位以下就重新计时。同一个盘口、同一边、同一档每场只记一次；已经确定的盘（例如角球数已经超过大小盘）不记。最后输入实际角球数结算，统计每一档的命中率，不管赔率。</p></div>
           <div><h4>你的记录</h4><p>你结束的比赛越多，“平均”会越来越接近你自己的记录习惯，攻势系数也会跟着校准。${H.n ? `目前已用到你 ${H.n} 场已结束的比赛。` : '目前还没有已结束的比赛。'}</p></div>
           <div><h4>来源</h4><p>模型数据：StatsBomb Open Data（github.com/statsbomb/open-data）。</p></div>
         </div>`;
@@ -1065,16 +1343,30 @@ card.addEventListener('click', ev => {
   const a = b.dataset.a, d = sheetData;
   switch (a){
     case 'close': closeSheet(); break;
-    case 'clock': openSheet('clock'); break;
+    case 'clock': openClock(); break;
     case 'list': openSheet('list'); break;
     case 'arch': openSheet('arch'); break;
     case 'import': openSheet('import'); break;
     case 'model': openSheet('model'); break;
+    case 'abstats': openSheet('abstats'); break;
+    case 'abhold': AB.hold = +b.dataset.v; LS.set('corner-sb-ab', AB); abTrack = {}; renderSheet(); renderAB(); break;
+    case 'msettle': openSettle(b.dataset.id); break;
+    case 'ss': { const f = b.dataset.f, i = +b.dataset.i; d[f][i] = clamp(d[f][i] + (+b.dataset.d), 0, 40); renderSheet(); break; }
+    case 'sgo': {
+      const m = store[d.id] || M, need = needRes(m);
+      if (need.h1 && need.ft && (d.ft[0] < d.h1[0] || d.ft[1] < d.h1[1])){ showToast('全场角球不能比上半场少'); break; }
+      m.res = { h1: need.h1 ? d.h1.slice() : (m.res && m.res.h1) || null, ft: need.ft ? d.ft.slice() : (m.res && m.res.ft) || null };
+      let w = 0, l = 0, pu = 0;
+      for (const x of m.ab.bets){ x.r = settleBet(x, m.res); if (x.r === 1) w++; else if (x.r === 0) l++; else if (x.r === 0.5) pu++; }
+      store[m.id] = m; saveNow(); closeSheet(); renderAll();
+      showToast(`已结算 ${w + l + pu} 笔：命中 ${w}，没中 ${l}${pu ? `，走盘 ${pu}` : ''}`, () => openSheet('abstats'), '看统计');
+      break;
+    }
     case 'new': closeSheet(); startNew(); break;
     case 'exp1': openExport([M]); break;
     case 'expall': openExport(Object.values(store).filter(m => m.ev.length || m.h || m.a)); break;
     case 'mexp': { const m = store[b.dataset.id]; if (m) openExport([m]); break; }
-    case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; H = history(); tv.z = 1; tv.off = 0; saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
+    case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; abTrack = {}; H = history(); tv.z = 1; tv.off = 0; saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
     case 'mdel': {
       const id = b.dataset.id;
       if (d.del !== id){ sheetData.del = id; renderSheet(); break; }
@@ -1082,22 +1374,46 @@ card.addEventListener('click', ev => {
       if (id === M.id){ M = newMatch(); tv.z = 1; tv.off = 0; }
       H = history(); sheetData.del = null; renderSheet(); renderAll(); break;
     }
-    case 'finish': { const st = finishMatch(); saveNow(); H = history(); closeSheet(); renderAll(); syncWake(); showToast(`已结束记录（记录到 ${fmtClock(st.p, st.t)}）`); break; }
+    case 'finish': {
+      const st = finishMatch(); M.ab.on = null; abTrack = {}; saveNow(); H = history(); closeSheet(); renderAll(); syncWake();
+      showToast(`已结束记录（记录到 ${fmtClock(st.p, st.t)}）`);
+      if (M.ab.bets.some(x => x.r == null)) openSettle(M.id);
+      break;
+    }
     case 'reopen': M.st = 1; M.stop = null; saveNow(); H = history(); closeSheet(); renderAll(); break;
     case 'join': openJoin(); break;
-    case 'jper': { sheetData.p = +b.dataset.p; sheetData.pAuto = false; sheetData.tIn = $('#joinT') ? $('#joinT').value : sheetData.tIn; refreshJoinCk(); renderSheet(); break; }
-    case 'js': { const f = b.dataset.f, i = +b.dataset.i; if ($('#joinT')) sheetData.tIn = $('#joinT').value; sheetData[f][i] = clamp(sheetData[f][i] + (+b.dataset.d), 0, 30); renderSheet(); break; }
-    case 'jgo': { if ($('#joinT')) sheetData.tIn = $('#joinT').value; if (applyJoin(sheetData)) closeSheet(); break; }
-    case 'cper': sheetData.cp = +b.dataset.p; renderSheet(); break;
+    case 'js': {
+      const f = b.dataset.f, i = +b.dataset.i, p2 = (d.mode === 'join' ? d.tp.p : d.p) === 2;
+      d[f][i] = clamp(d[f][i] + (+b.dataset.d), 0, 40);
+      if (p2 && f === 'ck1') d.ck1[i] = Math.min(d.ck1[i], d.ft[i]);
+      if (p2 && f === 'ft' && d.ck1[i] > d.ft[i]) d.ck1[i] = d.ft[i];
+      renderSheet(); break;
+    }
+    case 'jlk': d.lk = false; d.ck1 = d.ft.slice(); renderSheet(); break;
+    case 'jgo': {
+      const join = d.mode === 'join';
+      if (applyJoin({ mode: d.mode, p: join ? d.tp.p : d.p, v: d.tp.v, sc: d.sc, rc: d.rc, ck1: d.ck1, ft: d.ft, lk: d.lk })) closeSheet();
+      break;
+    }
+    case 'tpp': tpHalf(d.tp, +b.dataset.p); renderSheet(); break;
+    case 'tpn': d.tp.v = clamp(d.tp.v + (+b.dataset.d), TPR[d.tp.p][0], TPR[d.tp.p][1]); tpShow(d.tp); break;
+    case 'tpset': {
+      const tp = d.tp, first = M.st === 1 && !observed(M).length;
+      M.tm.p = tp.p; setClock(tp.v); M.tm.ht = 0;
+      if (first) M.obs = { p: tp.p, t: tp.v };
+      saveNow(); renderAll(); renderSheet();
+      if (first) showToast(`已设定为 ${fmtClock(tp.p, tp.v)}，要补录之前的比分和角球吗？`, openJoin, '补录');
+      else showToast(`已设定为 ${fmtClock(tp.p, tp.v)}`);
+      break;
+    }
     case 'kick': kick(+b.dataset.p); saveNow(); syncWake(); renderAll(); renderSheet(); break;
     case 'toggle': M.tm.r ? pauseClock() : startClock(); saveNow(); syncWake(); renderAll(); renderSheet(); break;
-    case 'endh': if (M.tm.p === 1){ endFirstHalf(); saveNow(); syncWake(); renderAll(); renderSheet(); showToast('上半场结束，预测已换成下半场'); } else showToast('现在已经是下半场'); break;
+    case 'endh': if (M.tm.p === 1){
+        endFirstHalf(); saveNow(); syncWake(); renderAll(); renderSheet();
+        if (M.ab.bets.some(x => x.mt === 'h1' && x.r == null)) showToast('上半场结束。上半场的自动投注可以结算了', () => openSettle(M.id), '结算');
+        else showToast('上半场结束，预测已换成下半场');
+      } else showToast('现在已经是下半场'); break;
     case 'nudge': setClock(clockOf(M) + (+b.dataset.d)); saveNow(); renderAll(); renderSheet(); break;
-    case 'setin': {
-      const r = parseClock($('#setIn').value, d.cp || null);
-      if (!r){ showToast('请输入像 23:40、67:30 或 45+2 这样的时间'); break; }
-      M.tm.p = r.p; setClock(r.v); M.tm.ht = 0; saveNow(); renderAll(); renderSheet(); showToast(`已设定为 ${fmtClock(r.p, r.v)}`); break;
-    }
     case 'edit': openSheet('edit', { k: +b.dataset.k }); break;
     case 'eteam': { const e = findEv(d.k); if (e){ e.i = +b.dataset.i; saveNow(); renderAll(); renderSheet(); } break; }
     case 'ecode': { const e = findEv(d.k); if (e){ e.c = b.dataset.c; saveNow(); renderAll(); renderSheet(); } break; }
@@ -1114,32 +1430,26 @@ function pauseOther(){ if (M.tm.r){ pauseClock(); } }
 function openJoin(){
   const mode = observed(M).length || M.tm.r || M.tm.b ? 'fix' : 'join';
   const p = M.tm.ht ? 1 : M.tm.p;
-  const c = curCounts(p);
-  openSheet('join', { mode, p, pAuto: true, tIn: '', sc: c.sc.slice(), ck: c.ck.slice(), rc: c.rc.slice() });
+  const c = curCounts(false);
+  openSheet('join', { mode, p, tp: { p: 1, v: 20 * 60 }, sc: c.sc.slice(), rc: c.rc.slice(), ck1: c.ck1.slice(), ft: c.ft.slice(), lk: mode === 'join' });
 }
-function refreshJoinCk(){
-  const c = curCounts(sheetData.p);
-  sheetData.ck = c.ck.slice();
+function openClock(){
+  const p = M.tm.ht ? 2 : M.tm.p, v = M.tm.ht ? PER[2][0] : Math.floor(clockOf(M));
+  openSheet('clock', { tp: { p, v: clamp(v, TPR[p][0], TPR[p][1]) } });
 }
 card.addEventListener('input', ev => {
-  if (ev.target.id !== 'joinT' || sheetKind !== 'join') return;
-  sheetData.tIn = ev.target.value;
-  if (!sheetData.pAuto) return;
-  const r = parseClock(sheetData.tIn, null);
-  if (r && r.p !== sheetData.p){
-    sheetData.p = r.p; refreshJoinCk();
-    $$('[data-a="jper"]', card).forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.p === r.p)));
-    const hd = $('#jckH'); if (hd) hd.textContent = `${PER[r.p][2]}已有的角球`;
-    $$('[data-a="js"][data-f="ck"]', card).forEach(x => { const bEl = x.parentElement.querySelector('b'); if (bEl) bEl.textContent = sheetData.ck[+x.dataset.i]; });
-  }
+  if (ev.target.id !== 'tpR' || !sheetData.tp) return;
+  sheetData.tp.v = +ev.target.value; tpShow(sheetData.tp);
 });
 
 /* ================= 导出与导入 ================= */
-const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、hd 上下半场角球让球(主队，负数=主队让)、pe 各半场结束时的比赛时钟秒数、obs 开始观看的位置{p 半场, t 比赛时钟秒数}、stop 结束记录的位置(未结束为 null)、ev 事件阵列。只有 obs 到 stop 之间是实际观看的时间。'
+const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、hd 上下半场角球让球(主队，负数=主队让)、pe 各半场结束时的比赛时钟秒数、obs 开始观看的位置{p 半场, t 比赛时钟秒数}、stop 结束记录的位置(未结束为 null)、mk 上下半场预测用的盘(h本半场/f全场)、fl 全场大小盘、fh 全场让球(主队)、ev 事件阵列。只有 obs 到 stop 之间是实际观看的时间。'
+  + 'ab.bets 是自动投注（模拟）记录：mt 盘(h1上半场/h2下半场/ft全场)、mk(ou大小/hd让球)、sd(o大/u小/h主/a客)、ln 盘口(让球以主队为准)、pr 投注当下模型的赢盘率、tier 档位(%)、p 与 t 投注时的半场与比赛时钟秒数、hold 需要稳定的秒数、sc 当时比分、ck 当时这个盘已有的角球、r 结果(1命中/0没中/0.5走盘/null待结算)。res 是结算用的最后角球 {h1 上半场[主,客], ft 全场[主,客]}。'
   + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码, b(可省略；1=中途加入时补录、时间不详)]。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
 function openExport(list){
   const ds = new Date().toISOString().slice(0, 10);
-  const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, line: m.line, hd: m.hd, add: m.add, pe: m.pe, obs: m.obs, stop: m.stop, ev: m.ev.map(e => e.b ? [e.t, e.p, e.i, e.c, 1] : [e.t, e.p, e.i, e.c]) }));
+  const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, line: m.line, hd: m.hd, mk: m.mk, fl: m.fl, fh: m.fh, add: m.add, pe: m.pe, obs: m.obs, stop: m.stop,
+    ab: { bets: m.ab.bets }, res: m.res, ev: m.ev.map(e => e.b ? [e.t, e.p, e.i, e.c, 1] : [e.t, e.p, e.i, e.c]) }));
   const codes = {}; for (const c of ORDER) codes[c] = LABEL[c];
   const obj = { app: '角球数据记录', fmt: 1, exported: new Date().toISOString().slice(0, 16), readme: README, codes, matches };
   const name = list.length === 1 ? `角球数据_${list[0].d}_${(list[0].h || '主队').replace(/[\\/:*?"<>|\s]+/g, '')}vs${(list[0].a || '客队').replace(/[\\/:*?"<>|\s]+/g, '')}.json` : `角球数据_全部${list.length}场_${ds}.json`;
@@ -1168,7 +1478,7 @@ function importText(txt){
   for (const r of o.matches){
     if (!r || !r.id) continue;
     const m = fixMatch({ id: String(r.id), c: nowSec(), u: nowSec(), d: String(r.d || ''), lg: String(r.lg || ''), h: String(r.h || ''), a: String(r.a || ''),
-      st: r.st === 1 ? 1 : 2, exp: typeof r.exp === 'number' ? r.exp : null, line: r.line, hd: r.hd, add: r.add, pe: r.pe || {}, obs: r.obs, stop: r.stop,
+      st: r.st === 1 ? 1 : 2, exp: typeof r.exp === 'number' ? r.exp : null, line: r.line, hd: r.hd, mk: r.mk, fl: r.fl, fh: r.fh, ab: r.ab, res: r.res, add: r.add, pe: r.pe || {}, obs: r.obs, stop: r.stop,
       tm: null, ev: (r.ev || []).map(x => ({ t: x[0], p: x[1], i: x[2], c: x[3], b: x[4] })) });
     if (m.id === M.id) continue;
     const last = m.ev[m.ev.length - 1];
@@ -1200,7 +1510,7 @@ $('#toastUndo').addEventListener('click', () => {
 });
 function startNew(){
   saveNow(); pauseOther();
-  M = newMatch(M); undoStack = []; H = history(); tv.z = 1; tv.off = 0;
+  M = newMatch(M); undoStack = []; abTrack = {}; H = history(); tv.z = 1; tv.off = 0;
   saveNow(); renderAll(); syncWake(); showToast('已开始新比赛');
 }
 
@@ -1211,9 +1521,11 @@ const tlPref = Object.assign({ fold: false, curve: true, legend: false }, LS.get
 const tv = { z: 1, off: 0 };
 let tlHeads = [], tlLast = null;
 const Z_MAX = 12, PAD_L = 22, PAD_R = 8, GAP = 16;
-const LVL = { f3: 0, cf: 1, co: 1, bx: 2, sb: 3, ss: 3, so: 3, ck: 4, sg: 5, og: 5, rc: 5 };
-const STEM = { f3: 'l1', cf: 'l2', co: 'l2', bx: 'l2', sb: 'l2', ss: 'l2', so: 'l2', ck: 'l3', sg: 'l4', og: 'l4', rc: 'l3' };
-const WT = { f3: 1, cf: 1.5, co: 2, bx: 2, sb: 3, ss: 3, so: 3, sg: 3 };
+// 线越长越显眼：进球＝角球 ＞ 射门（被扑＝被挡＝偏出）＞ 传中（到人＝没到人）＞ 进入禁区 ＞ 进入前场
+const LVL = { f3: 0, bx: 1, co: 2, cf: 2, sb: 3, ss: 3, so: 3, ck: 4, sg: 4, og: 4, rc: 4 };
+const STEM = { f3: 's0', bx: 's1', co: 's2', cf: 's2', sb: 's3', ss: 's3', so: 's3', ck: 's4', sg: 's4', og: 's4', rc: 's3' };
+const ATK = ['f3', 'bx', 'co', 'cf', 'sb', 'ss', 'so', 'sg'];  // 密度面积：所有进攻动作
+const CSH = ['co', 'cf', 'sb', 'ss', 'so', 'sg'];              // 密度实线：其中的传中＋射门
 const phoneMQ = matchMedia('(max-width: 599px)');
 function fmtMin(p, t){
   const E = PER[p][1];
@@ -1263,31 +1575,33 @@ function invContent(g, c){
 function headSVG(c, x, y, s){
   const team = s ? 'away' : 'home', d = s ? 1 : -1, f = s ? -1 : 1;
   switch (c){
-    case 'f3': return `<circle class="hd ${team} l1" cx="${x}" cy="${y}" r="3.2"/>`;
-    case 'co': case 'cf': { const r = 4.8; return `<path class="hd ${team} ${c === 'co' ? 'l2' : 'l0'}" d="M${x} ${(y - r).toFixed(1)}L${(x + r).toFixed(1)} ${y}L${x} ${(y + r).toFixed(1)}L${(x - r).toFixed(1)} ${y}Z"/>`; }
-    case 'bx': return `<circle class="hd ${team} l2" cx="${x}" cy="${y}" r="5.4"/>`;
+    case 'f3': return `<circle class="hd ${team} l1" cx="${x}" cy="${y}" r="2.4"/>`;
+    case 'bx': return `<circle class="hd ${team} l1b" cx="${x}" cy="${y}" r="3.6"/>`;
+    case 'co': case 'cf': { const r = 6.4; return `<path class="hd cr ${team} ${c === 'co' ? 'l2' : 'l0'}" d="M${x} ${(y - r).toFixed(1)}L${(x + r).toFixed(1)} ${y}L${x} ${(y + r).toFixed(1)}L${(x - r).toFixed(1)} ${y}Z"/>`; }
     case 'sb': case 'ss': case 'so': {
-      const r = 5.6;
-      return `<path class="hd ${team} ${c === 'ss' ? 'l2' : 'l0'}${c === 'so' ? ' dim' : ''}" d="M${x} ${(y + d * r).toFixed(1)}L${(x + r).toFixed(1)} ${(y - d * r * 0.7).toFixed(1)}L${(x - r).toFixed(1)} ${(y - d * r * 0.7).toFixed(1)}Z"/>`;
+      const r = 6, yb = y - d * r * 0.7;
+      const tri = `<path class="hd ${team} ${c === 'ss' ? 'l2' : 'l0'}" d="M${x} ${(y + d * r).toFixed(1)}L${(x + r).toFixed(1)} ${yb.toFixed(1)}L${(x - r).toFixed(1)} ${yb.toFixed(1)}Z"/>`;
+      // 被挡：三角形前面加一道“墙”
+      return c === 'sb' ? tri + `<line class="wall ${team}" x1="${(x - r - 1).toFixed(1)}" y1="${(y + d * (r + 3)).toFixed(1)}" x2="${(x + r + 1).toFixed(1)}" y2="${(y + d * (r + 3)).toFixed(1)}"/>` : tri;
     }
-    case 'ck': return `<path class="fl ${team}" d="M${x} ${y}L${x + 11} ${(y + f * 4).toFixed(1)}L${x} ${(y + f * 8).toFixed(1)}Z"/>`;
-    case 'sg': case 'og': return `<circle class="bl" cx="${x}" cy="${y}" r="7"/><circle class="bc" cx="${x}" cy="${y}" r="2.5"/>`;
+    case 'ck': return `<path class="fl ${team}" d="M${x} ${y}L${x + 14} ${(y + f * 5).toFixed(1)}L${x} ${(y + f * 10).toFixed(1)}Z"/>`;
+    case 'sg': case 'og': return `<circle class="bl" cx="${x}" cy="${y}" r="7.5"/><circle class="bc" cx="${x}" cy="${y}" r="2.7"/>`;
     case 'rc': return `<rect class="rcd" x="${(x - 3.5).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="7" height="10" rx="1.2"/>`;
   }
   return '';
 }
 const LGI = {
-  f3: '<svg viewBox="-8 -8 16 16"><circle class="hd home l1" r="3.2"/></svg>',
-  cr: '<svg class="w2" viewBox="-12 -8 24 16"><path class="hd home l2" d="M-6 -4.4L-1.6 0L-6 4.4L-10.4 0Z"/><path class="hd home l0" d="M6 -4.4L10.4 0L6 4.4L1.6 0Z"/></svg>',
-  bx: '<svg viewBox="-8 -8 16 16"><circle class="hd home l2" r="5.4"/></svg>',
-  sh: '<svg viewBox="-8 -8 16 16"><path class="hd home l2" d="M0 -5.6L5.6 3.9L-5.6 3.9Z"/></svg>',
-  ck: '<svg viewBox="-8 -8 16 16"><path class="fl home" d="M-3 -7L8 -3L-3 1Z"/></svg>',
+  f3: '<svg viewBox="-8 -8 16 16"><circle class="hd home l1" r="2.4"/></svg>',
+  cr: '<svg class="w2" viewBox="-14 -8 28 16"><path class="hd cr home l2" d="M-7 -5.6L-1.4 0L-7 5.6L-12.6 0Z"/><path class="hd cr home l0" d="M7 -5.6L12.6 0L7 5.6L1.4 0Z"/></svg>',
+  bx: '<svg viewBox="-8 -8 16 16"><circle class="hd home l1b" r="3.6"/></svg>',
+  sh: '<svg class="w3" viewBox="-21 -8 42 16"><path class="hd home l2" d="M-14 -5.6L-8.4 3.9L-19.6 3.9Z"/><path class="hd home l0" d="M0 -3.6L5.6 5.9L-5.6 5.9Z"/><line class="wall home" x1="-6.6" y1="-6.6" x2="6.6" y2="-6.6"/><path class="hd home l0" d="M14 -5.6L19.6 3.9L8.4 3.9Z"/></svg>',
+  ck: '<svg viewBox="-8 -8 16 16"><path class="fl home" d="M-4 -7L9 -2.5L-4 2Z"/></svg>',
   gl: '<svg viewBox="-8 -8 16 16"><circle class="bl" r="6.5"/><circle class="bc" r="2.4"/></svg>',
   rc: '<svg viewBox="-8 -8 16 16"><rect class="rcd" x="-3.5" y="-5" width="7" height="10" rx="1.2"/></svg>',
-  mo: '<svg viewBox="-8 -8 16 16"><path class="mo home" d="M-8 6L-3 -2L2 2L8 -6L8 6Z"/></svg>',
+  mo: '<svg class="w2" viewBox="-12 -8 24 16"><path class="mo home" d="M-12 7L-6 -3L0 -1L6 -7L12 -2L12 7Z"/><path class="mi home" d="M-12 7L-6 2L0 3L6 -1L12 3L12 7Z"/></svg>',
 };
 function renderLegend(){
-  $('#legend').innerHTML = `<span>${LGI.f3}进入前场</span><span>${LGI.cr}传中 到人／没到人</span><span>${LGI.bx}进入禁区</span><span>${LGI.sh}射门（实心＝被扑，空心＝被挡／偏出）</span><span>${LGI.ck}角球</span><span>${LGI.gl}进球</span><span>${LGI.rc}红牌</span><span>${LGI.mo}攻势曲线（前后 5 分钟加权）</span>`;
+  $('#legend').innerHTML = `<span>线越长越显眼：进球＝角球 ＞ 射门 ＞ 传中 ＞ 进入禁区 ＞ 进入前场</span><span>${LGI.gl}进球</span><span>${LGI.ck}角球</span><span>${LGI.sh}射门 被扑／被挡／偏出</span><span>${LGI.cr}传中 到人／没到人</span><span>${LGI.bx}进入禁区</span><span>${LGI.f3}进入前场</span><span>${LGI.rc}红牌</span><span>${LGI.mo}密度：浅色＝所有进攻，深色＝其中的传中＋射门（前后 5 分钟）</span>`;
   $('#legend').classList.toggle('open', !!tlPref.legend);
   tlSec.classList.toggle('fold', !!tlPref.fold);
   $('#tlFold').textContent = tlPref.fold ? '展开' : '收起';
@@ -1313,12 +1627,12 @@ function renderTimeline(){
     }
     return PAD_L;
   };
-  const LV = compact ? [6, 13, 20, 27, 34, 43] : short ? [5, 11, 17, 23, 29, 37] : [8, 16, 24, 33, 42, 52];
+  const LV = compact ? [6, 12, 20, 29, 42] : short ? [6, 11, 18, 26, 38] : [9, 17, 27, 38, 54];
   const x0v = PAD_L - 12, x1v = W - PAD_R + 12;
   const evs = M.ev.filter(e => !e.b);
   const items = [[], []];
   for (const e of evs){ const x = +X(e.p, e.t).toFixed(1); if (x >= x0v && x <= x1v) items[e.i].push({ e, x, y: LV[LVL[e.c]] }); }
-  const top = LV[5] + 12, bot = LV[5] + 12;
+  const top = LV[4] + 12, bot = LV[4] + 12;
   const axisY = top + 2, H = axisY + bot + 18, base = H - 5;
   let gx = '';
   // 加入前（没看到）的时段
@@ -1354,42 +1668,50 @@ function renderTimeline(){
     }
     if (i < g.ps.length - 1){ const xm = (xend + GAP / 2).toFixed(1); gx += `<text class="tk ht" x="${xm}" y="${axisY + 4}">HT</text>`; }
   }
-  // 攻势曲线
+  // 密度曲线：浅色面积＝所有进攻次数，深色面积＝其中的传中＋射门（同一个比例尺，深色一定在浅色里面）
   if (tlPref.curve && evs.length){
     const STEP = tv.z > 4 ? 15 : 30, KR = 300;
-    const pos = [0, 1].map(s => evs.filter(e => e.i === s && WT[e.c]).map(e => [posOf(info, e.p, e.t), WT[e.c], e.p]));
+    const pos = (s, codes) => evs.filter(e => e.i === s && codes.includes(e.c)).map(e => [posOf(info, e.p, e.t), e.p]);
+    const src = [0, 1].map(s => [pos(s, ATK), pos(s, CSH)]);
+    const dens = (list, P, half) => { let v = 0; for (const [ep, epP] of list){ if (epP !== half) continue; const dd = Math.abs(P - ep); if (dd < KR) v += 1 - dd / KR; } return v; };
     const series = [[], []]; let maxV = 0.0001;
     g.ps.forEach((q, i) => {
       if (q.dur <= 0) return;
       for (let t = 0; t <= q.dur + 0.1; t += STEP){
         const Pp = q.off + Math.min(t, q.dur);
         for (const s of [0, 1]){
-          let v = 0; for (const [ep, w, epP] of pos[s]){ if (epP !== q.p) continue; const dd = Math.abs(Pp - ep); if (dd < KR) v += w * (1 - dd / KR); }
-          series[s].push({ i, t: Math.min(t, q.dur), v }); maxV = Math.max(maxV, v);
+          const a = dens(src[s][0], Pp, q.p), c = dens(src[s][1], Pp, q.p);
+          series[s].push({ i, t: Math.min(t, q.dur), a, c }); maxV = Math.max(maxV, a);
         }
       }
     });
-    const HM = compact ? 40 : short ? 34 : 58;
+    const HM = LV[4] + 2;
     for (const s of [0, 1]){
       const team = s ? 'away' : 'home', dir = s ? 1 : -1;
       g.ps.forEach((q, i) => {
         const pts = series[s].filter(p => p.i === i); if (pts.length < 2) return;
-        let d = `M${SX(g.starts[i]).toFixed(1)} ${axisY}`;
-        for (const p of pts) d += `L${SX(g.starts[i] + p.t * g.k).toFixed(1)} ${(axisY + dir * p.v / maxV * HM).toFixed(1)}`;
-        d += `L${SX(g.starts[i] + pts[pts.length - 1].t * g.k).toFixed(1)} ${axisY}Z`;
-        gx += `<path class="mo ${team}" d="${d}"/>`;
+        const px = p => SX(g.starts[i] + p.t * g.k).toFixed(1), py = v => (axisY + dir * v / maxV * HM).toFixed(1);
+        const x0 = SX(g.starts[i]).toFixed(1), xe = px(pts[pts.length - 1]);
+        let d = `M${x0} ${axisY}`, c = `M${x0} ${axisY}`;
+        for (const p of pts){ d += `L${px(p)} ${py(p.a)}`; c += `L${px(p)} ${py(p.c)}`; }
+        gx += `<path class="mo ${team}" d="${d}L${xe} ${axisY}Z"/><path class="mi ${team}" d="${c}L${xe} ${axisY}Z"/>`;
       });
     }
   }
   // 事件
+  // 先画角球的黄色底条，再按显眼程度由低到高画，角球和进球永远在最上层
   tlHeads = [];
   for (const s of [0, 1]){
+    const dir = s ? 1 : -1;
+    for (const it of items[s]) if (it.e.c === 'ck') gx += `<line class="ckb" x1="${it.x}" y1="${axisY + dir * 2}" x2="${it.x}" y2="${(axisY + dir * it.y).toFixed(1)}"/>`;
+  }
+  for (const s of [0, 1]){
     const team = s ? 'away' : 'home', dir = s ? 1 : -1;
-    for (const it of items[s]){
+    for (const it of items[s].slice().sort((a, b) => LVL[a.e.c] - LVL[b.e.c] || a.x - b.x)){
       const e = it.e, ys = +(axisY + dir * it.y).toFixed(1);
       gx += `<line class="sm ${team} ${STEM[e.c]}" x1="${it.x}" y1="${axisY + dir * 2}" x2="${it.x}" y2="${ys}"/>`;
       gx += headSVG(e.c, it.x, ys, s);
-      tlHeads.push({ x: it.x, y: e.c === 'ck' ? ys + (s ? -4 : 4) : ys, k: e.k });
+      tlHeads.push({ x: it.x, y: e.c === 'ck' ? ys + (s ? -5 : 5) : ys, k: e.k });
     }
   }
   // 现在
@@ -1521,10 +1843,11 @@ $('#runBtn').addEventListener('click', () => {
   else M.tm.r ? pauseClock() : startClock();
   saveNow(); syncWake(); renderAll();
 });
-$('#clkBtn').addEventListener('click', () => openSheet('clock'));
+$('#clkBtn').addEventListener('click', openClock);
 $('#menuBtn').addEventListener('click', () => openSheet('menu'));
 $('#defBtn').addEventListener('click', () => openSheet('defs'));
 $('#listBtn').addEventListener('click', () => openSheet('list'));
+['#glH', '#glA', '#ckH', '#ckA'].forEach(x => $(x).addEventListener('click', openJoin));
 $('#undoBtn').addEventListener('click', undoLast);
 let lastPred = 0, lastTL = 0;
 setInterval(() => {
