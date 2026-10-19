@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="角球数据">
+<meta name="theme-color" content="#2F6C4B">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<title>角球数据记录</title>
+<style>
+:root{
+  --paper:#E6EAE5; --raise:#F5F7F4; --ink:#14201A; --ink2:#46544C; --muted:#748178; --rule:#C8D0CA;
+  --grass:#2F6C4B; --grass2:#2B6445; --grass-deep:#245A3D; --chalk:#F3F5EE; --chalk2:rgba(243,245,238,.62); --line:rgba(243,245,238,.72);
+  --flag:#F2C230; --on-flag:#2A2100; --home:#2A58D3; --away:#CF4229; --warn:#B3261E; --scrim:rgba(8,14,10,.45);
+  --f-ui:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --f-num:"Avenir Next Condensed","DIN Condensed","Roboto Condensed","Arial Narrow",-apple-system,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#101613; --raise:#18201C; --ink:#E4EAE5; --ink2:#AFBAB3; --muted:#7F8C85; --rule:#28322D;
+  --grass:#245A3D; --grass2:#215437; --grass-deep:#1C4A31; --home:#86A9FF; --away:#FF8E72; --scrim:rgba(0,0,0,.6);
+  color-scheme:dark;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.4 var(--f-ui);-webkit-text-size-adjust:100%;overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:2px solid var(--flag);outline-offset:2px}
+input{font:inherit;color:inherit}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+/* ---------- 计分列 ---------- */
+.app{min-height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;padding:10px 16px 8px}
+.meta{display:flex;flex-direction:column;gap:2px;min-width:0}
+.meta input{border:0;background:none;padding:0;font-weight:600;font-size:15px;min-width:0;width:100%}
+.meta input::placeholder{color:var(--muted)}
+.meta .sub{font-size:12px;color:var(--muted)}
+.score{display:grid;grid-template-columns:minmax(0,9em) auto auto auto minmax(0,9em);align-items:center;gap:10px}
+.tn{display:flex;flex-direction:column;min-width:0}
+.tn.h{align-items:flex-end;text-align:right} .tn.a{align-items:flex-start}
+.tn input{border:0;background:none;padding:0;font-weight:700;font-size:17px;width:100%;text-overflow:ellipsis}
+.tn.h input{text-align:right;color:var(--home)} .tn.a input{color:var(--away)}
+.tn input::placeholder{color:inherit;opacity:.55}
+.tn small{font-size:12px;color:var(--muted)}
+.gl{font-size:40px;line-height:1;font-weight:600;min-width:.7em;text-align:center}
+.gl.h{color:var(--home)} .gl.a{color:var(--away)}
+.clk{display:flex;align-items:center;gap:8px}
+.clkbtn{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center}
+.clkbtn span{font-size:12px;color:var(--muted);line-height:1}
+.clkbtn b{font:600 34px/1.05 var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.clk.idle .clkbtn b{color:var(--muted)}
+.run{width:40px;height:40px;border-radius:20px;border:0;background:var(--grass);color:var(--chalk);display:grid;place-items:center}
+.run.on{background:var(--raise);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule)}
+.run svg{width:16px;height:16px}
+.bar .tools{justify-self:end;display:flex;gap:4px}
+.tbtn{height:36px;padding:0 12px;border:0;border-radius:10px;background:none;color:var(--ink2);font-weight:500}
+.tbtn:active{background:var(--rule)}
+
+/* ---------- 主区 ---------- */
+.main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,350px) minmax(0,1fr);grid-template-areas:"home mid away";gap:14px;padding:4px 16px 84px;align-items:start}
+.pad[data-i="0"]{grid-area:home} .pad[data-i="1"]{grid-area:away} .mid{grid-area:mid}
+@media (max-width:899px){
+  .main{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"home away" "mid mid";gap:10px;padding:4px 10px 84px}
+  .main .mid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px 28px;align-items:start;padding-top:6px}
+  .bar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"meta tools" "score score";padding:8px 10px 6px;row-gap:4px}
+  .bar .meta{grid-area:meta;flex-direction:row;align-items:baseline;gap:10px}
+  .bar .meta input{width:auto;flex:1}
+  .bar .tools{grid-area:tools}
+  .score{grid-area:score;justify-self:stretch;grid-template-columns:minmax(0,1fr) auto auto auto minmax(0,1fr)}
+}
+@media (max-width:599px){
+  .score{gap:6px}
+  .pad-h [data-tot]{display:none}
+  .bar .tools .tbtn{height:32px}
+  .gl{font-size:30px}
+  .clkbtn b{font-size:26px}
+  .run{width:34px;height:34px}
+  .tn input{font-size:15px}
+  .bar .tools .tbtn{padding:0 8px}
+}
+
+/* ---------- 球场按键区 ---------- */
+.pad{container-type:inline-size;min-width:0}
+.pad-h{display:flex;align-items:baseline;gap:8px;padding:2px 2px 8px;font-size:14px}
+.pad-h i{width:9px;height:9px;border-radius:50%;display:inline-block;align-self:center}
+.pad[data-i="0"] .pad-h i{background:var(--home)} .pad[data-i="1"] .pad-h i{background:var(--away)}
+.pad-h b{font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pad[data-i="0"] .pad-h b{color:var(--home)} .pad[data-i="1"] .pad-h b{color:var(--away)}
+.pad-h span{color:var(--muted);font-size:13px;white-space:nowrap}
+.pitch{position:relative;border-radius:16px;overflow:hidden;color:var(--chalk);
+  background:repeating-linear-gradient(180deg,var(--grass) 0 56px,var(--grass2) 56px 112px);
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.3fr) minmax(0,1fr);
+  grid-template-areas:"goal goal goal" "ckl box ckr" "wl box wr" "f3 f3 f3" "ex ex ex";
+  grid-template-rows:auto 54px auto 132px auto;padding:10px 10px 0}
+.pitch::before{content:"";position:absolute;inset:10px 10px auto 10px;height:calc(100% - 10px);border:2px solid var(--line);border-radius:3px 3px 0 0;pointer-events:none}
+.z{position:relative;border:0;background:none;color:var(--chalk);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:6px 4px;border-radius:10px;z-index:1}
+.z:active{background:rgba(243,245,238,.16)}
+.z .l{font-size:15px;font-weight:600;line-height:1.2;text-align:center}
+.z .s{font-size:12px;color:var(--chalk2);line-height:1.2;text-align:center}
+.z .c{font:600 22px/1 var(--f-num);font-variant-numeric:tabular-nums;color:var(--chalk2)}
+.z.hit{animation:hit .5s ease-out}
+@keyframes hit{0%{background:rgba(243,245,238,.55)}100%{background:rgba(243,245,238,0)}}
+@media (prefers-reduced-motion:reduce){.z.hit{animation:none;background:rgba(243,245,238,.3)}}
+.goalrow{grid-area:goal;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px 6px 8px;position:relative}
+.goalrow::after{content:"";position:absolute;left:30%;right:30%;bottom:0;height:10px;border:2px solid var(--line);border-bottom:0}
+.goalrow .z{min-height:56px;background:rgba(0,0,0,.12)}
+.goalrow .z.sg{background:var(--chalk);color:var(--grass-deep)}
+.goalrow .z.sg .c,.goalrow .z.sg .s{color:var(--grass-deep)}
+.box{grid-area:box;margin:0 2px;border:2px solid var(--line);border-top:0;border-radius:0 0 4px 4px}
+.box .l{font-size:18px}
+.box .c{font-size:30px}
+.ck{color:var(--flag)}
+.ck .l{color:var(--flag)} .ck .c{color:var(--flag)}
+.ck svg{width:18px;height:18px}
+.ckl{grid-area:ckl;justify-self:start;width:100%} .ckr{grid-area:ckr;justify-self:end;width:100%}
+.wing{display:flex;flex-direction:column;gap:4px;padding:4px 0}
+.wl{grid-area:wl} .wr{grid-area:wr}
+.wing .z{flex:1;min-height:62px;background:rgba(0,0,0,.1)}
+.f3{grid-area:f3;margin-top:8px;border-bottom:2px dashed var(--line);border-radius:10px 10px 0 0}
+.f3 .l{font-size:19px} .f3 .c{font-size:30px}
+.f3 .tag{position:absolute;right:8px;bottom:6px;font-size:11px;color:var(--chalk2)}
+.extra{grid-area:ex;display:flex;justify-content:center;gap:8px;padding:12px 6px 14px;position:relative}
+.extra::before{content:"";position:absolute;left:50%;bottom:-46px;width:92px;height:92px;margin-left:-46px;border:2px solid var(--line);border-radius:50%;pointer-events:none}
+.extra .z{flex:0 1 auto;flex-direction:row;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:18px;background:var(--grass-deep)}
+.extra .z .l{font-size:13px;font-weight:500}
+.extra .z .c{font-size:16px}
+.extra .z{white-space:nowrap}
+@container (max-width:330px){
+  .pitch{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"goal goal" "box box" "wl wl" "f3 f3" "ckl ckl" "ex ex";grid-template-rows:auto 76px auto 104px 54px auto;padding:6px 6px 0}
+  .pitch::before{inset:6px 6px auto 6px}
+  .goalrow{grid-template-columns:repeat(2,minmax(0,1fr));padding:2px 2px 6px}
+  .goalrow .z{min-height:46px}
+  .goalrow::after{display:none}
+  .ckr,.wr{display:none}
+  .wl{flex-direction:row}
+  .wing .z{min-height:56px}
+  .box{margin:0;border-top:2px solid var(--line);border-radius:4px}
+  .box .l{font-size:16px} .box .c{font-size:24px}
+  .f3 .l{font-size:16px} .f3 .c{font-size:24px}
+  .f3 .tag{display:none}
+  .z .l{font-size:14px}
+  .extra{padding:10px 2px 12px;gap:4px}
+  .extra .z{padding:6px 10px}
+  .extra .pre{display:none}
+  .extra::before{width:70px;height:70px;margin-left:-35px;bottom:-35px}
+}
+
+/* ---------- 中间：预测与统计 ---------- */
+.mid{min-width:0;display:flex;flex-direction:column;gap:16px}
+.sec-h{display:flex;align-items:baseline;gap:8px;margin:0 0 8px}
+.sec-h h2{margin:0;font-size:15px;font-weight:700}
+.sec-h .sp{flex:1}
+.sec-h small{font-size:12.5px;color:var(--muted)}
+.sec-h small b{font:600 15px var(--f-num)} .sec-h small .h{color:var(--home)} .sec-h small .a{color:var(--away)}
+.pred-top{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pv{background:var(--raise);border-radius:14px;padding:10px 12px 8px;display:flex;flex-direction:column}
+.pv b{font:600 46px/1 var(--f-num);font-variant-numeric:tabular-nums}
+.pv span{font-size:13px;color:var(--ink2);margin-top:2px}
+.pv.over{background:var(--flag);color:var(--on-flag)} .pv.over span{color:var(--on-flag)}
+.pred-line{margin:10px 0 0;font-size:13.5px;color:var(--ink2)}
+.pred-line b{font:600 17px var(--f-num);color:var(--ink)}
+.dist{margin-top:10px;position:relative;max-width:440px}
+.dist svg{display:block;width:100%;height:auto}
+.dist .tk{font:500 11px var(--f-ui);fill:var(--muted)}
+.dist .pl{font:600 11px var(--f-num);fill:var(--ink2)}
+.lines{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:12.5px;color:var(--muted)}
+.lines b{font:600 14px var(--f-num);color:var(--ink2);margin-left:4px}
+.lines .on b{color:var(--ink)}
+.factor{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;margin-top:12px;font-size:13px}
+.factor .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:8em}
+.factor .nm.h{color:var(--home)} .factor .nm.a{color:var(--away)}
+.factor .bar2{height:6px;border-radius:3px;background:var(--rule);position:relative;overflow:hidden}
+.factor .bar2 i{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--ink2)}
+.factor .bar2::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.factor .v{font:600 15px var(--f-num);font-variant-numeric:tabular-nums;text-align:right;min-width:3.4em}
+.ctls{display:grid;gap:6px;margin-top:12px}
+.ctl{display:grid;grid-template-columns:1fr 34px 4.2em 34px 2.8em;align-items:center;gap:4px;font-size:13.5px;color:var(--ink2)}
+.ctl>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl button{height:34px;border:0;border-radius:17px;background:var(--raise);font-size:17px;font-weight:600;box-shadow:inset 0 0 0 1px var(--rule)}
+.ctl button:active{background:var(--rule)}
+.ctl b{text-align:center;font:600 16px var(--f-num);color:var(--ink)}
+.ctl .x{background:none;box-shadow:none;font-size:12px;font-weight:500;color:var(--muted);text-decoration:underline;text-underline-offset:3px;padding:0;white-space:nowrap}
+.note{font-size:12px;line-height:1.5;color:var(--muted);margin:10px 0 0}
+.msg{font-size:13.5px;color:var(--ink2);margin:0}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl td{padding:6px 0;border-top:1px solid var(--rule)}
+.tbl td.n{font:600 19px/1 var(--f-num);font-variant-numeric:tabular-nums;width:3em}
+.tbl td.n.h{color:var(--home)} .tbl td.n.a{color:var(--away);text-align:right}
+.tbl td.m{text-align:center}
+.tbl td.m small{display:block;font-size:11.5px;color:var(--muted)}
+.src{font-size:11px;color:var(--muted);margin:0}
+
+/* ---------- 底部事件列 ---------- */
+.strip{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--raise);border-top:1px solid var(--rule);
+  padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+  display:flex;align-items:center;gap:10px}
+.recent{flex:1;min-width:0;display:flex;gap:14px;overflow:hidden;font-size:13px;white-space:nowrap;color:var(--ink2)}
+.recent button{border:0;background:none;padding:4px 0;display:flex;gap:6px;align-items:baseline;color:var(--ink2)}
+.recent .t{font:600 14px var(--f-num);color:var(--muted)}
+.recent .d0{color:var(--home)} .recent .d1{color:var(--away)}
+.recent .empty{color:var(--muted)}
+.minip{display:none;font-size:13px;color:var(--ink2);white-space:nowrap}
+.minip b{font:600 17px var(--f-num);color:var(--ink)}
+@media (max-width:899px){.minip{display:block}}
+.pill{height:38px;padding:0 14px;border:0;border-radius:19px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule);font-weight:600;white-space:nowrap}
+.pill:active{background:var(--rule)}
+.pill.dark{background:var(--ink);color:var(--paper);box-shadow:none}
+.pill.green{background:var(--grass);color:var(--chalk);box-shadow:none}
+.pill.danger{background:var(--warn);color:#fff;box-shadow:none}
+.pill:disabled{opacity:.45}
+
+/* ---------- 弹出视窗 ---------- */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.card{width:min(560px,100%);max-height:88vh;overflow:auto;background:var(--raise);border-radius:18px 18px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+@media (min-width:700px){.sheet{align-items:center}.card{border-radius:18px}}
+.card-h{display:flex;align-items:center;gap:10px}
+.card-h h3{margin:0;font-size:17px;flex:1}
+.menu{display:grid;gap:2px}
+.menu button{border:0;background:none;text-align:left;padding:12px 4px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;gap:10px;font-size:15px}
+.menu button span{color:var(--muted);font-size:13px}
+.menu button:active{background:var(--paper)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{height:34px;padding:0 12px;border:0;border-radius:17px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule);font-size:13.5px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);box-shadow:none}
+.big-clk{font:600 54px/1 var(--f-num);font-variant-numeric:tabular-nums;text-align:center}
+.lbl{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.fi{width:100%;height:42px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);padding:0 12px}
+textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,monospace}
+.hint{font-size:12.5px;color:var(--muted);margin:0;line-height:1.5}
+.list{display:grid}
+.list button{border:0;background:none;border-bottom:1px solid var(--rule);padding:10px 2px;display:grid;grid-template-columns:4.6em 1fr auto;gap:10px;align-items:baseline;text-align:left}
+.list .t{font:600 15px var(--f-num);color:var(--muted)}
+.list .who.d0{color:var(--home)} .list .who.d1{color:var(--away)}
+.list h4{margin:10px 0 2px;font-size:13px;color:var(--muted);font-weight:600}
+.mrow{border-bottom:1px solid var(--rule);padding:10px 0;display:grid;gap:6px}
+.mrow .t1{font-weight:600}
+.mrow .t2{font-size:12.5px;color:var(--muted)}
+.defs{display:grid;gap:12px}
+.defs h4{margin:0 0 2px;font-size:15px}
+.defs p{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink2)}
+.toast{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--paper);border-radius:22px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:10px;font-size:14px;max-width:92vw;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.toast[hidden]{display:none}
+.toast button{border:0;background:var(--flag);color:var(--on-flag);border-radius:16px;height:32px;padding:0 12px;font-weight:700}
+.toast button[hidden]{display:none}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="meta">
+      <input id="fLg" placeholder="输入联赛" maxlength="24" autocomplete="off" aria-label="联赛">
+      <span class="sub" id="mDate"></span>
+    </div>
+    <div class="score">
+      <div class="tn h"><input id="fH" placeholder="主队" maxlength="20" autocomplete="off" aria-label="主队名称"><small id="ckH">角球 0</small></div>
+      <b class="gl h num" id="glH" aria-label="主队进球">0</b>
+      <div class="clk idle" id="clk">
+        <button class="clkbtn" id="clkBtn" aria-label="调整比赛时间"><span id="perL">上半场</span><b id="clkT">00:00</b></button>
+        <button class="run" id="runBtn" aria-label="开始计时"></button>
+      </div>
+      <b class="gl a num" id="glA" aria-label="客队进球">0</b>
+      <div class="tn a"><input id="fA" placeholder="客队" maxlength="20" autocomplete="off" aria-label="客队名称"><small id="ckA">角球 0</small></div>
+    </div>
+    <div class="tools">
+      <button class="tbtn" id="defBtn">按键定义</button>
+      <button class="tbtn" id="menuBtn" aria-label="菜单">菜单</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="pad" data-i="0" aria-label="主队进攻"></section>
+    <section class="mid">
+      <div id="pred" aria-live="polite"></div>
+      <div id="counts"></div>
+    </section>
+    <section class="pad" data-i="1" aria-label="客队进攻"></section>
+  </main>
+</div>
+
+<div class="strip">
+  <div class="recent" id="recent"></div>
+  <span class="minip" id="minip"></span>
+  <button class="pill" id="undoBtn">撤销</button>
+  <button class="pill" id="listBtn">全部事件</button>
+</div>
+
+<div class="sheet" id="sheet" hidden><div class="card" id="card" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastMsg"></span><button id="toastUndo" hidden>撤销</button></div>
+<input type="file" id="fileIn" class="vh" accept=".json,application/json,text/plain" tabindex="-1" aria-hidden="true">
+
+<script>
+/* ================= 角球模型 =================
+   参数由 StatsBomb Open Data（2015/16 英超、西甲、意甲、法甲共 1,517 场）拟合：
+   每队每分钟角球率 = 时段基准 × 主场 × 比分状态 × 人数 × 刚有角球 × 攻势系数。
+   攻势系数由本场到目前为止的“进入前场、进入禁区、传中”相对平均水准算出。
+   阵列里 0 = 主队，1 = 客队。 */
+const MODEL = {"base":{"bin":[0.034936,0.046015,0.043645,0.045262,0.043231,0.042883,0.042359,0.045899,0.045682,0.063527,0.041233,0.050224,0.052769,0.049025,0.047032,0.046438,0.048075,0.047778,0.048937,0.053657],"home":1.2998,"state":[1.0859,1.124,1.0,0.76832,0.73417],"clu":1.3596,"cluSec":180,"man":[0.59119,1.0,1.3596],"goal":[[0.010869,0.014283],[0.012811,0.017279]]},"rates":{"f3":0.45911,"bx":0.13775,"cr":0.12044,"sh":0.13031,"sbs":0.063222,"ck":0.053594},"groups":{"f3":["f3"],"bx":["bx","co"],"cr":["co","cf"],"sh":["sb","ss","so","sg"],"ck":["ck"]},"meanTotal":10.2,"features":["so_own_f3","so_own_bx","so_own_cr","so_opp_f3","so_opp_bx"],"coefNoPrior":[0.017398,0.18637,0.21596,0.047979,-0.20657,0.0098398],"coefPrior":[0.0091673,0.17322,0.19579,0.042472,-0.22221,-0.011137,1.0316],"pseudo":15.0,"addDef":[4,6]};
+
+function mRng(seed){
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function mPois(lam, rnd){
+  if (lam <= 0) return 0;
+  const L = Math.exp(-lam); let k = 0, p = 1;
+  do { k++; p *= rnd(); } while (p > L);
+  return k - 1;
+}
+/* 攻势系数：cnt[i][group] 本场到目前为止的次数；elapsed 已比赛分钟；rates 每队每分钟的平均次数；exp 赛前全场预期（可为 null） */
+function mMultipliers(cnt, elapsed, rates, exp){
+  const useP = exp != null && exp > 0;
+  const coef = useP ? MODEL.coefPrior : MODEL.coefNoPrior;
+  const names = useP ? MODEL.features.concat(['pr_x_x']) : MODEL.features;
+  const out = [0, 0], parts = [[], []];
+  for (let i = 0; i < 2; i++){
+    let z = coef[0];
+    names.forEach((nm, j) => {
+      const [kind, who, g] = nm.split('_');
+      let x;
+      if (kind === 'pr') x = Math.log(exp / MODEL.meanTotal);
+      else {
+        const n = who === 'own' ? cnt[i][g] : cnt[1 - i][g];
+        const a = rates[g] * MODEL.pseudo;
+        x = Math.log((n + a) / (rates[g] * elapsed + a));
+      }
+      z += coef[j + 1] * x;
+      parts[i].push(coef[j + 1] * x);
+    });
+    out[i] = Math.exp(z);
+  }
+  return { mult: out, parts };
+}
+/* half 1/2；t0 本半场已过秒数；score/reds/last/mult 都是 [主, 客]；last 为本半场最后一个角球的秒数或 null；
+   end 本半场预计总秒数。回传剩余角球总数的分布 dist[k] 与平均。 */
+function mSimulate(half, t0, score, reds, last, end, mult, n, seed){
+  const P = MODEL.base, rnd = mRng(seed), dist = [];
+  const man = [Math.sign(reds[1] - reds[0]), Math.sign(reds[0] - reds[1])];
+  const gH = P.goal[half - 1][1], gA = P.goal[half - 1][0];
+  let sum = 0;
+  for (let s = 0; s < n; s++){
+    let g0 = score[0], g1 = score[1], l0 = last[0] == null ? -1e9 : last[0], l1 = last[1] == null ? -1e9 : last[1], tot = 0, t = t0;
+    while (t < end - 1e-9){
+      const mi = Math.floor(t / 60), step = Math.min(60 - (t - mi * 60), end - t), dt = step / 60;
+      const b = P.bin[(half - 1) * 10 + Math.min(Math.floor(mi / 5), 9)];
+      for (let i = 0; i < 2; i++){
+        const diff = i === 0 ? g0 - g1 : g1 - g0;
+        const st = P.state[diff <= -2 ? 0 : diff === -1 ? 1 : diff === 0 ? 2 : diff === 1 ? 3 : 4];
+        const lc = i === 0 ? l0 : l1;
+        const lam = b * (i === 0 ? P.home : 1) * P.man[man[i] + 1] * st * (t - lc <= P.cluSec ? P.clu : 1) * mult[i] * dt;
+        const k = mPois(lam, rnd);
+        tot += k;
+        if (k > 0){ if (i === 0) l0 = t + step / 2; else l1 = t + step / 2; }
+        const g = mPois((i === 0 ? gH : gA) * dt, rnd);
+        if (i === 0) g0 += g; else g1 += g;
+      }
+      t += step;
+    }
+    dist[tot] = (dist[tot] || 0) + 1; sum += tot;
+  }
+  for (let k = 0; k < dist.length; k++) dist[k] = (dist[k] || 0) / n;
+  return { dist, mean: sum / n };
+}
+function mOver(res, have, line){
+  let p = 0;
+  for (let k = 0; k < res.dist.length; k++) if (have + k > line) p += res.dist[k];
+  return p;
+}
+
+</script>
+<script>
+(() => {
+'use strict';
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad2 = n => String(n).padStart(2, '0');
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const nowSec = () => Math.floor(Date.now() / 1000);
+const PER = { 1: [0, 2700, '上半场'], 2: [2700, 5400, '下半场'] };
+const LABEL = { f3: '进入前场', bx: '进入禁区', co: '传中到人', cf: '传中没到人', sb: '射门被挡', ss: '射门被扑', so: '射门偏出', sg: '射门进球', og: '对方乌龙', ck: '角球', rc: '红牌' };
+const ORDER = ['f3', 'bx', 'co', 'cf', 'sb', 'ss', 'so', 'sg', 'ck', 'og', 'rc'];
+const GOALC = ['sg', 'og'];
+const G = MODEL.groups;
+const FLAG = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 17V1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4.8 2h10l-3 3.2 3 3.2h-10z" fill="currentColor"/></svg>';
+const PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg>';
+const PAUSE = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3" height="11" rx="1" fill="currentColor"/></svg>';
+
+/* ================= 保存 ================= */
+const LS = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+};
+const KEY = 'corner-sb-matches';
+let store = LS.get(KEY, {}) || {};
+let M = null, seq = 0;
+function newMatch(prev){
+  const d = new Date();
+  return { id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), c: nowSec(), u: nowSec(),
+    d: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, lg: prev ? prev.lg : '', h: '', a: '', st: 1,
+    exp: null, line: prev ? prev.line.slice() : [4.5, 4.5], add: [null, null], pe: {}, tm: { p: 1, b: 0, r: 0, at: 0, ht: 0 }, ev: [] };
+}
+function fixMatch(m){
+  m.line = Array.isArray(m.line) && m.line.length === 2 ? m.line : [4.5, 4.5];
+  m.add = Array.isArray(m.add) && m.add.length === 2 ? m.add : [null, null];
+  m.pe = m.pe && typeof m.pe === 'object' ? m.pe : {};
+  m.tm = m.tm && PER[m.tm.p] ? m.tm : { p: 1, b: 0, r: 0, at: 0, ht: 0 };
+  m.ev = (m.ev || []).filter(e => e && LABEL[e.c] && PER[e.p]).map(e => ({ t: Math.max(0, +e.t || 0), p: +e.p, i: e.i ? 1 : 0, c: e.c, k: ++seq }));
+  sortEv(m);
+  return m;
+}
+const sortEv = m => m.ev.sort((x, y) => x.p - y.p || x.t - y.t || x.k - y.k);
+let saveT = 0;
+function saveNow(){
+  clearTimeout(saveT); saveT = 0;
+  M.u = nowSec();
+  const empty = !M.ev.length && !M.h && !M.a && !M.lg && !M.tm.b && !M.tm.r;
+  if (!empty || store[M.id]) store[M.id] = M;
+  if (!LS.set(KEY, store)) showToast('保存失败：空间可能不足，请先导出备份');
+  LS.set('corner-sb-current', M.id);
+}
+const save = () => { clearTimeout(saveT); saveT = setTimeout(saveNow, 300); };
+addEventListener('pagehide', () => { if (saveT) saveNow(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && saveT) saveNow(); });
+for (const id in store) fixMatch(store[id]);
+M = store[LS.get('corner-sb-current', '')] || newMatch();
+
+/* ================= 计时 ================= */
+const clockOf = m => m.tm.r ? m.tm.b + (Date.now() - m.tm.at) / 1000 : m.tm.b;
+function fmtClock(p, t){
+  t = Math.max(0, Math.floor(t)); const end = PER[p][1];
+  if (t > end){ const x = t - end; return `${end / 60}+${Math.floor(x / 60)}:${pad2(x % 60)}`; }
+  return `${pad2(Math.floor(t / 60))}:${pad2(t % 60)}`;
+}
+const maxT = (m, p) => m.ev.reduce((a, e) => e.p === p ? Math.max(a, e.t) : a, 0);
+function startClock(){ if (!M.tm.r){ M.tm.r = 1; M.tm.at = Date.now(); } M.tm.ht = 0; }
+function pauseClock(){ if (M.tm.r){ M.tm.b = Math.round(clockOf(M)); M.tm.r = 0; } }
+function setClock(sec){ M.tm.b = Math.max(PER[M.tm.p][0], Math.round(sec)); if (M.tm.r) M.tm.at = Date.now(); }
+function kick(p){
+  if (p === 2 && !M.pe[1]){ const c = clockOf(M); M.pe[1] = M.tm.p === 1 && c >= 2700 && c <= 3900 ? Math.round(c) : Math.max(2700, maxT(M, 1)); }
+  M.tm = { p, b: PER[p][0], r: 1, at: Date.now(), ht: 0 };
+}
+function endFirstHalf(){
+  pauseClock();
+  M.pe[1] = Math.max(Math.round(clockOf(M)), maxT(M, 1), 2700);
+  M.tm.ht = 1;
+}
+function finishMatch(){
+  pauseClock();
+  const p = M.tm.p;
+  M.pe[p] = Math.max(Math.round(clockOf(M)), maxT(M, p), PER[p][1]);
+  if (p === 1) M.pe[2] = M.pe[2] || 5400;
+  M.st = 2; M.tm.ht = 0;
+}
+let wake = null;
+async function syncWake(){
+  try {
+    if (M.tm.r && document.visibilityState === 'visible' && 'wakeLock' in navigator){ if (!wake){ wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } }
+    else if (wake){ await wake.release(); wake = null; }
+  } catch(e){}
+}
+document.addEventListener('visibilitychange', syncWake);
+
+/* ================= 事件 ================= */
+let undoStack = [];
+function addEv(i, c){
+  if (M.st === 2){ showToast('这场已经结束。要继续记录，请在菜单里重新打开。'); return; }
+  if (M.tm.ht){ showToast('中场休息中。下半场开球后再记录，或点时间按“下半场开球”。'); return; }
+  const e = { t: Math.floor(clockOf(M)), p: M.tm.p, i, c, k: ++seq };
+  M.ev.push(e); sortEv(M); undoStack.push(e.k);
+  save(); renderAll();
+  const nm = teamName(i);
+  showToast(`${fmtClock(e.p, e.t)}　${nm} ${LABEL[c]}${M.tm.r ? '' : '（计时器没有在走）'}`, () => removeEv(e.k));
+}
+function removeEv(k){
+  const j = M.ev.findIndex(e => e.k === k);
+  if (j < 0) return;
+  M.ev.splice(j, 1); undoStack = undoStack.filter(x => x !== k);
+  saveNow(); renderAll();
+}
+function undoLast(){
+  while (undoStack.length){ const k = undoStack.pop(); if (M.ev.some(e => e.k === k)){ const e = M.ev.find(x => x.k === k); removeEv(k); showToast(`已撤销：${teamName(e.i)} ${LABEL[e.c]}`); return; } }
+  const last = M.ev.reduce((a, e) => !a || e.k > a.k ? e : a, null);
+  if (!last){ showToast('还没有事件可以撤销'); return; }
+  removeEv(last.k); showToast(`已撤销：${teamName(last.i)} ${LABEL[last.c]}`);
+}
+const teamName = i => ((i ? M.a : M.h) || '').trim() || (i ? '客队' : '主队');
+
+/* ================= 预测 ================= */
+function history(){
+  const done = Object.values(store).filter(m => m.st === 2 && m.id !== M.id && m.pe && m.pe[1] && m.pe[2]);
+  const cnt = {}, add = [[], []];
+  let tmin = 0;
+  for (const g in G) cnt[g] = 0;
+  for (const m of done){
+    const len = (m.pe[1] - PER[1][0] + m.pe[2] - PER[2][0]) / 60;
+    if (len < 60 || len > 130) continue;
+    tmin += 2 * len;
+    for (const e of m.ev) for (const g in G) if (G[g].includes(e.c)) cnt[g]++;
+    for (const p of [1, 2]){ const x = (m.pe[p] - PER[p][1]) / 60; if (x >= 0 && x <= 20) add[p - 1].push(x); }
+  }
+  const K = 600, rates = {};
+  for (const g in MODEL.rates) rates[g] = g in cnt ? (MODEL.rates[g] * K + cnt[g]) / (K + tmin) : MODEL.rates[g];
+  const addDef = add.map((a, j) => a.length >= 3 ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : MODEL.addDef[j]);
+  return { rates, addDef, n: done.length };
+}
+let H = history();
+function halfLen1(){ return M.pe[1] ? M.pe[1] : Math.max(2700 + 60 * (M.add[0] == null ? H.addDef[0] : M.add[0]), maxT(M, 1)); }
+function predState(){
+  if (M.st === 2) return { msg: '比赛已结束，不再预测。' };
+  let p = M.tm.p, t;
+  const clock = clockOf(M);
+  if (M.tm.ht){ p = 2; t = 0; } else t = Math.max(0, clock - PER[p][0]);
+  const S = PER[p][0];
+  const cnt = [{}, {}], hc = [{}, {}], co = [0, 0], gl = [0, 0], rd = [0, 0], last = [null, null];
+  for (const i of [0, 1]) for (const g in G){ cnt[i][g] = 0; hc[i][g] = 0; }
+  for (const e of M.ev){
+    const inHalf = e.p === p;
+    if (e.p > p || (inHalf && e.t - S > t + 1)) continue;
+    for (const g in G) if (G[g].includes(e.c)){ cnt[e.i][g]++; if (inHalf) hc[e.i][g]++; }
+    if (GOALC.includes(e.c)) gl[e.i]++;
+    if (e.c === 'rc') rd[e.i]++;
+    if (inHalf && e.c === 'ck'){ co[e.i]++; const x = e.t - S; if (last[e.i] == null || x > last[e.i]) last[e.i] = x; }
+  }
+  for (const e of M.ev) if (e.p === p && e.c === 'ck') t = Math.max(t, e.t - S);
+  const add = M.add[p - 1] == null ? H.addDef[p - 1] : M.add[p - 1];
+  let end = (45 + add) * 60;
+  if (t > end - 15) end = t + 30;
+  const elapsed = (p === 2 ? halfLen1() / 60 : 0) + t / 60;
+  const mm = mMultipliers(cnt, elapsed, H.rates, M.exp);
+  return { p, t, end, add, cnt, hc, co, gl, rd, last, elapsed, mult: mm.mult, line: M.line[p - 1], halfMin: t / 60 };
+}
+let cache = { key: '', res: null };
+function predict(s){
+  const key = [M.id, s.p, Math.floor(s.t / 10), s.end, s.gl, s.rd, s.last, s.co, s.mult.map(x => x.toFixed(3))].join('|');
+  if (cache.key !== key) cache = { key, res: mSimulate(s.p, s.t, s.gl, s.rd, s.last, s.end, s.mult, 4000, 2015) };
+  return cache.res;
+}
+const pct = v => Math.round(v * 100) + '%';
+const fmtLine = x => (Math.round(x * 10) / 10).toString();
+
+/* ================= 画面 ================= */
+const padHTML = i => `
+  <div class="pad-h"><i></i><b data-name="${i}"></b><span>进攻</span><span class="sp" style="flex:1"></span><span data-tot="${i}"></span></div>
+  <div class="pitch">
+    <div class="goalrow">
+      ${[['sg', '进球'], ['ss', '被扑'], ['so', '偏出'], ['sb', '被挡']].map(([c, l]) => `<button class="z ${c}" data-i="${i}" data-c="${c}" aria-label="${LABEL[c]}"><span class="s">射门</span><span class="l">${l}</span><span class="c" data-n="${c}">0</span></button>`).join('')}
+    </div>
+    <button class="z ck ckl" data-i="${i}" data-c="ck" aria-label="角球">${FLAG}<span class="l">角球 <span class="c" data-n="ck">0</span></span></button>
+    <button class="z ck ckr" data-i="${i}" data-c="ck" aria-label="角球">${FLAG}<span class="l">角球 <span class="c" data-n="ck">0</span></span></button>
+    <div class="wing wl"><button class="z" data-i="${i}" data-c="co"><span class="s">传中</span><span class="l">到人</span><span class="c" data-n="co">0</span></button><button class="z" data-i="${i}" data-c="cf"><span class="s">传中</span><span class="l">没到人</span><span class="c" data-n="cf">0</span></button></div>
+    <button class="z box" data-i="${i}" data-c="bx"><span class="l">进入禁区</span><span class="s">传球到人或带球</span><span class="c" data-n="bx">0</span></button>
+    <div class="wing wr"><button class="z" data-i="${i}" data-c="co"><span class="s">传中</span><span class="l">到人</span><span class="c" data-n="co">0</span></button><button class="z" data-i="${i}" data-c="cf"><span class="s">传中</span><span class="l">没到人</span><span class="c" data-n="cf">0</span></button></div>
+    <button class="z f3" data-i="${i}" data-c="f3"><span class="l">进入前场</span><span class="s">没进禁区的推进</span><span class="c" data-n="f3">0</span><span class="tag">前场三分之一</span></button>
+    <div class="extra"><button class="z" data-i="${i}" data-c="og"><span class="l"><span class="pre">对方</span>乌龙</span><span class="c" data-n="og">0</span></button><button class="z" data-i="${i}" data-c="rc"><span class="l"><span class="pre">本队</span>红牌</span><span class="c" data-n="rc">0</span></button></div>
+  </div>`;
+$$('.pad').forEach(el => { const i = +el.dataset.i; el.innerHTML = padHTML(i); });
+$$('.pad').forEach(el => el.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-c]'); if (!b) return;
+  addEv(+b.dataset.i, b.dataset.c);
+  b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit');
+}));
+$$('.pad .z').forEach(b => b.addEventListener('animationend', () => b.classList.remove('hit')));
+
+const fH = $('#fH'), fA = $('#fA'), fLg = $('#fLg');
+[[fH, 'h'], [fA, 'a'], [fLg, 'lg']].forEach(([el, k]) => el.addEventListener('input', () => { M[k] = el.value; save(); renderNames(); }));
+function renderNames(){
+  $$('[data-name]').forEach(el => { el.textContent = teamName(+el.dataset.name); });
+  $$('.pad').forEach(el => { const i = +el.dataset.i; $$('[data-c]', el).forEach(b => b.setAttribute('aria-label', `${teamName(i)} ${LABEL[b.dataset.c]}`)); });
+}
+function renderHeader(){
+  for (const [el, k] of [[fH, 'h'], [fA, 'a'], [fLg, 'lg']]) if (document.activeElement !== el && el.value !== M[k]) el.value = M[k];
+  $('#mDate').textContent = M.d + (M.st === 2 ? '　已结束' : '');
+  const gl = [0, 0], ck = [0, 0];
+  for (const e of M.ev){ if (GOALC.includes(e.c)) gl[e.i]++; if (e.c === 'ck') ck[e.i]++; }
+  $('#glH').textContent = gl[0]; $('#glA').textContent = gl[1];
+  $('#ckH').textContent = `角球 ${ck[0]}`; $('#ckA').textContent = `角球 ${ck[1]}`;
+  $('#perL').textContent = M.st === 2 ? '已结束' : M.tm.ht ? '中场休息' : PER[M.tm.p][2];
+  $('#runBtn').innerHTML = M.tm.r ? PAUSE : PLAY;
+  $('#runBtn').classList.toggle('on', !!M.tm.r);
+  $('#runBtn').setAttribute('aria-label', M.tm.r ? '暂停计时' : '开始计时');
+  $('#clk').classList.toggle('idle', !M.tm.r);
+  tickClock(true);
+}
+let lastClk = -1;
+function tickClock(force){
+  const c = clockOf(M), s = Math.floor(c);
+  if (force || s !== lastClk){ lastClk = s; $('#clkT').textContent = fmtClock(M.tm.p, c); const sh = $('#shClk'); if (sh) sh.textContent = fmtClock(M.tm.p, c); }
+}
+function renderPads(){
+  const p = M.tm.ht ? 1 : M.tm.p;
+  for (const i of [0, 1]){
+    const el = $(`.pad[data-i="${i}"]`), n = {};
+    for (const c of ORDER) n[c] = 0;
+    let tot = 0;
+    for (const e of M.ev) if (e.i === i && (e.p === p || e.c === 'rc' || e.c === 'og')){ if (e.p === p || e.c === 'rc') n[e.c]++; if (e.p === p) tot++; }
+    n.og = M.ev.filter(e => e.i === i && e.c === 'og').length;
+    n.rc = M.ev.filter(e => e.i === i && e.c === 'rc').length;
+    $$('[data-n]', el).forEach(s => { s.textContent = n[s.dataset.n]; });
+    $(`[data-tot="${i}"]`).textContent = `${PER[p][2]} ${tot} 笔`;
+  }
+}
+function distSVG(res, have, line){
+  let K = 0;
+  for (let k = 0; k < res.dist.length; k++) if (res.dist[k] >= 0.004) K = k;
+  K = Math.max(K, Math.ceil(line - have) + 2, 6);
+  const W = 320, Hh = 96, top = 14, bot = 18, n = K + 1, bw = W / n;
+  const mx = Math.max(...res.dist.slice(0, n).map(x => x || 0), 0.01);
+  let s = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="本半场最后角球数的概率分布">`;
+  for (let k = 0; k <= K; k++){
+    const v = res.dist[k] || 0, h = (Hh - top - bot) * v / mx, x = k * bw, tot = have + k;
+    const over = tot > line;
+    s += `<rect x="${(x + bw * 0.14).toFixed(1)}" y="${(Hh - bot - h).toFixed(1)}" width="${(bw * 0.72).toFixed(1)}" height="${Math.max(h, v > 0 ? 1 : 0).toFixed(1)}" rx="3" fill="${over ? 'var(--flag)' : 'var(--rule)'}"/>`;
+    if (v >= 0.06) s += `<text class="pl" x="${(x + bw / 2).toFixed(1)}" y="${(Hh - bot - h - 3).toFixed(1)}" text-anchor="middle">${Math.round(v * 100)}</text>`;
+    s += `<text class="tk" x="${(x + bw / 2).toFixed(1)}" y="${Hh - 4}" text-anchor="middle">${tot}</text>`;
+  }
+  const lx = (line - have + 0.5) * bw;
+  if (lx > 0 && lx < W) s += `<line x1="${lx.toFixed(1)}" x2="${lx.toFixed(1)}" y1="2" y2="${Hh - bot}" stroke="var(--ink2)" stroke-dasharray="3 3" stroke-width="1.2"/>`;
+  return s + '</svg>';
+}
+function renderPred(){
+  const s = predState(), el = $('#pred'), mini = $('#minip');
+  if (s.msg){ el.innerHTML = `<div class="sec-h"><h2>半场角球预测</h2></div><p class="msg">${s.msg}</p>`; mini.textContent = ''; return; }
+  const r = predict(s), have = s.co[0] + s.co[1], over = mOver(r, have, s.line), half = PER[s.p][2];
+  const lines = [s.line - 1, s.line, s.line + 1].filter(x => x > 0);
+  const fx = (i) => { const m = s.mult[i], w = clamp(Math.log(m) / Math.log(2) * 50, -50, 50); return `<span class="nm ${i ? 'a' : 'h'}">${esc(teamName(i))}</span><span class="bar2"><i style="${w >= 0 ? `left:50%;width:${w.toFixed(1)}%` : `left:${(50 + w).toFixed(1)}%;width:${(-w).toFixed(1)}%`}"></i></span><span class="v">${m.toFixed(2)}×</span>`; };
+  const addAuto = M.add[s.p - 1] == null;
+  el.innerHTML = `<div class="sec-h"><h2>${half}角球</h2><span class="sp"></span><small>${M.tm.ht ? '下半场还没开始　' : ''}本半场 <b class="h">${s.co[0]}</b>–<b class="a">${s.co[1]}</b></small></div>
+    <div class="pred-top"><div class="pv over"><b>${pct(over)}</b><span>大 ${fmtLine(s.line)}</span></div><div class="pv"><b>${pct(1 - over)}</b><span>小 ${fmtLine(s.line)}</span></div></div>
+    <p class="pred-line">预计${half}共 <b>${(have + r.mean).toFixed(1)}</b> 个，还会有 <b>${r.mean.toFixed(1)}</b> 个</p>
+    <div class="dist">${distSVG(r, have, s.line)}</div>
+    <div class="lines">${lines.map(x => `<span class="${x === s.line ? 'on' : ''}">大 ${fmtLine(x)}<b>${pct(mOver(r, have, x))}</b></span>`).join('')}</div>
+    <div class="factor" title="攻势系数">${fx(0)}${fx(1)}</div>
+    <p class="note">攻势系数：根据本场到目前为止的进入前场、进入禁区和传中，这队接下来的角球节奏是平均的几倍。</p>
+    <div class="ctls">
+      <div class="ctl"><span>${half}盘口</span><button data-pa="line" data-d="-1" aria-label="盘口减一">−</button><b>${fmtLine(s.line)}</b><button data-pa="line" data-d="1" aria-label="盘口加一">＋</button><i></i></div>
+      <div class="ctl"><span>全场预期</span><button data-pa="exp" data-d="-0.5" aria-label="全场预期减少">−</button><b>${M.exp == null ? '未填' : fmtLine(M.exp)}</b><button data-pa="exp" data-d="0.5" aria-label="全场预期增加">＋</button>${M.exp == null ? '<i></i>' : '<button class="x" data-pa="exp0">清除</button>'}</div>
+      <div class="ctl"><span>${half}补时</span><button data-pa="add" data-d="-1" aria-label="补时减一分钟">−</button><b>${s.add} 分</b><button data-pa="add" data-d="1" aria-label="补时加一分钟">＋</button>${addAuto ? '<i></i>' : '<button class="x" data-pa="add0">默认</button>'}</div>
+    </div>
+    <p class="note">“全场预期”填赛前的全场角球盘口或两队平均角球，预测会更准。补时默认 ${H.addDef[s.p - 1]} 分钟${H.n >= 3 ? '（根据你已结束的比赛）' : ''}，第四官员举牌后再调整。</p>`;
+  mini.innerHTML = `大 ${fmtLine(s.line)} <b>${pct(over)}</b>`;
+}
+$('#pred').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-pa]'); if (!b) return;
+  const p = M.tm.ht ? 2 : M.tm.p, d = +b.dataset.d || 0;
+  switch (b.dataset.pa){
+    case 'line': M.line[p - 1] = clamp(M.line[p - 1] + d, 0.5, 15.5); break;
+    case 'exp': M.exp = clamp(M.exp == null ? (d > 0 ? 10.5 : 9.5) : M.exp + d, 3, 25); break;
+    case 'exp0': M.exp = null; break;
+    case 'add': { const cur = M.add[p - 1] == null ? H.addDef[p - 1] : M.add[p - 1]; M.add[p - 1] = clamp(cur + d, 0, 20); break; }
+    case 'add0': M.add[p - 1] = null; break;
+  }
+  save(); renderPred(); renderCounts();
+});
+function renderCounts(){
+  const s = predState(), el = $('#counts');
+  if (s.msg){ el.innerHTML = ''; return; }
+  const rows = [['f3', '进入前场'], ['bx', '进入禁区', '含传中到人'], ['cr', '传中'], ['sh', '射门'], ['ck', '角球']];
+  let mins = s.halfMin, half = PER[s.p][2];
+  if (M.tm.ht){
+    // 中场休息时显示上半场的记录
+    half = PER[1][2]; mins = (halfLen1() - PER[1][0]) / 60;
+    for (const i of [0, 1]) for (const g in G) s.hc[i][g] = M.ev.filter(e => e.p === 1 && e.i === i && G[g].includes(e.c)).length;
+  }
+  el.innerHTML = `<div class="sec-h"><h2>${half}记录</h2><span class="sp"></span><small>${mins >= 0.5 ? Math.round(mins) + ' 分钟' : '还没开始'}</small></div>
+    <table class="tbl"><tbody>${rows.map(([g, l, sub]) => {
+      const avg = H.rates[g] * mins;
+      return `<tr><td class="n h">${s.hc[0][g]}</td><td class="m">${l}${sub ? `<small>${sub}</small>` : ''}<small>平均每队 ${avg < 9.95 ? avg.toFixed(1) : Math.round(avg)}</small></td><td class="n a">${s.hc[1][g]}</td></tr>`;
+    }).join('')}</tbody></table>
+    <p class="note">“平均每队”是同样比赛时间里，StatsBomb 数据${H.n >= 3 ? '和你过去的记录' : ''}的平均次数。</p>
+    <p class="src">模型数据：StatsBomb Open Data</p>`;
+}
+function renderStrip(){
+  const el = $('#recent');
+  const ev = M.ev.slice().sort((a, b) => b.p - a.p || b.t - a.t || b.k - a.k).slice(0, 4);
+  el.innerHTML = ev.length ? ev.map(e => `<button data-k="${e.k}"><span class="t">${fmtClock(e.p, e.t)}</span><span class="d${e.i}">${esc(teamName(e.i))}</span><span>${LABEL[e.c]}</span></button>`).join('')
+    : '<span class="empty">在球场上点击发生的事件，最近的会显示在这里</span>';
+}
+$('#recent').addEventListener('click', ev => { const b = ev.target.closest('[data-k]'); if (b) openSheet('edit', { k: +b.dataset.k }); });
+function renderAll(){ renderHeader(); renderNames(); renderPads(); renderPred(); renderCounts(); renderStrip(); if (!sheet.hidden && sheetKind === 'list') renderSheet(); }
+
+/* ================= 弹出视窗 ================= */
+const sheet = $('#sheet'), card = $('#card');
+let sheetKind = null, sheetData = {};
+function openSheet(kind, data){ sheetKind = kind; sheetData = data || {}; renderSheet(); sheet.hidden = false; card.scrollTop = 0; }
+function closeSheet(){ sheet.hidden = true; sheetKind = null; card.innerHTML = ''; }
+sheet.addEventListener('click', ev => { if (ev.target === sheet) closeSheet(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !sheet.hidden) closeSheet(); });
+const DEFS = [
+  ['进入前场', '本队在运动战中把球推进前场三分之一：传球而且队友接到，或者自己带球过线。把球场长度分成三等份，最靠近对方球门的那一份就是前场三分之一，大约是对方半场靠近球门的三分之二。球又被打回去、再推进一次，就再点一次。如果这一下直接进了禁区，只点“进入禁区”。'],
+  ['进入禁区', '本队在运动战中从禁区外把球送进对方禁区：传球而且队友在禁区里接到，或者自己带球进禁区。传中另外点，不要重复点这个。定位球（角球、任意球、界外球）不算。'],
+  ['传中到人／没到人', '运动战中从边路往禁区传的球（地面或高空都算）。队友接到、头球或射门碰到算“到人”；被挡出、被解围、门将没收或直接出界算“没到人”。角球和任意球的传中不算。两边都有按键，球从哪边传就点哪边，结果一样。'],
+  ['射门', '所有射门都算，包括头球、任意球和点球。“被挡”是被防守球员挡下；“被扑”是门将扑到或碰到（包括扑出底线、扑到门柱）；“偏出”是没有打在门框以内，打中门柱或横梁也算偏出；射进就点“进球”。'],
+  ['角球', '裁判判给本队的角球。两个角旗都可以点，结果一样。'],
+  ['对方乌龙', '对方球员把球打进自己的球门，算本队得分。'],
+  ['本队红牌', '本队有球员被罚下，直接红牌或两黄变一红都算。少一人的球队，角球大约只剩平均的六成。'],
+];
+function renderSheet(){
+  const d = sheetData;
+  let h = '';
+  switch (sheetKind){
+    case 'menu': {
+      const n = Object.values(store).filter(m => m.ev.length || m.h || m.a).length;
+      h = `<div class="card-h"><h3>${esc(teamName(0))} vs ${esc(teamName(1))}</h3><button class="pill" data-a="close">关闭</button></div>
+        <div class="menu">
+          <button data-a="clock">比赛时间<span>${M.tm.ht ? '中场休息' : PER[M.tm.p][2]} ${fmtClock(M.tm.p, clockOf(M))}</span></button>
+          <button data-a="list">全部事件<span>${M.ev.length} 笔</span></button>
+          <button data-a="arch">比赛列表<span>${n} 场</span></button>
+          <button data-a="new">新比赛<span>目前这场会保留在列表里</span></button>
+          <button data-a="exp1">导出这场</button>
+          <button data-a="import">导入文件或文字</button>
+          ${M.st === 2 ? '<button data-a="reopen">重新打开这场<span>已结束</span></button>' : '<button data-a="finish">结束比赛<span>停止预测，存成完整记录</span></button>'}
+          <button data-a="model">预测模型怎么算</button>
+        </div>
+        <p class="hint">${offline}</p>`;
+      break;
+    }
+    case 'clock': {
+      const p = M.tm.p;
+      h = `<div class="card-h"><h3>比赛时间</h3><button class="pill" data-a="close">完成</button></div>
+        <div class="big-clk" id="shClk">${fmtClock(p, clockOf(M))}</div>
+        <p class="hint" style="text-align:center">${M.tm.ht ? '中场休息' : PER[p][2]}　${M.tm.r ? '计时中' : '已暂停'}</p>
+        <div class="grid2"><button class="pill green" data-a="kick" data-p="1">上半场开球</button><button class="pill green" data-a="kick" data-p="2">下半场开球</button></div>
+        <div class="grid2"><button class="pill" data-a="toggle">${M.tm.r ? '暂停' : '继续计时'}</button><button class="pill" data-a="endh">上半场结束</button></div>
+        <div class="lbl">微调</div>
+        <div class="row"><button class="chip" data-a="nudge" data-d="-60">−1 分</button><button class="chip" data-a="nudge" data-d="-10">−10 秒</button><button class="chip" data-a="nudge" data-d="10">＋10 秒</button><button class="chip" data-a="nudge" data-d="60">＋1 分</button></div>
+        <div class="lbl">直接输入（分:秒，下半场从 45:00 起算）</div>
+        <div class="row"><input class="fi" id="setIn" inputmode="numeric" placeholder="例如 23:40" style="flex:1"><button class="pill dark" data-a="setin">设定</button></div>
+        <p class="hint">开球时按“上半场开球”或“下半场开球”，计时会从 0:00 或 45:00 开始。上半场吹哨时按“上半场结束”，预测会换成下半场。</p>`;
+      break;
+    }
+    case 'list': {
+      const groups = [2, 1].map(p => [p, M.ev.filter(e => e.p === p).sort((a, b) => b.t - a.t || b.k - a.k)]).filter(([, a]) => a.length);
+      h = `<div class="card-h"><h3>全部事件</h3><button class="pill" data-a="close">关闭</button></div>
+        ${groups.length ? `<div class="list">${groups.map(([p, a]) => `<h4>${PER[p][2]}　${a.length} 笔</h4>` + a.map(e => `<button data-a="edit" data-k="${e.k}"><span class="t">${fmtClock(e.p, e.t)}</span><span><span class="who d${e.i}">${esc(teamName(e.i))}</span>　${LABEL[e.c]}</span><span class="hint">修改</span></button>`).join('')).join('')}</div>` : '<p class="hint">还没有事件。</p>'}`;
+      break;
+    }
+    case 'edit': {
+      const e = M.ev.find(x => x.k === d.k);
+      if (!e){ closeSheet(); return; }
+      h = `<div class="card-h"><h3>${fmtClock(e.p, e.t)}　${esc(teamName(e.i))} ${LABEL[e.c]}</h3><button class="pill" data-a="close">完成</button></div>
+        <div class="lbl">哪一队</div>
+        <div class="chips">${[0, 1].map(i => `<button class="chip" data-a="eteam" data-i="${i}" aria-pressed="${e.i === i}">${esc(teamName(i))}</button>`).join('')}</div>
+        <div class="lbl">事件</div>
+        <div class="chips">${ORDER.map(c => `<button class="chip" data-a="ecode" data-c="${c}" aria-pressed="${e.c === c}">${LABEL[c]}</button>`).join('')}</div>
+        <div class="lbl">时间</div>
+        <div class="row"><button class="chip" data-a="etime" data-d="-60">−1 分</button><button class="chip" data-a="etime" data-d="-10">−10 秒</button><button class="chip" data-a="etime" data-d="10">＋10 秒</button><button class="chip" data-a="etime" data-d="60">＋1 分</button></div>
+        <button class="pill danger" data-a="edel">删除这个事件</button>`;
+      break;
+    }
+    case 'arch': {
+      const arr = Object.values(store).filter(m => m.ev.length || m.h || m.a || m.lg).sort((a, b) => (b.u || b.c) - (a.u || a.c));
+      const last = LS.get('corner-sb-exported', 0);
+      h = `<div class="card-h"><h3>比赛列表</h3><button class="pill" data-a="close">关闭</button></div>
+        <div class="row"><button class="pill dark" data-a="expall" ${arr.length ? '' : 'disabled'}>导出全部</button><button class="pill" data-a="import">导入</button></div>
+        <p class="hint">数据只存在这台设备上，建议定期导出备份。${last ? `上次导出：${new Date(last * 1000).toLocaleString('zh-CN', { hour12: false })}。` : ''}导出档可以直接传给 Claude 分析。</p>
+        ${arr.map(m => {
+          const c = [0, 0], g = [0, 0];
+          for (const e of m.ev){ if (e.c === 'ck') c[e.i]++; if (GOALC.includes(e.c)) g[e.i]++; }
+          return `<div class="mrow"><div class="t1">${esc(m.h || '主队')} ${g[0]}–${g[1]} ${esc(m.a || '客队')}${m.id === M.id ? '（目前这场）' : ''}</div>
+            <div class="t2">${esc(m.d)}${m.lg ? '，' + esc(m.lg) : ''}，事件 ${m.ev.length} 笔，角球 ${c[0]}–${c[1]}${m.st === 2 ? '，已结束' : ''}</div>
+            <div class="row">${m.id === M.id ? '' : `<button class="pill" data-a="mopen" data-id="${esc(m.id)}">打开</button>`}<button class="pill" data-a="mexp" data-id="${esc(m.id)}">导出</button><button class="pill ${d.del === m.id ? 'danger' : ''}" data-a="mdel" data-id="${esc(m.id)}">${d.del === m.id ? '确定删除' : '删除'}</button></div></div>`;
+        }).join('') || '<p class="hint">还没有比赛。</p>'}`;
+      break;
+    }
+    case 'export': {
+      const canShare = !!(navigator.canShare && window.File && (() => { try { return navigator.canShare({ files: [new File(['x'], 'x.json', { type: 'application/json' })] }); } catch(e){ return false; } })());
+      h = `<div class="card-h"><h3>导出 ${d.count} 场</h3><button class="pill" data-a="close">完成</button></div>
+        <div class="row">${canShare ? '<button class="pill dark" data-a="share">分享文件</button>' : ''}<button class="pill ${canShare ? '' : 'dark'}" data-a="download">下载文件</button><button class="pill" data-a="copy">复制文字</button></div>
+        <p class="hint">文件是 JSON，里面附有每个按键的定义，可以直接传给 Claude 分析，也可以在另一台设备导入。</p>
+        <textarea class="fi" readonly id="expText">${esc(d.text)}</textarea>`;
+      break;
+    }
+    case 'import':
+      h = `<div class="card-h"><h3>导入</h3><button class="pill" data-a="close">关闭</button></div>
+        <div class="row"><button class="pill dark" data-a="file">选择文件</button></div>
+        <div class="lbl">或粘贴导出的文字</div>
+        <textarea class="fi" id="pasteIn" placeholder="把导出的 JSON 贴在这里"></textarea>
+        <button class="pill" data-a="paste">导入粘贴的文字</button>
+        <p class="hint">相同的比赛会用比较新的版本覆盖。</p>`;
+      break;
+    case 'defs':
+      h = `<div class="card-h"><h3>按键定义</h3><button class="pill" data-a="close">关闭</button></div>
+        <p class="hint">按键的定义跟 StatsBomb 的事件数据一致，预测模型就是用这些数据算出来的。记录得越接近这些定义，预测越准。每次点击都用当下的比赛时间；点错了按下方“撤销”，或在“全部事件”里修改。</p>
+        <div class="defs">${DEFS.map(([t, x]) => `<div><h4>${t}</h4><p>${x}</p></div>`).join('')}</div>`;
+      break;
+    case 'model':
+      h = `<div class="card-h"><h3>预测模型怎么算</h3><button class="pill" data-a="close">关闭</button></div>
+        <div class="defs">
+          <div><h4>数据</h4><p>StatsBomb 免费公开的 2015/16 赛季英超、西甲、意甲、法甲全部 1,517 场比赛，每一次传球、带球、射门、角球都有时间和位置。按键就是照这些事件的定义设计的。</p></div>
+          <div><h4>基本节奏</h4><p>每队每分钟拿到角球的概率，会随比赛时段、主客场、比分（落后的一方角球多）、人数（少一人角球大减）和“刚拿到角球”而变化。</p></div>
+          <div><h4>攻势系数</h4><p>本队进入前场和进入禁区越多，接下来的角球越多；对方进入前场越多，本队的角球越少。传中的影响比较小。这些记录换算成每队一个倍数，乘在基本节奏上。比赛刚开始时记录少，系数会接近 1；记录越多，影响越大。</p></div>
+          <div><h4>算法</h4><p>用目前的时间、比分、人数和攻势系数，把本半场剩下的时间模拟 4,000 次（包括之后可能的进球），统计最后角球数超过盘口的比例。</p></div>
+          <div><h4>准确度</h4><p>用“三个联赛训练、拿第四个联赛测试”的方式轮流验证。和只用时间、比分、人数和角球的基本模型相比，加上这些记录后，下半场大小判断的误差（Brier 分数）降低约 1.4%，下半场开球时约 1.8%；上半场几乎没有差别，因为上半场的记录还太少。再填上全场预期，下半场的误差降低约 2.7%（开球时约 3.4%），上半场约 0.6%。概率本身是准的：模型说 55% 左右的情况，实际大约 53%。提升幅度不大，因为半场角球本身的随机性很高。</p></div>
+          <div><h4>你的记录</h4><p>你结束的比赛越多，“平均”会越来越接近你自己的记录习惯，攻势系数也会跟着校准。${H.n ? `目前已用到你 ${H.n} 场已结束的比赛。` : '目前还没有已结束的比赛。'}</p></div>
+          <div><h4>来源</h4><p>模型数据：StatsBomb Open Data（github.com/statsbomb/open-data）。</p></div>
+        </div>`;
+      break;
+  }
+  card.innerHTML = h;
+}
+const findEv = k => M.ev.find(e => e.k === k);
+function parseClock(s){
+  const m = String(s).trim().match(/^(\d{1,3})(?::(\d{1,2}))?$/);
+  return m ? (+m[1]) * 60 + (+(m[2] || 0)) : null;
+}
+card.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a, d = sheetData;
+  switch (a){
+    case 'close': closeSheet(); break;
+    case 'clock': openSheet('clock'); break;
+    case 'list': openSheet('list'); break;
+    case 'arch': openSheet('arch'); break;
+    case 'import': openSheet('import'); break;
+    case 'model': openSheet('model'); break;
+    case 'new': saveNow(); M = newMatch(M); undoStack = []; H = history(); saveNow(); closeSheet(); renderAll(); syncWake(); showToast('已开始新比赛'); break;
+    case 'exp1': openExport([M]); break;
+    case 'expall': openExport(Object.values(store).filter(m => m.ev.length || m.h || m.a)); break;
+    case 'mexp': { const m = store[b.dataset.id]; if (m) openExport([m]); break; }
+    case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; H = history(); saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
+    case 'mdel': {
+      const id = b.dataset.id;
+      if (d.del !== id){ sheetData.del = id; renderSheet(); break; }
+      delete store[id]; LS.set(KEY, store);
+      if (id === M.id){ M = newMatch(); }
+      H = history(); sheetData.del = null; renderSheet(); renderAll(); break;
+    }
+    case 'finish': finishMatch(); saveNow(); H = history(); closeSheet(); renderAll(); syncWake(); showToast('比赛已结束并保存'); break;
+    case 'reopen': M.st = 1; saveNow(); H = history(); closeSheet(); renderAll(); break;
+    case 'kick': kick(+b.dataset.p); saveNow(); syncWake(); renderAll(); renderSheet(); break;
+    case 'toggle': M.tm.r ? pauseClock() : startClock(); saveNow(); syncWake(); renderAll(); renderSheet(); break;
+    case 'endh': if (M.tm.p === 1){ endFirstHalf(); saveNow(); syncWake(); renderAll(); renderSheet(); showToast('上半场结束，预测已换成下半场'); } else showToast('现在已经是下半场'); break;
+    case 'nudge': setClock(clockOf(M) + (+b.dataset.d)); saveNow(); renderAll(); renderSheet(); break;
+    case 'setin': {
+      const v = parseClock($('#setIn').value);
+      if (v == null){ showToast('请输入像 23:40 这样的时间'); break; }
+      if (M.tm.p === 1 && v >= 2700 + 1200) M.tm.p = 2;
+      setClock(v); M.tm.ht = 0; saveNow(); renderAll(); renderSheet(); break;
+    }
+    case 'edit': openSheet('edit', { k: +b.dataset.k }); break;
+    case 'eteam': { const e = findEv(d.k); if (e){ e.i = +b.dataset.i; saveNow(); renderAll(); renderSheet(); } break; }
+    case 'ecode': { const e = findEv(d.k); if (e){ e.c = b.dataset.c; saveNow(); renderAll(); renderSheet(); } break; }
+    case 'etime': { const e = findEv(d.k); if (e){ e.t = Math.max(PER[e.p][0], e.t + (+b.dataset.d)); sortEv(M); saveNow(); renderAll(); renderSheet(); } break; }
+    case 'edel': { removeEv(d.k); closeSheet(); showToast('已删除'); break; }
+    case 'share': shareFile(); break;
+    case 'download': downloadFile(); break;
+    case 'copy': copyText(); break;
+    case 'file': $('#fileIn').click(); break;
+    case 'paste': importText($('#pasteIn').value); break;
+  }
+});
+function pauseOther(){ if (M.tm.r){ pauseClock(); } }
+
+/* ================= 导出与导入 ================= */
+const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、pe 各半场结束时的比赛时钟秒数、ev 事件阵列。'
+  + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码]。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
+function openExport(list){
+  const ds = new Date().toISOString().slice(0, 10);
+  const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, line: m.line, add: m.add, pe: m.pe, ev: m.ev.map(e => [e.t, e.p, e.i, e.c]) }));
+  const codes = {}; for (const c of ORDER) codes[c] = LABEL[c];
+  const obj = { app: '角球数据记录', fmt: 1, exported: new Date().toISOString().slice(0, 16), readme: README, codes, matches };
+  const name = list.length === 1 ? `角球数据_${list[0].d}_${(list[0].h || '主队').replace(/[\\/:*?"<>|\s]+/g, '')}vs${(list[0].a || '客队').replace(/[\\/:*?"<>|\s]+/g, '')}.json` : `角球数据_全部${list.length}场_${ds}.json`;
+  openSheet('export', { text: JSON.stringify(obj), name, count: list.length });
+}
+const markExported = () => LS.set('corner-sb-exported', nowSec());
+async function shareFile(){
+  try { await navigator.share({ files: [new File([sheetData.text], sheetData.name, { type: 'application/json' })] }); markExported(); showToast('已送出文件'); }
+  catch(e){ if (e && e.name !== 'AbortError') showToast('分享失败，请改用“复制文字”'); }
+}
+function downloadFile(){
+  const url = URL.createObjectURL(new Blob([sheetData.text], { type: 'application/json' }));
+  const a = document.createElement('a'); a.href = url; a.download = sheetData.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000); markExported(); showToast('已开始下载；如果没有反应，请改用“复制文字”');
+}
+function copyText(){
+  const ta = $('#expText');
+  const fb = () => { ta.focus(); ta.select(); try { document.execCommand('copy'); markExported(); showToast('已复制'); } catch(e){ showToast('文字已全选，请手动复制'); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(sheetData.text).then(() => { markExported(); showToast('已复制到剪贴簿'); }, fb); else fb();
+}
+function importText(txt){
+  let o;
+  try { o = JSON.parse(txt); } catch(e){ showToast('读不懂这段文字，请确认是完整的导出内容'); return; }
+  if (!o || o.fmt !== 1 || !Array.isArray(o.matches) || o.app !== '角球数据记录' && o.app !== '角球數據記錄'){ showToast('这不是角球数据记录的导出档'); return; }
+  let n = 0;
+  for (const r of o.matches){
+    if (!r || !r.id) continue;
+    const m = fixMatch({ id: String(r.id), c: nowSec(), u: nowSec(), d: String(r.d || ''), lg: String(r.lg || ''), h: String(r.h || ''), a: String(r.a || ''),
+      st: r.st === 1 ? 1 : 2, exp: typeof r.exp === 'number' ? r.exp : null, line: r.line, add: r.add, pe: r.pe || {},
+      tm: null, ev: (r.ev || []).map(x => ({ t: x[0], p: x[1], i: x[2], c: x[3] })) });
+    if (m.id === M.id) continue;
+    const last = m.ev[m.ev.length - 1];
+    m.tm = { p: last ? last.p : 1, b: last ? last.t : 0, r: 0, at: 0, ht: 0 };
+    store[m.id] = m; n++;
+  }
+  LS.set(KEY, store); H = history(); closeSheet(); renderAll();
+  showToast(`已导入 ${n} 场`);
+}
+$('#fileIn').addEventListener('change', ev => {
+  const f = ev.target.files && ev.target.files[0]; if (!f) return;
+  f.text().then(importText); ev.target.value = '';
+});
+
+/* ================= 提示 ================= */
+let toastT = 0, toastFn = null;
+function showToast(msg, undoFn){
+  $('#toastMsg').textContent = msg; toastFn = undoFn || null;
+  $('#toastUndo').hidden = !undoFn; $('#toast').hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { $('#toast').hidden = true; toastFn = null; }, undoFn ? 3500 : 2600);
+}
+$('#toastUndo').addEventListener('click', () => { if (toastFn){ const f = toastFn; toastFn = null; f(); showToast('已撤销'); } });
+
+/* ================= 按钮与更新 ================= */
+$('#runBtn').addEventListener('click', () => {
+  if (M.st === 2){ showToast('这场已经结束'); return; }
+  if (M.tm.ht){ kick(2); showToast('下半场开球，从 45:00 开始计时'); }
+  else M.tm.r ? pauseClock() : startClock();
+  saveNow(); syncWake(); renderAll();
+});
+$('#clkBtn').addEventListener('click', () => openSheet('clock'));
+$('#menuBtn').addEventListener('click', () => openSheet('menu'));
+$('#defBtn').addEventListener('click', () => openSheet('defs'));
+$('#listBtn').addEventListener('click', () => openSheet('list'));
+$('#undoBtn').addEventListener('click', undoLast);
+let lastPred = 0;
+setInterval(() => {
+  tickClock(false);
+  if (M.tm.r && Date.now() - lastPred > 10000){ lastPred = Date.now(); renderPred(); renderCounts(); }
+}, 500);
+
+let offline = '离线使用：请从主屏幕的图示打开，联网时打开一次后就能离线使用。';
+if ('serviceWorker' in navigator && location.protocol === 'https:'){
+  navigator.serviceWorker.register('./sw.js').then(() => navigator.serviceWorker.ready).then(() => { offline = '离线使用：已准备好，没有网络也能从主屏幕打开。'; }).catch(() => {});
+}
+renderAll(); syncWake();
+})();
+</script>
+</body>
+</html>

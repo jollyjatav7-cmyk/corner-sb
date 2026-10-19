@@ -1,0 +1,17 @@
+{
+  "name": "角球数据记录",
+  "short_name": "角球数据",
+  "description": "按 StatsBomb 事件定义记录比赛，并预测半场角球",
+  "lang": "zh-Hans",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#E6EAE5",
+  "theme_color": "#2F6C4B",
+  "icons": [
+    { "src": "./icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
