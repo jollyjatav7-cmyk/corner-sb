@@ -409,6 +409,23 @@ small.auto{font-size:10.5px;color:var(--grass);margin-left:4px;font-weight:600}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);box-shadow:none}
 .big-clk{font:600 54px/1 var(--f-num);font-variant-numeric:tabular-nums;text-align:center}
 .lbl{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.myb{margin:0 0 12px;padding:8px 12px 6px;border:1.5px solid var(--line2);border-radius:12px;background:var(--tile)}
+.myh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.myh b{font-size:14px}
+.myr{display:flex;gap:6px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--rule)}
+.myl{flex:1;min-width:0;display:grid;gap:3px}
+.myl b{font-size:14px}
+.myl small{color:var(--muted);font-size:12px;line-height:1.4}
+.myp{font:600 14px var(--f-num)}
+.myr.up .myp{color:var(--ok)} .myr.dn .myp{color:var(--red)}
+.myx{border:0;background:none;font-size:20px;line-height:1;color:var(--muted);width:32px;height:32px;flex-shrink:0}
+.myadd{display:block;margin:4px 0 0;text-align:left}
+.oddsn{display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:12.5px;color:var(--muted);line-height:1.4}
+.oddsn span{flex:1;min-width:0}
+.oddsn .fixb{flex-shrink:0}
+.mbl{display:flex;align-items:center;gap:12px;margin:6px 0 2px}
+.mbl b{font:700 22px var(--f-num);min-width:5.5em;text-align:center}
+.mbl button{width:44px;height:38px;border-radius:10px;border:1px solid var(--line2);background:var(--card);font-size:18px}
 .fi{width:100%;height:42px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);padding:0 12px}
 textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,monospace}
 .hint{font-size:12.5px;color:var(--muted);margin:0;line-height:1.5}
@@ -1129,7 +1146,85 @@ function predict(s){
   return cache.res;
 }
 const pct = v => Math.round(v * 100) + '%';
-const fmtLine = x => (Math.round(x * 10) / 10).toString();
+const fmtLine = x => (Math.round(x * 100) / 100).toString();
+
+/* ================= 我的投注：你在博彩 app 实际投的注，按现在的比赛情况算命中率 =================
+   b = { k, mt 盘 h1/h2/ft, mk 'hd' 让球 / 'ou' 大小, sd 'h'/'a'/'o'/'u', ln 这一边的盘口（让球：主 −0.5 记 -0.5；客 +0.5 记 0.5），
+         s0 [主, 客] 投注时这个盘已有的角球, cnt 1=投注前的角球也算（按整个盘的总数）/ 0=从投注时 0:0 起算（滚球让球常见） }
+   四分之一盘（如 −0.75）拆成两半：−0.5 和 −1 各一半，所以会有“赢一半／输一半”。 */
+const myBets = () => M.my || (M.my = []);
+const ZERO_RES = { dist: [1], diff: { 0: 1 }, mean: 0, meanT: [0, 0] };
+const myCache = {};
+function mktHave(mt){
+  const c = [0, 0];
+  for (const e of M.ev) if (e.c === 'ck' && (mt === 'ft' || e.p === +mt[1])) c[e.i]++;
+  return c;
+}
+/* 这个盘接下来还会有多少角球（模拟）；盘已经结束就回传 0 */
+function mktSim(s, mt){
+  if (!s || s.msg) return ZERO_RES;
+  const p = s.p, end2 = (45 + s.add2) * 60;
+  if (mt === 'h1' && p === 2) return ZERO_RES;          // 上半场已经结束（中场或下半场）
+  let a;
+  if (mt === 'ft' && p === 1) a = [1, s.t, s.end, s.last, [{ half: 2, end: end2 }]];
+  else if (mt === 'h2' && p === 1) a = [2, 0, end2, [null, null], null];   // 还在上半场就投下半场
+  else a = [p, s.t, s.end, s.last, null];
+  const key = [M.id, mt, a[0], Math.floor(a[1] / 10), a[2], s.gl, s.rd, a[3], s.co, s.mult.map(x => x.toFixed(3)), a[4] ? a[4][0].end : 0].join('|');
+  if (!myCache[mt] || myCache[mt].key !== key) myCache[mt] = { key, res: mSimulate(a[0], a[1], s.gl, s.rd, a[3], a[2], s.mult, 4000, 2016, a[4]) };
+  return myCache[mt].res;
+}
+const mktOver = (mt, s) => M.st === 2 || (mt === 'h1' && !!s && !s.msg && s.p === 2);
+/* 回传 { w 全赢, hw 赢一半, p 走, hl 输一半, l 全输 }，以及现在这一刻（不再有角球的话）会怎样 */
+function betProb(b, s){
+  const have = mktHave(b.mt), over = mktOver(b.mt, s), res = over ? ZERO_RES : mktSim(s, b.mt);
+  const quarter = Math.round(Math.abs(b.ln) * 4) % 2 === 1;
+  const lines = quarter ? [b.ln - 0.25, b.ln + 0.25] : [b.ln, b.ln];
+  const base = b.mk === 'hd' ? (have[0] - have[1]) - (b.cnt ? 0 : b.s0[0] - b.s0[1]) : have[0] + have[1];
+  const one = k => {   // k = 主减客的剩余差（让球）或剩余总数（大小）
+    let sc = 0;
+    for (const L of lines){
+      const v = b.mk === 'hd' ? (b.sd === 'h' ? base + k : -(base + k)) + L : (b.sd === 'o' ? base + k - L : L - base - k);
+      sc += v > 1e-9 ? 1 : v < -1e-9 ? -1 : 0;
+    }
+    return sc;
+  };
+  const out = { w: 0, hw: 0, p: 0, hl: 0, l: 0 };
+  const add = (sc, pr) => { if (sc === 2) out.w += pr; else if (sc === 1) out.hw += pr; else if (sc === 0) out.p += pr; else if (sc === -1) out.hl += pr; else out.l += pr; };
+  if (b.mk === 'hd') for (const k in res.diff) add(one(+k), res.diff[k]);
+  else res.dist.forEach((pr, k) => { if (pr) add(one(k), pr); });
+  const nowSc = one(0);
+  return Object.assign(out, { over, have, now: nowSc === 2 ? '赢' : nowSc === 1 ? '赢一半' : nowSc === 0 ? '走' : nowSc === -1 ? '输一半' : '输' });
+}
+function myLabel(b){
+  const side = b.mk === 'hd' ? `${b.sd === 'h' ? '主' : '客'} ${b.ln > 0 ? '+' : b.ln < 0 ? '−' : ''}${fmtLine(Math.abs(b.ln))}` : `${b.sd === 'o' ? '大' : '小'} ${fmtLine(b.ln)}`;
+  return `${MKT[b.mt]}${b.mk === 'hd' ? '让球' : ''} ${side}`;
+}
+function myProbText(o){
+  if (o.over) return `已结束：${o.now}`;
+  const win = o.w + o.hw, lose = o.l + o.hl;
+  return `赢 ${pct(win)}${o.hw >= 0.005 ? `（含赢一半 ${pct(o.hw)}）` : ''}${o.p >= 0.005 ? ` · 走 ${pct(o.p)}` : ''} · 输 ${pct(lose)}${o.hl >= 0.005 ? `（含输一半 ${pct(o.hl)}）` : ''}`;
+}
+function myDefLine(mt, mk, sd){
+  const p = mt === 'ft' ? 0 : +mt[1], bk = M.odds && M.odds.mk[mt + '|' + mk];
+  if (bk) return mk === 'hd' && sd === 'a' ? -bk.ln : bk.ln;   // 有博彩盘口就用它（含四分之一盘）
+  let v = mk === 'hd' ? (mt === 'ft' ? (M.fh == null ? -0.5 : M.fh) : M.hd[p - 1]) : (mt === 'ft' ? (M.fl == null ? 9.5 : M.fl) : M.line[p - 1]);
+  if (mk === 'hd' && sd === 'a') v = -v;
+  return v;
+}
+function openMyBet(){
+  const s = predState(), mt = s.msg ? 'h1' : s.mt;
+  openSheet('mybet', { mt, mk: 'hd', sd: 'h', ln: myDefLine(mt, 'hd', 'h'), s0: mktHave(mt), cnt: 0 });
+}
+function myBetsHTML(s){
+  const L = myBets();
+  if (!L.length) return '';
+  return `<div class="myb"><div class="myh"><b>我的投注</b><button class="fixb" data-pa="mybet">＋ 再记一笔</button></div>
+    ${L.map(b => { const o = betProb(b, s), d = [o.have[0] - b.s0[0], o.have[1] - b.s0[1]];
+      return `<div class="myr ${o.over ? 'done' : (o.w + o.hw) >= (o.l + o.hl) ? 'up' : 'dn'}"><div class="myl"><b>${myLabel(b)}</b>
+        <small>投注时 ${b.s0[0]}:${b.s0[1]}，${o.over ? '最后' : '现在'} ${o.have[0]}:${o.have[1]}${b.mk === 'hd' ? (b.cnt ? '（投注前的角球也算）' : `（从投注时起算 ${d[0]}:${d[1]}）`) : ''}${o.over ? '' : `　现在结束的话：${o.now}`}</small>
+        <span class="myp">${myProbText(o)}</span></div><button class="myx" data-pa="mydel" data-k="${b.k}" aria-label="删除这笔">×</button></div>`; }).join('')}
+  </div>`;
+}
 
 /* ================= 画面 ================= */
 const padHTML = i => `
@@ -1245,7 +1340,7 @@ function renderPred(){
   if (s.msg){
     el.innerHTML = M.st === 2 ? `<div class="start"><h2>这场已经结束记录</h2>
       <div class="grid2"><button class="pill green" data-pa="new">开始新比赛</button><button class="pill" data-pa="reopen">重新打开这场</button></div>
-      <p class="note" style="margin:0">这场的记录已经保存在“比赛列表”里，可以随时导出。</p></div>` : `<div class="sec-h"><h2>角球预测</h2></div><p class="msg">${s.msg}</p>`;
+      <p class="note" style="margin:0">这场的记录已经保存在“比赛列表”里，可以随时导出。</p></div>${myBetsHTML(null)}` : `<div class="sec-h"><h2>角球预测</h2></div><p class="msg">${s.msg}</p>`;
     mini.textContent = ''; abView = null; renderAB(); renderHud(null); return;
   }
   const r = predict(s), full = s.scope === 'f', half = PER[s.p][2], hv = s.have, have = hv[0] + hv[1];
@@ -1263,7 +1358,7 @@ function renderPred(){
   const addAuto = M.add[s.p - 1] == null;
   const lines = [line - 1, line, line + 1].filter(x => x > 0);
   const best = (a, b) => a > b ? 'over' : '';
-  el.innerHTML = startPanel() + netBar() + `<div class="sec-h ph"><h2>${mName}角球</h2>
+  el.innerHTML = startPanel() + netBar() + myBetsHTML(s) + `<div class="sec-h ph"><h2>${mName}角球</h2>
       <span class="sub2">${M.tm.ht ? '中场休息　' : ''}${full ? `已有 <b class="h">${hv[0]}</b>–<b class="a">${hv[1]}</b>　${s.p === 2 || M.tm.ht ? '下' : '上'}半场 ${s.co[0]}–${s.co[1]}` : `已有 <b class="h">${hv[0]}</b>–<b class="a">${hv[1]}</b>`}</span>
       <div class="seg" role="group" aria-label="预测哪一个盘"><button data-pa="scope" data-v="h" aria-pressed="${!full}">${half}</button><button data-pa="scope" data-v="f" aria-pressed="${full}">全场</button></div></div>
     <div class="pred-top"><div class="pv ${best(over, under)}"><b>${pct(over)}</b><span>大 ${fmtLine(line)}</span></div><div class="pv ${best(under, over)}"><b>${pct(under)}</b><span>小 ${fmtLine(line)}${pushT >= 0.005 ? `　走 ${pct(pushT)}` : ''}</span></div></div>
@@ -1271,6 +1366,8 @@ function renderPred(){
     <div class="hrule"></div>
     <div class="hcr"><div class="hw ${hc.home > hc.away ? 'best' : ''}"><b>${pct(hc.home)}</b><span>主 ${hdShort(hd)} 赢盘</span></div><div><b>${hasPush ? pct(hc.push) : '—'}</b><span>走盘</span></div><div class="aw ${hc.away > hc.home ? 'best' : ''}"><b>${pct(hc.away)}</b><span>客 ${hdShort(-hd)} 赢盘</span></div></div>
     ${lineRow(`${mName}让球（以主队为准）`, 'hd', hd, chipVals(hd, cH, 0.5, false), 0.5, hdShort)}
+    ${oddsRow()}
+    ${myBets().length ? '' : '<button class="fixb myadd" data-pa="mybet">已经在博彩 app 投了一笔？记下来，看这笔现在的命中率</button>'}
     <div class="hrule"></div>
     <div class="expl"><div><small>预计${mName}</small><p class="pred-line"><b class="big">${E.toFixed(1)}</b> 个，还会有 ${r.mean.toFixed(1)} 个</p></div>
       <div class="teams tms">${[0, 1].map(i => `<span><em class="${i ? 'a' : 'h'}">${esc(teamName(i))}</em> <b>${exT[i].toFixed(1)}</b> <small>×${s.mult[i].toFixed(2)}</small></span>`).join('')}</div></div>
@@ -1296,7 +1393,7 @@ function renderPred(){
     { mk: 'hd', sd: 'a', ln: hd, pr: hc.away, done: false },
   ]);
   renderAB();
-  renderHud({ over, under, hc, E, line, hd, mName });
+  renderHud({ over, under, hc, E, line, hd, mName, s });
 }
 /* 手机：比分下面的数据条（开赛前是开始按钮），点一下拉出详情 */
 function renderHud(x){
@@ -1309,7 +1406,9 @@ function renderHud(x){
   const c2 = x.hc.home >= x.hc.away ? [`让球 主 ${hdShort(x.hd)}`, x.hc.home] : [`让球 客 ${hdShort(-x.hd)}`, x.hc.away];
   el.innerHTML = `<button class="hud-c ${c1[1] >= 0.6 ? 'hot' : ''}" data-pa="open"><small>${c1[0]}</small><b>${pct(c1[1])}</b></button>
     <button class="hud-c ${c2[1] >= 0.6 ? 'hot' : ''}" data-pa="open"><small>${c2[0]}</small><b>${pct(c2[1])}</b></button>
-    <button class="hud-c" data-pa="open"><small>预计${M.ab.on ? ' · 自动投注中' : ''}</small><b>${x.E.toFixed(1)}</b></button>
+    ${(() => { const a = myBets().map(b => [b, betProb(b, x.s)]).find(([, o]) => !o.over);   // 有记下的投注：第三格显示这笔的命中率
+      if (!a) return `<button class="hud-c" data-pa="open"><small>预计${M.ab.on ? ' · 自动投注中' : ''}</small><b>${x.E.toFixed(1)}</b></button>`;
+      const w = a[1].w + a[1].hw; return `<button class="hud-c ${w >= 0.6 ? 'hot' : ''}" data-pa="open"><small>我的注 ${myLabel(a[0]).replace(/^(上半场|下半场|全场)(让球)?/, '')}</small><b>${pct(w)}</b></button>`; })()}
     <button class="hud-x" data-pa="open" aria-label="打开详情"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 10l4.5-4.5 4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>详情</button>`;
 }
 /* 还在等画面追上的联网补录：还要等多久（下半场的要等你按下半场开球） */
@@ -1367,6 +1466,13 @@ function predAction(b){
     case 'nfin': finishFromNet(); return;
     case 'expc': closeMid(); openExpCalc(); return;
     case 'expauto': expAuto(); return;
+    case 'mybet': closeMid(); openMyBet(); return;
+    case 'odds': oddsFetch(true); return;
+    case 'mydel': {
+      const k = +b.dataset.k, L = myBets(), i = L.findIndex(x => x.k === k); if (i < 0) return;
+      const [gone] = L.splice(i, 1); saveNow(); renderAll();
+      showToast(`已删除：${myLabel(gone)}`, () => { myBets().splice(i, 0, gone); saveNow(); renderAll(); }); return;
+    }
   }
   save(); renderPred(); renderCounts();
 }
@@ -1786,13 +1892,14 @@ async function apiLink(c){
   netBusy = true; renderPred();
   try {
     const s = await apiFetch(M);
-    if (!isRecording() && M.st === 1 && LIVE_ST.includes(s.st)){ netBusy = false; await openJoinFromApi(s); }
+    if (!isRecording() && M.st === 1 && LIVE_ST.includes(s.st)){ netBusy = false; await openJoinFromApi(s); }   // 中途加入：按“开始”后再读盘口（滚球让球要用加入后的角球数）
     else {
       // 开球前就连上：之后所有射门都算你看到的
       if (!isRecording() && (s.st === 'NS' || s.st === 'TBD')) M.api.base = [0, 1].map(() => ({ sb: 0, ss: 0, so: 0 }));
       applySync(s);
       const pre = M.exp == null && !isRecording();   // 开赛前连上：顺便提供一键查赛前预期
-      showToast(`已连上：${M.api.h} vs ${M.api.a}（${ST_ZH[s.st] || s.st}）${isRecording() ? '' : '，开球后按“比赛刚开球”'}`, pre ? expAuto : null, '查赛前预期'); }
+      showToast(`已连上：${M.api.h} vs ${M.api.a}（${ST_ZH[s.st] || s.st}）${isRecording() ? '' : '，开球后按“比赛刚开球”'}`, pre ? expAuto : null, '查赛前预期');
+      if (NET.odds !== false) setTimeout(() => oddsFetch(false), 4500); }   // 连上就顺便读这场的角球盘口（提示看完再读，免得盖掉）
   } catch(e){ M.api.err = e.message; showToast('已连上，但读取资料失败：' + e.message); }
   finally { netBusy = false; renderPred(); }
 }
@@ -2074,6 +2181,112 @@ async function expAuto(){
   } catch(e){ showToast('自动查找失败：' + e.message, openExpCalc, '手动填'); }
   finally { expBusy = false; renderPred(); }
 }
+/* ---------- 博彩盘口：连上比赛时自动读这场的角球盘（API-Football 赔率，1 次请求）。
+   比赛进行中读滚球赔率（/odds/live），开赛前读赛前赔率（/odds，优先 Bet365，其次 Pinnacle 等）。
+   每个盘取“主盘”：有标 main 的用它，没有就取两边赔率最接近的那条线。读到的盘口直接设成 app 的盘口。 */
+const BOOKS = ['Bet365', 'Pinnacle', 'William Hill', 'Unibet', 'Betfair', '1xBet', 'Marathonbet', 'Bwin', '10Bet', 'Betway'];
+const oddsNum = v => { const xs = String(v == null ? '' : v).match(/[-+]?\d+(\.\d+)?/g); return xs ? xs.map(Number).reduce((a, b) => a + b, 0) / xs.length : null; };
+function cornerMarkets(bets, sw){
+  const out = {};
+  for (const b of bets || []){
+    const nm = String(b && b.name || '');
+    if (!/corner/i.test(nm) || /home|away|team|1x2|3.?way|european|odd|even|race|range|first corner|last corner|exact|minute|player|\d+ ?min/i.test(nm.replace(/(1st|2nd|first|second) half/ig, ''))) continue;
+    const mt = /(1st|first) half/i.test(nm) ? 'h1' : /(2nd|second) half/i.test(nm) ? 'h2' : 'ft';
+    const lines = {}, homes = [], aways = [];
+    let kind = null;
+    for (const v of b.values || []){
+      const t = String(v.value || '').trim(), odd = +v.odd;
+      if (!odd || v.suspended) continue;
+      const side = /^over/i.test(t) ? 'o' : /^under/i.test(t) ? 'u' : /^(home|1)\b/i.test(t) ? 'h' : /^(away|2)\b/i.test(t) ? 'a' : null;
+      if (!side) continue;
+      const ln = v.handicap != null && v.handicap !== '' ? oddsNum(v.handicap) : oddsNum(t.replace(/^(over|under|home|away)/i, ''));
+      if (ln == null) continue;
+      if (side === 'h' || side === 'a'){ kind = 'hd'; (side === 'h' ? homes : aways).push({ ln, odd, main: !!v.main }); continue; }
+      kind = 'ou';
+      const key = ln.toFixed(2), L = lines[key] || (lines[key] = { ln, main: false });
+      L[side] = odd; if (v.main) L.main = true;
+    }
+    if (!kind) continue;
+    // 让球：客队那一边有的写客队自己的让球数（+0.5），有的写主队的（−0.5），两种都对得上
+    if (kind === 'hd') for (const H of homes){
+      const A = aways.find(x => Math.abs(x.ln + H.ln) < 1e-9) || aways.find(x => Math.abs(x.ln - H.ln) < 1e-9);
+      if (A) lines[H.ln.toFixed(2)] = { ln: H.ln, h: H.odd, a: A.odd, main: H.main || A.main };
+    }
+    const pairs = Object.values(lines).filter(L => kind === 'ou' ? L.o && L.u : L.h && L.a);
+    if (!pairs.length) continue;
+    const best = pairs.find(L => L.main) || pairs.sort((x, y) => Math.abs((kind === 'ou' ? x.o - x.u : x.h - x.a)) - Math.abs((kind === 'ou' ? y.o - y.u : y.h - y.a)))[0];
+    const k = mt + '|' + kind;
+    if (out[k]) continue;   // 同一个盘出现两次时，用第一个
+    if (kind === 'ou') out[k] = { ln: best.ln, odds: [best.o, best.u] };
+    else out[k] = sw ? { ln: -best.ln, odds: [best.a, best.h] } : { ln: best.ln, odds: [best.h, best.a] };   // 你输入的主客跟联网相反时对调
+  }
+  return out;
+}
+async function apiOdds(m){
+  const live = LIVE_ST.includes(m.api.st), sw = !!m.api.sw;
+  if (live){
+    const r = (await apiGet(`/odds/live?fixture=${m.api.id}`) || [])[0];
+    const mk = cornerMarkets(r && r.odds, sw);
+    return { mk, book: '滚球', live: true, at: nowSec() };
+  }
+  const bms = ((await apiGet(`/odds?fixture=${m.api.id}`) || [])[0] || {}).bookmakers || [];
+  const rank = n => { const i = BOOKS.findIndex(b => String(n || '').toLowerCase().includes(b.toLowerCase())); return i < 0 ? 99 : i; };
+  for (const b of bms.slice().sort((x, y) => rank(x.name) - rank(y.name))){
+    const mk = cornerMarkets(b.bets, sw);
+    if (Object.keys(mk).length) return { mk, book: b.name, live: false, at: nowSec() };
+  }
+  return { mk: {}, book: null, live: false, at: nowSec() };
+}
+/* 四分之一盘（如 9.75、−0.75）在预测卡上用它的 .5 那一半；记“我的投注”时可以用原来的线 */
+const halfOf = x => Math.round(Math.abs(x) * 4) % 2 === 1 ? (Math.abs((x - 0.25) % 1) === 0.5 ? x - 0.25 : x + 0.25) : x;
+function applyOdds(o){
+  const g = k => o.mk[k];
+  const set = (mt, kind, v) => {
+    const p = mt === 'ft' ? 0 : +mt[1];
+    if (kind === 'ou'){ if (mt === 'ft') M.fl = v; else M.line[p - 1] = v; }
+    else { if (mt === 'ft') M.fh = v; else M.hd[p - 1] = v; }
+  };
+  let n = 0;
+  o.base = {};
+  for (const mt of ['h1', 'h2', 'ft']) for (const kind of ['ou', 'hd']){
+    const x = g(mt + '|' + kind); if (!x) continue;
+    let v = x.ln;
+    // 滚球让球通常从读到盘口这一刻 0:0 起算；预测卡上的让球按整个盘的总数算，所以换成等价的整盘让球数
+    if (o.live && kind === 'hd'){ const h = mktHave(mt); o.base[mt] = h; v = x.ln - (h[0] - h[1]); }
+    set(mt, kind, halfOf(v)); n++;
+  }
+  M.odds = o;
+  return n;
+}
+var oddsBusy = false;   // var：渲染可能比这一行先跑
+async function oddsFetch(manual){
+  if (!M.api || !NET.key || oddsBusy) return;
+  oddsBusy = true; renderPred();
+  const id = M.id;
+  try {
+    const o = await apiOdds(M);
+    if (M.id !== id) return;
+    const n = applyOdds(o);
+    saveNow(); renderAll();
+    if (n) showToast(`已按${o.live ? '滚球' : o.book}盘口设好：${oddsSummary(o)}`);
+    else if (manual) showToast(o.live ? '联网现在没有这场的滚球角球盘' : '联网没有这场的角球盘口（有些联赛没有）');
+  } catch(e){ if (manual) showToast('读取盘口失败：' + e.message); }
+  finally { oddsBusy = false; renderPred(); }
+}
+const fmtSigned = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${fmtLine(Math.abs(v))}`;
+function oddsSummary(o){
+  const part = mt => { const ou = o.mk[mt + '|ou'], hd = o.mk[mt + '|hd'], a = [];
+    if (ou) a.push(`大小 ${fmtLine(ou.ln)}`);
+    if (hd) a.push(`让球 主 ${fmtSigned(hd.ln)}${o.base && o.base[mt] ? `（从 ${o.base[mt][0]}:${o.base[mt][1]} 起算）` : ''}`);
+    return a.length ? `${MKT[mt]}${a.join('、')}` : ''; };
+  return ['h1', 'h2', 'ft'].map(part).filter(Boolean).join('；');
+}
+function oddsRow(){
+  if (!M.api || !NET.key) return '';
+  const o = M.odds, ago = o ? Math.max(0, Math.round((nowSec() - o.at) / 60)) : null;
+  const what = o && Object.keys(o.mk).length ? `${o.live ? '滚球' : esc(o.book)}盘口（${ago ? ago + ' 分钟前' : '刚刚'}）：${oddsSummary(o)}` : o ? '联网没有这场的角球盘口' : '还没读博彩盘口';
+  return `<p class="oddsn"><span>${what}</span><button class="fixb" data-pa="odds" ${oddsBusy ? 'disabled' : ''}>${oddsBusy ? '读取中…' : o ? '更新' : '读取'}</button></p>`;
+}
 /* 预测卡上的赛前预期一行（没填时最显眼） */
 function expRow(){
   if (M.exp == null) return `<button class="fixb exr" data-pa="expauto" ${expBusy ? 'disabled' : ''}>${expBusy ? '正在查两队近 10 场的角球…' : M.api && NET.key ? '赛前预期未填 · 点这里自动查两队近 10 场角球' : '赛前预期未填 · 点这里填（预测会更准）'}</button>`;
@@ -2337,6 +2550,27 @@ function renderSheet(){
         <p class="hint">${join ? '加入前的进入前场、禁区和传中没办法补，模型会只用你看到的这段时间来算攻势系数。之后要改比分或角球，直接点上方的比分或“角球”数字。' : '只会调整补录的数字，你已经点过的事件不会被删除。'}</p>`;
       break;
     }
+    case 'mybet': {
+      const hdk = d.mk === 'hd', s0 = predState();
+      const pv = betProb(d, s0);
+      const lnTxt = hdk ? `${d.sd === 'h' ? '主' : '客'} ${d.ln > 0 ? '+' : d.ln < 0 ? '−' : ''}${fmtLine(Math.abs(d.ln))}` : `${d.sd === 'o' ? '大' : '小'} ${fmtLine(d.ln)}`;
+      const stp = i => `<div class="stp"><span class="${i ? 'a' : 'h'}">${esc(teamName(i))}</span><button data-a="mbsc" data-i="${i}" data-d="-1" aria-label="减少">−</button><b>${d.s0[i]}</b><button data-a="mbsc" data-i="${i}" data-d="1" aria-label="增加">＋</button></div>`;
+      const chip = (a, v, cur, l) => `<button class="chip" data-a="${a}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`;
+      h = `<div class="card-h"><h3>记下我的投注</h3><button class="pill" data-a="close">取消</button></div>
+        <p class="hint">把你在博彩 app 上已经投的那一笔记下来，app 会按比赛现在的情况算这笔的命中率，比赛中一直更新。</p>
+        <div class="lbl">哪个盘</div><div class="chips">${chip('mbm', 'h1', d.mt, '上半场')}${chip('mbm', 'h2', d.mt, '下半场')}${chip('mbm', 'ft', d.mt, '全场')}</div>
+        <div class="lbl">玩法</div><div class="chips">${chip('mbk', 'hd', d.mk, '角球让球')}${chip('mbk', 'ou', d.mk, '角球大小')}</div>
+        <div class="lbl">投的哪一边和盘口</div>
+        <div class="chips">${hdk ? chip('mbs', 'h', d.sd, `主队 ${esc(teamName(0))}`) + chip('mbs', 'a', d.sd, `客队 ${esc(teamName(1))}`) : chip('mbs', 'o', d.sd, '大') + chip('mbs', 'u', d.sd, '小')}</div>
+        <div class="mbl"><button data-a="mbl" data-d="-0.25" aria-label="盘口减 0.25">−</button><b>${lnTxt}</b><button data-a="mbl" data-d="0.25" aria-label="盘口加 0.25">＋</button></div>
+        <div class="lbl">投注那一刻，这个盘的角球是几比几（博彩 app 上显示的）</div>
+        <div class="jgrp">${stp(0)}${stp(1)}</div>
+        ${hdk ? `<div class="lbl">投注之前的角球算不算</div><div class="chips">${chip('mbc', 0, d.cnt, '不算：从投注时 0:0 起算')}${chip('mbc', 1, d.cnt, '算：按整个盘的总数')}</div>
+          <p class="hint">多数亚洲盘的滚球让球不算投注之前的角球，赛前投的选哪个都一样。以你投注的 app 规则为准。</p>` : '<p class="hint">大小盘按这个盘的角球总数算，投注之前的角球也算。</p>'}
+        <p class="netnote">${s0.msg && M.st !== 2 ? '开始记录后会按比赛情况算命中率。' : `按现在的情况（${MKT[d.mt]}角球 ${pv.have[0]}:${pv.have[1]}）：${myProbText(pv)}`}</p>
+        <button class="pill green" data-a="mbgo">记下这笔</button>`;
+      break;
+    }
     case 'expc': {
       const v = d.v, e = expOf(v), n0 = esc(teamName(0)), n1 = esc(teamName(1));
       const L = [[0, `${n0} 场均得角球`], [1, `${n0} 场均失角球`], [2, `${n1} 场均得角球`], [3, `${n1} 场均失角球`]];
@@ -2384,8 +2618,10 @@ function renderSheet(){
         <input class="fi" id="netKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="贴上 API-Football 的 API key" value="${esc(NET.key)}">
         <div class="row"><button class="pill dark" data-a="nkey">保存并测试</button>${NET.key ? '<button class="pill" data-a="nkey0">清除</button>' : ''}</div>
         ${d.msg ? `<p class="netnote">${esc(d.msg)}</p>` : ''}
-        <div class="lbl">输入两队名字后自动查找</div>
+        <div class="lbl">输入球队名字后自动查找</div>
         <div class="chips"><button class="chip" data-a="nauto" data-v="1" aria-pressed="${!!NET.auto}">开</button><button class="chip" data-a="nauto" data-v="0" aria-pressed="${!NET.auto}">关（只在按“查找”时找）</button></div>
+        <div class="lbl">连上比赛时读博彩的角球盘口（每次 1 次请求，盘口自动设好）</div>
+        <div class="chips"><button class="chip" data-a="nodds" data-v="1" aria-pressed="${NET.odds !== false}">开</button><button class="chip" data-a="nodds" data-v="0" aria-pressed="${NET.odds === false}">关（需要时在盘口下面按“读取”）</button></div>
         <div class="lbl">同步射门（被挡／被扑／偏出）</div>
         <div class="chips"><button class="chip" data-a="nshot" data-v="1" aria-pressed="${NET.shots !== false}">开</button><button class="chip" data-a="nshot" data-v="0" aria-pressed="${NET.shots === false}">关</button></div>
         <p class="hint" style="margin-top:-4px">只补加入之后的射门。进入前场、进入禁区和传中 API-Football 没有提供，还是要自己点；预测主要靠这三项。</p>
@@ -2512,6 +2748,7 @@ card.addEventListener('click', ev => {
     }
     case 'nkey0': NET.key = ''; saveNet(); sheetData.msg = '已清除。'; renderSheet(); renderPred(); break;
     case 'nauto': NET.auto = b.dataset.v === '1'; saveNet(); renderSheet(); break;
+    case 'nodds': NET.odds = b.dataset.v === '1'; saveNet(); renderSheet(); break;
     case 'niv': NET.iv = +b.dataset.v; saveNet(); renderSheet(); break;
     case 'ndl0': NET.delay = null; if (M.api){ M.api.dl = null; M.api.dlk = null; } saveNet(); saveNow(); renderSheet(); showToast('已清除画面延迟，下次开球或中途加入时重新测'); break;
     case 'nshot': NET.shots = b.dataset.v === '1'; saveNet(); renderSheet(); break;
@@ -2544,6 +2781,18 @@ card.addEventListener('click', ev => {
       saveNow(); closeSheet(); renderAll(); showToast(`全场预期设为 ${M.exp.toFixed(1)}`); break;
     }
     case 'ppick': pickPast(b.dataset.id, +b.dataset.i); break;
+    case 'mbm': d.mt = b.dataset.v; d.s0 = mktHave(d.mt); d.ln = myDefLine(d.mt, d.mk, d.sd); renderSheet(); break;
+    case 'mbk': d.mk = b.dataset.v; d.sd = d.mk === 'hd' ? 'h' : 'o'; d.ln = myDefLine(d.mt, d.mk, d.sd); renderSheet(); break;
+    case 'mbs': if (b.dataset.v !== d.sd){ if (d.mk === 'hd') d.ln = -d.ln; d.sd = b.dataset.v; } renderSheet(); break;
+    case 'mbl': d.ln = Math.round((d.ln + (+b.dataset.d)) * 4) / 4; if (d.mk === 'ou') d.ln = Math.max(0.5, d.ln); else d.ln = clamp(d.ln, -10, 10); renderSheet(); break;
+    case 'mbsc': { const i = +b.dataset.i; d.s0[i] = clamp(d.s0[i] + (+b.dataset.d), 0, 30); renderSheet(); break; }
+    case 'mbc': d.cnt = +b.dataset.v; renderSheet(); break;
+    case 'mbgo': {
+      const nb = { k: Date.now(), mt: d.mt, mk: d.mk, sd: d.sd, ln: d.ln, s0: d.s0.slice(), cnt: d.mk === 'hd' ? d.cnt : 1, at: Date.now() };
+      myBets().push(nb); saveNow(); closeSheet(); renderAll();
+      const o = betProb(nb, predState());
+      showToast(`已记下：${myLabel(nb)}。${o.over ? `这个盘已经结束：${o.now}` : `现在：${myProbText(o)}`}`); break;
+    }
     case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; abTrack = {}; closeSugg(); H = history(); tv.z = 1; tv.off = 0; saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
     case 'mdel': {
       const id = b.dataset.id;
@@ -2575,6 +2824,7 @@ card.addEventListener('click', ev => {
         if (join && d.ht){ endFirstHalf(); saveNow(); syncWake(); renderAll(); showToast('已从中场休息开始记录，下半场开球时按 ▶'); }
         // 你按画面设定的时间跟联网实时的差＝画面延迟，记下来
         if (join && !d.ht && M.api){ const dl = learnDelay(clockOf(M), 'join'); saveNow(); if (dl != null) showToast(`已从 ${fmtClock(M.tm.p, clockOf(M))} 开始记录${delayNote(dl)}`); }
+        if (join && M.api && NET.odds !== false && !M.odds) setTimeout(() => oddsFetch(false), 3000);
       }
       break;
     }
@@ -2646,7 +2896,7 @@ card.addEventListener('input', ev => {
 
 /* ================= 导出与导入 ================= */
 const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、hd 上下半场角球让球(主队，负数=主队让)、pe 各半场结束时的比赛时钟秒数、obs 开始观看的位置{p 半场, t 比赛时钟秒数}、stop 结束记录的位置(未结束为 null)、mk 上下半场预测用的盘(h本半场/f全场)、fl 全场大小盘、fh 全场让球(主队)、ev 事件阵列。只有 obs 到 stop 之间是实际观看的时间。'
-  + 'ab.bets 是自动投注（模拟）记录：mt 盘(h1上半场/h2下半场/ft全场)、mk(ou大小/hd让球)、sd(o大/u小/h主/a客)、ln 盘口(让球以主队为准)、pr 投注当下模型的赢盘率、tier 档位(%)、p 与 t 投注时的半场与比赛时钟秒数、hold 需要稳定的秒数、sc 当时比分、ck 当时这个盘已有的角球、r 结果(1命中/0没中/0.5走盘/null待结算)。res 是结算用的最后角球 {h1 上半场[主,客], ft 全场[主,客]}。'
+  + 'ab.bets 是自动投注（模拟）记录：mt 盘(h1上半场/h2下半场/ft全场)、mk(ou大小/hd让球)、sd(o大/u小/h主/a客)、ln 盘口(让球以主队为准)、pr 投注当下模型的赢盘率、tier 档位(%)、p 与 t 投注时的半场与比赛时钟秒数、hold 需要稳定的秒数、sc 当时比分、ck 当时这个盘已有的角球、r 结果(1命中/0没中/0.5走盘/null待结算)。res 是结算用的最后角球 {h1 上半场[主,客], ft 全场[主,客]}。my 是你自己记下的实际投注：mt 盘、mk(hd让球/ou大小)、sd(h主/a客/o大/u小)、ln 这一边的盘口、s0 投注时这个盘的角球[主,客]、cnt(1=投注前的角球也算，0=从投注时起算)、at 记下的时间。'
   + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码, b(可省略；1=中途加入时补录、时间不详), a(可省略；1=联网同步自动补上的，时间是同步当下)]。api 是联网连上的比赛(API-Football fixture id、两队英文名、sw=1 表示主客跟输入相反、最后同步到的 st 状态/el 分钟/g 比分/ck 角球/ck1 上半场角球/sh 射门、dl 你的画面比实时慢几秒、pok 各半场的开球时间戳是否跟分钟数对得上、fin=1 表示赛后同步到了完场数据)。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
 function openExport(list){
   const ds = new Date().toISOString().slice(0, 10);

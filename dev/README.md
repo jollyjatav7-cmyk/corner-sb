@@ -42,6 +42,8 @@ node uitest5.js http://localhost:8766 out            # online lookup and sync (m
 node uitest6.js http://localhost:8766 out            # screen delay, held sync, sync buttons, expectation lookup, post-match sync (mocked)
 node uitest7.js http://localhost:8766 out            # kick-off stamps checked against the minute, second-half data waits for your kick-off, clock nudges (mocked)
 node uitest8.js http://localhost:8766 out            # one-name search, one-tap expectation, no-corner-stats matches, late kick-off tap, faded backfill (mocked)
+node uitest9.js  http://localhost:8766 out           # my bets: a real bet with the corner score at the time of the bet, live win chance
+node uitest10.js http://localhost:8766 out           # bookmaker corner lines from /odds and /odds/live (mocked)
 node fitphone.js http://localhost:8766 out           # phone layouts fit the screen
 node compat.js  http://localhost:8766                # old saved data still loads
 ```
