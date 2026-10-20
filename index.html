@@ -533,7 +533,7 @@ body{background:var(--paper)}
   #defBtn{display:none}
   .menu .mdefs{display:flex}
   .netpill{height:26px;padding:0 8px;font-size:11px;max-width:9em}
-  .hud{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:6px 10px 0;background:var(--card);border:1px solid var(--line2);border-radius:14px;overflow:hidden;flex:none}
+  .hud{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 46px;margin:6px 10px 0;background:var(--card);border:1px solid var(--line2);border-radius:14px;overflow:hidden;flex:none}
   .hud:empty{display:none}
   .hud-c{border:0;background:none;text-align:left;padding:6px 10px;display:flex;flex-direction:column;border-right:1px solid var(--line2);min-width:0;color:var(--ink)}
   .hud-c:last-child{border-right:0}
@@ -541,13 +541,18 @@ body{background:var(--paper)}
   .hud-c b{font:600 22px/1.1 var(--f-num)}
   .hud-c.hot{background:var(--flag);color:var(--on-flag)} .hud-c.hot small{color:var(--on-flag)}
   .hud-row{grid-column:1/-1;display:flex;gap:8px;padding:8px;align-items:center;font-size:14px}
-  .hud-row .pill{flex:1}
+  .hud-row .pill{flex:1;height:36px;padding:0 8px}
+  .hud-row .pill.hud-more{flex:0 0 auto}
+  .hud-x{border:0;border-left:1px solid var(--line2);background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:10.5px;color:var(--ink2);padding:0}
+  .hud-x svg{width:14px;height:14px}
   .tl{padding:6px 10px 0;flex:none}
-  .tl-card{padding:0 8px 0}
-  .tl-head{min-height:24px}
+  .tl-card{padding:0 8px 0;position:relative}
+  .tl-head{position:absolute;top:2px;right:6px;z-index:2;min-height:0}
+  .tl-head .zb{height:24px;font-size:11.5px;background:var(--card)}
+  .tl.fold .tl-card{min-height:30px}
   .tl-cap,.tl .zoom,.tl .lgdbtn,#curveBtn,.tl .legend{display:none}
   #tlMore{display:inline-block}
-  .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"home away";grid-template-rows:minmax(0,1fr);gap:8px;padding:8px 10px calc(64px + env(safe-area-inset-bottom))}
+  .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"home away";grid-template-rows:minmax(0,1fr);align-items:stretch;gap:8px;padding:6px 10px calc(50px + env(safe-area-inset-bottom))}
   .main .pad{display:flex;flex-direction:column;min-height:0}
   .main .pad .pitch{flex:1;min-height:0}
   .pad-h{padding:0 2px 6px;gap:6px}
@@ -564,15 +569,22 @@ body{background:var(--paper)}
   .mid-x{position:absolute;right:0;top:-2px;border:0;background:none;font-size:13px;color:var(--ink2);height:28px;padding:0 4px}
   .scrim{position:fixed;inset:0;z-index:15;background:var(--scrim)}
   .minip{display:none}
-  .strip .pill{padding:0 12px}
-  .strip{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+  .strip .pill{padding:0 12px;height:34px}
+  @media (max-height:700px){.box .s{display:none}.pitch{gap:4px}}
+  .strip{padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom))}
 }
 @container (max-width:330px){
-  .pitch{grid-template-areas:"goal goal" "ckl ckl" "box box" "wl wl" "f3 f3" "ex ex";grid-template-rows:auto 40px minmax(54px,1fr) 58px 70px auto;padding:6px;gap:6px}
+  .pitch{grid-template-areas:"goal goal" "ckl ckl" "box box" "wl wl" "f3 f3" "ex ex";grid-template-rows:minmax(0,2.2fr) minmax(0,.75fr) minmax(0,1.5fr) minmax(0,1.05fr) minmax(0,1.15fr) auto;padding:6px;gap:5px}
+  .goalrow{grid-template-rows:repeat(2,minmax(0,1fr))}
+  .z{padding:2px 4px}
+  .extra .z{padding:4px 10px}
   .goalrow{padding:0}
-  .goalrow .z{min-height:52px}
+  .goalrow .z{min-height:0}
   .goalrow .z .s{display:none}
   .goalrow .z .l::before{content:"射门"}
+  .wing .z .s{display:none}
+  .wing .z .l::before{content:"传中"}
+  .wing .z .l{font-size:13px;white-space:nowrap}
   .box .l{font-size:15px} .box .c{font-size:24px}
   .f3 .l{font-size:15px} .f3 .c{font-size:24px}
   .f3 .s{display:none}
@@ -1237,14 +1249,16 @@ function renderPred(){
 /* 手机：比分下面的数据条（开赛前是开始按钮），点一下拉出详情 */
 function renderHud(x){
   const el = $('#hud');
-  if (M.st === 2){ el.innerHTML = '<div class="hud-row"><span>这场已经结束记录</span><button class="pill green" data-pa="new">开始新比赛</button></div>'; return; }
-  if (startVisible()){ el.innerHTML = '<div class="hud-row"><button class="pill green" data-pa="kick1">比赛刚开球</button><button class="pill" data-pa="join">比赛已经开始了</button></div>'; return; }
+  const more = '<button class="pill hud-more" data-pa="open" aria-label="打开盘口和统计">盘口 ⌃</button>';
+  if (M.st === 2){ el.innerHTML = `<div class="hud-row"><span style="flex:1">这场已经结束记录</span><button class="pill green" data-pa="new">开始新比赛</button>${more}</div>`; return; }
+  if (startVisible()){ el.innerHTML = `<div class="hud-row"><button class="pill green" data-pa="kick1">比赛刚开球</button><button class="pill" data-pa="join">比赛已经开始了</button>${more}</div>`; return; }
   if (!x){ el.innerHTML = ''; return; }
   const c1 = x.over >= x.under ? [`${x.mName} 大 ${fmtLine(x.line)}`, x.over] : [`${x.mName} 小 ${fmtLine(x.line)}`, x.under];
   const c2 = x.hc.home >= x.hc.away ? [`让球 主 ${hdShort(x.hd)}`, x.hc.home] : [`让球 客 ${hdShort(-x.hd)}`, x.hc.away];
   el.innerHTML = `<button class="hud-c ${c1[1] >= 0.6 ? 'hot' : ''}" data-pa="open"><small>${c1[0]}</small><b>${pct(c1[1])}</b></button>
     <button class="hud-c ${c2[1] >= 0.6 ? 'hot' : ''}" data-pa="open"><small>${c2[0]}</small><b>${pct(c2[1])}</b></button>
-    <button class="hud-c" data-pa="open"><small>预计${M.ab.on ? ' · 自动投注中' : ''}</small><b>${x.E.toFixed(1)}</b></button>`;
+    <button class="hud-c" data-pa="open"><small>预计${M.ab.on ? ' · 自动投注中' : ''}</small><b>${x.E.toFixed(1)}</b></button>
+    <button class="hud-x" data-pa="open" aria-label="打开详情"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 10l4.5-4.5 4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>详情</button>`;
 }
 function renderNetPill(){
   const b = $('#netPill');
@@ -2374,7 +2388,7 @@ function renderTimeline(){
   };
   // 手机默认是精简时间轴：只画传中、射门、角球、进球、红牌，高度也压低
   const slim = compact && !tlPref.full;
-  const LV = slim ? [3, 6, 10, 15, 22] : compact ? [6, 12, 20, 29, 42] : short ? [6, 11, 18, 26, 38] : [9, 17, 27, 38, 54];
+  const LV = slim ? [3, 5, 8, 12, 18] : compact ? [6, 12, 20, 29, 42] : short ? [6, 11, 18, 26, 38] : [9, 17, 27, 38, 54];
   const x0v = PAD_L - 12, x1v = W - PAD_R + 12;
   const evs = M.ev.filter(e => !e.b);
   const items = [[], []];
