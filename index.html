@@ -424,6 +424,161 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
 .toast button{border:0;background:var(--flag);color:var(--on-flag);border-radius:16px;height:32px;padding:0 12px;font-weight:700}
 .toast button[hidden]{display:none}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ================= 新排版：iPad 三栏整理（方案 A）、手机全屏球场（方案 C） ================= */
+:root{--paper:#F1F3EF;--card:#FFFFFF;--line2:#E3E7E2;--tile:rgba(255,255,255,.07);--pitch:#24573D;--ok:#2F8A57}
+@media (prefers-color-scheme:dark){:root{--paper:#101613;--card:#18201C;--line2:#28322D;--pitch:#1E4A33;--ok:#5CC08A}}
+body{background:var(--paper)}
+/* 比分列 */
+.bar .tools{align-items:center;gap:6px}
+.tbtn.ic{width:40px;padding:0;display:grid;place-items:center}
+.netpill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:15px;background:var(--card);border:1px solid var(--line2);font-size:12px;color:var(--ink2);white-space:nowrap;max-width:15em;overflow:hidden}
+.netpill[hidden]{display:none}
+.netpill i{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
+.netpill.off i{background:var(--faint)}
+.netpill.bad{color:var(--warn);border-color:var(--warn)} .netpill.bad i{background:var(--warn)}
+.menu .mdefs{display:none}
+.toast{left:0;right:0;margin:0 auto;width:fit-content;max-width:calc(100vw - 24px);transform:none}
+#toastMsg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* 时间轴放进卡片，工具列缩小 */
+.tl{padding:0 20px 0}
+.tl-card{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:2px 10px 2px}
+.tl-head{min-height:28px}
+.tl-cap{font-size:12px;color:var(--muted);font-weight:600}
+.tl-wrap{background:none;margin-top:0;border-radius:0}
+.tl .zb{height:26px}
+#tlMore{display:none}
+/* 球场：平面色块 */
+.pitch{background:var(--pitch);padding:10px;gap:6px;border-radius:18px}
+.pitch::before{display:none}
+.z{background:var(--tile)}
+.z:active{background:rgba(243,245,238,.2)}
+.goalrow{padding:0;gap:6px}
+.goalrow::after{display:none}
+.goalrow .z{background:var(--tile)}
+.goalrow .z.sg{background:var(--chalk)}
+.box{margin:0;border:2px solid rgba(243,245,238,.35);border-radius:10px}
+.ck{flex-direction:row;gap:6px}
+.ck .l{display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+.ck{gap:4px;padding:4px 3px}
+.ck svg{flex:none}
+.wing{padding:0;gap:6px}
+.wing .z{background:var(--tile)}
+.f3{margin-top:0;border-bottom:2px dashed rgba(243,245,238,.45);border-radius:10px 10px 4px 4px}
+.extra{padding:0}
+.extra::before{display:none}
+.extra .z{background:transparent;border:1px solid rgba(243,245,238,.4);border-radius:16px}
+@media (min-width:900px) and (max-height:860px){.pitch{padding:8px;gap:5px}}
+/* 球场上方的撤销 */
+.pad-h{align-items:center}
+.pad-h .undo{height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--line2);background:var(--card);font-size:13px;font-weight:600;color:var(--ink2);white-space:nowrap;max-width:60%;overflow:hidden;text-overflow:ellipsis}
+.pad-h .undo.hot{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pad-h .undo:disabled{opacity:.35}
+.pad-h .tot{font-size:12px;color:var(--muted)}
+/* 中间卡片：分页 */
+.main{padding:12px 20px 76px}
+.main .mid{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:12px 14px;gap:10px}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--paper);border-radius:11px;padding:3px;flex:none}
+.tabs button{height:32px;border:0;border-radius:9px;background:none;font-size:13px;color:var(--ink2);white-space:nowrap}
+.tabs button[aria-selected="true"]{background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:700;color:var(--ink)}
+.badge{display:inline-block;min-width:17px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--faint);color:#fff;font-size:11px;line-height:17px;font-weight:600}
+.badge.on{background:var(--ok)}
+.badge:empty{display:none}
+.mid[data-tab="pred"] .tabp:not([data-tab="pred"]),.mid[data-tab="ab"] .tabp:not([data-tab="ab"]),.mid[data-tab="data"] .tabp:not([data-tab="data"]){display:none}
+.mid-top{display:none}
+#pred{display:flex;flex-direction:column;gap:10px}
+#pred .start{margin:0;background:var(--paper)}
+.mid .abx{border-top:0;padding-top:0}
+.mid .sec-h.ph{margin:0;gap:6px 10px}
+.mid .sec-h.ph h2{font-size:15px}
+.mid .sub2{margin:0;font-size:12px;color:var(--muted)}
+.mid .seg{margin-left:auto}
+.mid .pv{background:var(--paper)}
+.mid .pv.over{background:var(--flag)}
+.mid .lnc{margin:0}
+.mid .lnh{display:none}
+.mid .lnr button{background:var(--card)}
+.mid .lnr .lnv[aria-pressed="true"]{background:var(--ink)}
+.mid .hcr{margin:0}
+.mid .hcr div{background:var(--paper)}
+.mid .hcr .hw.best,.mid .hcr .aw.best{background:var(--flag)}
+.hrule{height:1px;background:var(--rule);opacity:.7}
+.expl{display:flex;align-items:flex-end;gap:12px}
+.expl small{font-size:12px;color:var(--muted)}
+.expl .pred-line{margin:0;font-size:12px;color:var(--muted)}
+.expl .pred-line b.big{font:600 32px/1 var(--f-num);color:var(--ink)}
+.mid .teams.tms{display:flex;flex-direction:column;gap:3px;margin:0 0 0 auto;text-align:right;font-size:12px;color:var(--muted)}
+.teams.tms em{font-style:normal;font-weight:600} .teams.tms em.h{color:var(--home)} .teams.tms em.a{color:var(--away)}
+.teams.tms b{font:600 16px var(--f-num);color:var(--ink)}
+.morebtn{border:0;border-top:1px solid var(--rule);background:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0 2px;font-size:12.5px;color:var(--ink2);width:100%;text-align:left}
+.more{display:flex;flex-direction:column;gap:10px}
+.more .dist,.more .lines,.more .factor,.more .ctls,.more .note{margin:0}
+.more .fixb{align-self:flex-start;padding:0}
+.mid .net{margin:0}
+@media (min-width:900px){
+  .main{align-items:stretch}
+  .main .mid{contain:size;overflow:auto;overscroll-behavior:contain}
+}
+@media (max-width:899px){
+  .main .mid{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:12px 14px}
+}
+/* ---------- 手机：全屏球场＋上方数据条＋从下面拉出的详情 ---------- */
+.hud{display:none}
+.scrim[hidden]{display:none}
+@media (max-width:599px){
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh}
+  .bar{padding:6px 10px 4px}
+  .bar .tools .tbtn{height:30px}
+  #defBtn{display:none}
+  .menu .mdefs{display:flex}
+  .netpill{height:26px;padding:0 8px;font-size:11px;max-width:9em}
+  .hud{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:6px 10px 0;background:var(--card);border:1px solid var(--line2);border-radius:14px;overflow:hidden;flex:none}
+  .hud:empty{display:none}
+  .hud-c{border:0;background:none;text-align:left;padding:6px 10px;display:flex;flex-direction:column;border-right:1px solid var(--line2);min-width:0;color:var(--ink)}
+  .hud-c:last-child{border-right:0}
+  .hud-c small{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hud-c b{font:600 22px/1.1 var(--f-num)}
+  .hud-c.hot{background:var(--flag);color:var(--on-flag)} .hud-c.hot small{color:var(--on-flag)}
+  .hud-row{grid-column:1/-1;display:flex;gap:8px;padding:8px;align-items:center;font-size:14px}
+  .hud-row .pill{flex:1}
+  .tl{padding:6px 10px 0;flex:none}
+  .tl-card{padding:0 8px 0}
+  .tl-head{min-height:24px}
+  .tl-cap,.tl .zoom,.tl .lgdbtn,#curveBtn,.tl .legend{display:none}
+  #tlMore{display:inline-block}
+  .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"home away";grid-template-rows:minmax(0,1fr);gap:8px;padding:8px 10px calc(64px + env(safe-area-inset-bottom))}
+  .main .pad{display:flex;flex-direction:column;min-height:0}
+  .main .pad .pitch{flex:1;min-height:0}
+  .pad-h{padding:0 2px 6px;gap:6px}
+  .pad-h .atk,.pad-h .tot{display:none}
+  .pad-h b{font-size:15px}
+  .pad-h b{flex:none;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+  .pad-h .undo{height:28px;padding:0 9px;font-size:12px;flex:0 1 auto;min-width:0;max-width:none}
+  .pad-h .undo.hot .uw{display:none}
+  .toast{bottom:calc(6px + env(safe-area-inset-bottom))}
+  .main .mid{position:fixed;left:0;right:0;bottom:0;z-index:16;max-height:84vh;max-height:84dvh;overflow:auto;overscroll-behavior:contain;border-radius:22px 22px 0 0;border:0;box-shadow:0 -10px 40px rgba(0,0,0,.2);padding:4px 14px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);visibility:hidden;transition:transform .25s ease,visibility 0s .25s}
+  .main .mid.open{transform:none;visibility:visible;transition:transform .25s ease}
+  .mid-top{display:flex;align-items:center;justify-content:center;position:relative;height:24px;flex:none}
+  .mid-top .grip{width:40px;height:5px;border-radius:3px;background:var(--rule)}
+  .mid-x{position:absolute;right:0;top:-2px;border:0;background:none;font-size:13px;color:var(--ink2);height:28px;padding:0 4px}
+  .scrim{position:fixed;inset:0;z-index:15;background:var(--scrim)}
+  .minip{display:none}
+  .strip .pill{padding:0 12px}
+  .strip{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+}
+@container (max-width:330px){
+  .pitch{grid-template-areas:"goal goal" "ckl ckl" "box box" "wl wl" "f3 f3" "ex ex";grid-template-rows:auto 40px minmax(54px,1fr) 58px 70px auto;padding:6px;gap:6px}
+  .goalrow{padding:0}
+  .goalrow .z{min-height:52px}
+  .goalrow .z .s{display:none}
+  .goalrow .z .l::before{content:"射门"}
+  .box .l{font-size:15px} .box .c{font-size:24px}
+  .f3 .l{font-size:15px} .f3 .c{font-size:24px}
+  .f3 .s{display:none}
+  .wing .z{min-height:0}
+  .extra{padding:0 0 2px}
+}
 </style>
 </head>
 <body>
@@ -444,13 +599,15 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
       <div class="tn a"><input id="fA" placeholder="客队" maxlength="20" autocomplete="off" aria-label="客队名称"><button class="cks" id="ckA" aria-label="补录或校正角球">角球 0</button></div>
     </div>
     <div class="tools">
+      <button class="netpill" id="netPill" hidden></button>
       <button class="tbtn" id="defBtn">按键定义</button>
-      <button class="tbtn" id="menuBtn" aria-label="菜单">菜单</button>
+      <button class="tbtn ic" id="menuBtn" aria-label="菜单"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 5h12M3 9h12M3 13h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
     </div>
   </header>
   <section class="sugg" id="sugg" hidden aria-live="polite"></section>
+  <section class="hud" id="hud" aria-label="盘口摘要"></section>
 
-  <section class="tl" id="tlSec" aria-label="时间轴">
+  <section class="tl" id="tlSec" aria-label="时间轴"><div class="tl-card">
     <div class="tl-head">
       <h2 class="tl-cap">时间轴</h2>
       <div class="legend" id="legend"></div>
@@ -465,17 +622,24 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
         </div>
         <button class="zb t" id="curveBtn">密度曲线</button>
         <button class="zb t" id="tlFold">收起</button>
+        <button class="zb t" id="tlMore">完整时间轴</button>
       </div>
     </div>
     <div class="tl-wrap" id="tlWrap"><svg id="tl" role="img" aria-label="两队进攻时间轴，主队在上，客队在下，越高越接近球门"></svg></div>
-  </section>
+  </div></section>
 
   <main class="main">
     <section class="pad" data-i="0" aria-label="主队进攻"></section>
-    <section class="mid">
-      <div id="pred" aria-live="polite"></div>
-      <div id="ab" class="abx"></div>
-      <div id="counts"></div>
+    <section class="mid" id="mid" data-tab="pred" aria-label="盘口面板">
+      <div class="mid-top"><span class="grip"></span><button class="mid-x" id="midClose">收起</button></div>
+      <div class="tabs" role="tablist" aria-label="盘口面板分页">
+        <button role="tab" data-tab="pred" aria-selected="true">盘口</button>
+        <button role="tab" data-tab="ab" aria-selected="false">自动投注<span class="badge" id="abBadge"></span></button>
+        <button role="tab" data-tab="data" aria-selected="false">数据</button>
+      </div>
+      <div id="pred" class="tabp" data-tab="pred" aria-live="polite"></div>
+      <div id="ab" class="abx tabp" data-tab="ab"></div>
+      <div id="counts" class="tabp" data-tab="data"></div>
     </section>
     <section class="pad" data-i="1" aria-label="客队进攻"></section>
   </main>
@@ -488,6 +652,7 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
   <button class="pill" id="listBtn">全部事件</button>
 </div>
 
+<div class="scrim" id="scrim" hidden></div>
 <div class="sheet" id="sheet" hidden><div class="card" id="card" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastMsg"></span><button id="toastUndo" hidden>撤销</button></div>
 <input type="file" id="fileIn" class="vh" accept=".json,application/json,text/plain" tabindex="-1" aria-hidden="true">
@@ -782,9 +947,33 @@ function addEv(i, c){
   if (M.tm.ht){ showToast('中场休息中。下半场开球后再记录，或点时间按“下半场开球”。'); return; }
   const e = { t: Math.floor(clockOf(M)), p: M.tm.p, i, c, k: ++seq };
   M.ev.push(e); sortEv(M); undoStack.push(e.k);
+  lastTap[i] = { k: e.k, c, until: Date.now() + 5000 };
+  clearTimeout(lastTap.t); lastTap.t = setTimeout(renderUndo, 5100);
   save(); renderAll();
   const nm = teamName(i);
   showToast(`${fmtClock(e.p, e.t)}　${nm} ${LABEL[c]}${M.tm.r ? '' : '（计时器没有在走）'}`, () => removeEv(e.k));
+}
+/* 每队球场上方的撤销：刚点完 5 秒内显示刚点的是什么，一点就撤掉这一队最后一下 */
+const lastTap = [null, null];
+function undoTarget(i){
+  for (let j = undoStack.length - 1; j >= 0; j--){ const e = M.ev.find(x => x.k === undoStack[j]); if (e && e.i === i) return e; }
+  return M.ev.filter(e => e.i === i && !e.b && !e.a).reduce((a, e) => !a || e.k > a.k ? e : a, null);
+}
+function undoTeam(i){
+  const e = undoTarget(i);
+  if (!e){ showToast(`${teamName(i)}还没有可以撤销的事件`); return; }
+  lastTap[i] = null; removeEv(e.k);
+  showToast(`已撤销：${teamName(i)} ${LABEL[e.c]}（${e.b ? '加入前' : fmtClock(e.p, e.t)}）`);
+}
+function renderUndo(){
+  for (const i of [0, 1]){
+    const b = $(`.pad[data-i="${i}"] .undo`); if (!b) continue;
+    const t = lastTap[i], hot = t && Date.now() < t.until && M.ev.some(e => e.k === t.k);
+    b.classList.toggle('hot', !!hot);
+    b.innerHTML = hot ? `↶ <span class="uw">撤销</span> ${LABEL[t.c]}` : '↶ 撤销';
+    b.disabled = M.st === 2 || !undoTarget(i);
+    b.setAttribute('aria-label', hot ? `撤销${teamName(i)}刚点的${LABEL[t.c]}` : `撤销${teamName(i)}最后一个事件`);
+  }
 }
 function removeEv(k){
   const j = M.ev.findIndex(e => e.k === k);
@@ -883,7 +1072,7 @@ const fmtLine = x => (Math.round(x * 10) / 10).toString();
 
 /* ================= 画面 ================= */
 const padHTML = i => `
-  <div class="pad-h"><i></i><b data-name="${i}"></b><span>进攻</span><span class="sp" style="flex:1"></span><span data-tot="${i}"></span></div>
+  <div class="pad-h"><i></i><b data-name="${i}"></b><span class="atk">进攻</span><span class="sp" style="flex:1"></span><span class="tot" data-tot="${i}"></span><button class="undo" data-undo="${i}" disabled>↶ 撤销</button></div>
   <div class="pitch">
     <div class="goalrow">
       ${[['sg', '进球'], ['ss', '被扑'], ['so', '偏出'], ['sb', '被挡']].map(([c, l]) => `<button class="z ${c}" data-i="${i}" data-c="${c}" aria-label="${LABEL[c]}"><span class="s">射门</span><span class="l">${l}</span><span class="c" data-n="${c}">0</span></button>`).join('')}
@@ -898,6 +1087,7 @@ const padHTML = i => `
   </div>`;
 $$('.pad').forEach(el => { const i = +el.dataset.i; el.innerHTML = padHTML(i); });
 $$('.pad').forEach(el => el.addEventListener('click', ev => {
+  const u = ev.target.closest('[data-undo]'); if (u){ undoTeam(+u.dataset.undo); return; }
   const b = ev.target.closest('[data-c]'); if (!b) return;
   addEv(+b.dataset.i, b.dataset.c);
   b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit');
@@ -942,6 +1132,7 @@ function renderPads(){
     $$('[data-n]', el).forEach(s => { s.textContent = n[s.dataset.n]; });
     $(`[data-tot="${i}"]`).textContent = `${PER[p][2]} ${tot} 笔`;
   }
+  renderUndo();
 }
 function distSVG(res, have, line, name){
   let K = 0;
@@ -983,13 +1174,16 @@ function lineRow(title, kind, cur, vals, step, fmt){
     <button class="lnb" data-pa="${kind}" data-d="${step}" aria-label="${title}往上调">＋</button></div></div>`;
 }
 let abView = null;
+let predMore = false;
+const startVisible = () => M.st === 1 && !M.tm.r && !M.tm.b && !observed(M).length && !M.ev.length;
 function renderPred(){
   const s = predState(), el = $('#pred'), mini = $('#minip');
+  renderNetPill();
   if (s.msg){
     el.innerHTML = M.st === 2 ? `<div class="start"><h2>这场已经结束记录</h2>
       <div class="grid2"><button class="pill green" data-pa="new">开始新比赛</button><button class="pill" data-pa="reopen">重新打开这场</button></div>
       <p class="note" style="margin:0">这场的记录已经保存在“比赛列表”里，可以随时导出。</p></div>` : `<div class="sec-h"><h2>角球预测</h2></div><p class="msg">${s.msg}</p>`;
-    mini.textContent = ''; abView = null; renderAB(); return;
+    mini.textContent = ''; abView = null; renderAB(); renderHud(null); return;
   }
   const r = predict(s), full = s.scope === 'f', half = PER[s.p][2], hv = s.have, have = hv[0] + hv[1];
   // 全场盘还没设定时，先用最接近预计结果的盘口
@@ -1005,25 +1199,31 @@ function renderPred(){
   const fx = (i) => { const m = s.mult[i], w = clamp(Math.log(m) / Math.log(2) * 50, -50, 50); return `<span class="nm ${i ? 'a' : 'h'}">${esc(teamName(i))}</span><span class="bar2"><i style="${w >= 0 ? `left:50%;width:${w.toFixed(1)}%` : `left:${(50 + w).toFixed(1)}%;width:${(-w).toFixed(1)}%`}"></i></span><span class="v">${m.toFixed(2)}×</span>`; };
   const addAuto = M.add[s.p - 1] == null;
   const lines = [line - 1, line, line + 1].filter(x => x > 0);
+  const best = (a, b) => a > b ? 'over' : '';
   el.innerHTML = startPanel() + netBar() + `<div class="sec-h ph"><h2>${mName}角球</h2>
-      <div class="seg" role="group" aria-label="预测哪一个盘"><button data-pa="scope" data-v="h" aria-pressed="${!full}">${half}</button><button data-pa="scope" data-v="f" aria-pressed="${full}">全场</button></div>
-      <span class="sp"></span><button class="fixb" data-pa="join">补录／校正</button></div>
-    <p class="sub2">${M.tm.ht ? '中场休息　' : ''}${full ? `全场已有 <b class="h">${hv[0]}</b>–<b class="a">${hv[1]}</b>　${s.p === 2 || M.tm.ht ? '下' : '上'}半场 ${s.co[0]}–${s.co[1]}` : `本半场已有 <b class="h">${hv[0]}</b>–<b class="a">${hv[1]}</b>`}</p>
-    <div class="pred-top"><div class="pv over"><b>${pct(over)}</b><span>大 ${fmtLine(line)}</span></div><div class="pv"><b>${pct(under)}</b><span>小 ${fmtLine(line)}${pushT >= 0.005 ? `　走 ${pct(pushT)}` : ''}</span></div></div>
+      <span class="sub2">${M.tm.ht ? '中场休息　' : ''}${full ? `已有 <b class="h">${hv[0]}</b>–<b class="a">${hv[1]}</b>　${s.p === 2 || M.tm.ht ? '下' : '上'}半场 ${s.co[0]}–${s.co[1]}` : `已有 <b class="h">${hv[0]}</b>–<b class="a">${hv[1]}</b>`}</span>
+      <div class="seg" role="group" aria-label="预测哪一个盘"><button data-pa="scope" data-v="h" aria-pressed="${!full}">${half}</button><button data-pa="scope" data-v="f" aria-pressed="${full}">全场</button></div></div>
+    <div class="pred-top"><div class="pv ${best(over, under)}"><b>${pct(over)}</b><span>大 ${fmtLine(line)}</span></div><div class="pv ${best(under, over)}"><b>${pct(under)}</b><span>小 ${fmtLine(line)}${pushT >= 0.005 ? `　走 ${pct(pushT)}` : ''}</span></div></div>
     ${lineRow(`${mName}大小盘`, 'line', line, chipVals(line, cT, 1, true), 1, fmtLine)}
-    <p class="pred-line">预计${mName}共 <b>${E.toFixed(1)}</b> 个，还会有 <b>${r.mean.toFixed(1)}</b> 个</p>
-    <div class="dist">${distSVG(r, have, line, mName)}</div>
-    <div class="lines">${lines.map(x => `<span class="${x === line ? 'on' : ''}">大 ${fmtLine(x)}<b>${pct(mOver(r, have, x))}</b></span>`).join('')}</div>
-    <div class="teams">${[0, 1].map(i => `<div class="tmv ${i ? 'a' : 'h'}"><span>${esc(teamName(i))}</span><b>${exT[i].toFixed(1)}</b><small>已有 ${hv[i]}，还会有 ${r.meanT[i].toFixed(1)}</small></div>`).join('')}</div>
+    <div class="hrule"></div>
     <div class="hcr"><div class="hw ${hc.home > hc.away ? 'best' : ''}"><b>${pct(hc.home)}</b><span>主 ${hdShort(hd)} 赢盘</span></div><div><b>${hasPush ? pct(hc.push) : '—'}</b><span>走盘</span></div><div class="aw ${hc.away > hc.home ? 'best' : ''}"><b>${pct(hc.away)}</b><span>客 ${hdShort(-hd)} 赢盘</span></div></div>
     ${lineRow(`${mName}让球（以主队为准）`, 'hd', hd, chipVals(hd, cH, 0.5, false), 0.5, hdShort)}
-    <div class="factor" title="攻势系数">${fx(0)}${fx(1)}</div>
-    <p class="note">攻势系数：根据你看到的这段时间里的进入前场、进入禁区和传中，这队接下来的角球节奏是平均的几倍。${full && s.p === 1 ? `全场盘＝上半场剩下的时间＋整个下半场（下半场补时按 ${s.add2} 分钟算），下半场也先用目前的攻势系数。` : ''}</p>
-    <div class="ctls">
-      <div class="ctl"><span>全场预期</span><button data-pa="exp" data-d="-0.5" aria-label="全场预期减少">−</button><b>${M.exp == null ? '未填' : fmtLine(M.exp)}</b><button data-pa="exp" data-d="0.5" aria-label="全场预期增加">＋</button>${M.exp == null ? '<i></i>' : '<button class="x" data-pa="exp0">清除</button>'}</div>
-      <div class="ctl"><span>${half}补时</span><button data-pa="add" data-d="-1" aria-label="补时减一分钟">−</button><b>${s.add} 分</b><button data-pa="add" data-d="1" aria-label="补时加一分钟">＋</button>${addAuto ? '<i></i>' : '<button class="x" data-pa="add0">默认</button>'}</div>
-    </div>
-    <p class="note">盘口直接点博彩 app 上看到的数字；下半场博彩 app 换成全场盘时，这里默认也是全场。“全场预期”填赛前的全场角球盘口或两队平均角球，预测会更准。补时默认 ${H.addDef[s.p - 1]} 分钟${H.n >= 3 ? '（根据你已结束的比赛）' : ''}，第四官员举牌后再调整。</p>`;
+    <div class="hrule"></div>
+    <div class="expl"><div><small>预计${mName}</small><p class="pred-line"><b class="big">${E.toFixed(1)}</b> 个，还会有 ${r.mean.toFixed(1)} 个</p></div>
+      <div class="teams tms">${[0, 1].map(i => `<span><em class="${i ? 'a' : 'h'}">${esc(teamName(i))}</em> <b>${exT[i].toFixed(1)}</b> <small>×${s.mult[i].toFixed(2)}</small></span>`).join('')}</div></div>
+    <button class="morebtn" data-pa="more" aria-expanded="${predMore}"><span>分布图 · 攻势系数 · 全场预期 · 补时</span><span>${predMore ? '收起' : '展开 ›'}</span></button>
+    ${predMore ? `<div class="more">
+      <div class="dist">${distSVG(r, have, line, mName)}</div>
+      <div class="lines">${lines.map(x => `<span class="${x === line ? 'on' : ''}">大 ${fmtLine(x)}<b>${pct(mOver(r, have, x))}</b></span>`).join('')}</div>
+      <div class="factor" title="攻势系数">${fx(0)}${fx(1)}</div>
+      <p class="note">攻势系数：根据你看到的这段时间里的进入前场、进入禁区和传中，这队接下来的角球节奏是平均的几倍。${full && s.p === 1 ? `全场盘＝上半场剩下的时间＋整个下半场（下半场补时按 ${s.add2} 分钟算），下半场也先用目前的攻势系数。` : ''}</p>
+      <div class="ctls">
+        <div class="ctl"><span>全场预期</span><button data-pa="exp" data-d="-0.5" aria-label="全场预期减少">−</button><b>${M.exp == null ? '未填' : fmtLine(M.exp)}</b><button data-pa="exp" data-d="0.5" aria-label="全场预期增加">＋</button>${M.exp == null ? '<i></i>' : '<button class="x" data-pa="exp0">清除</button>'}</div>
+        <div class="ctl"><span>${half}补时</span><button data-pa="add" data-d="-1" aria-label="补时减一分钟">−</button><b>${s.add} 分</b><button data-pa="add" data-d="1" aria-label="补时加一分钟">＋</button>${addAuto ? '<i></i>' : '<button class="x" data-pa="add0">默认</button>'}</div>
+      </div>
+      <p class="note">“全场预期”填赛前的全场角球盘口或两队平均角球，预测会更准。补时默认 ${H.addDef[s.p - 1]} 分钟${H.n >= 3 ? '（根据你已结束的比赛）' : ''}，第四官员举牌后再调整。</p>
+      <button class="fixb" data-pa="join">补录／校正比分和角球</button>
+    </div>` : ''}`;
   mini.innerHTML = `${full ? '全场' : ''}大 ${fmtLine(line)} <b>${pct(over)}</b>`;
   abView = abEval(s, [
     { mk: 'ou', sd: 'o', ln: line, pr: over, done: have > line },
@@ -1032,9 +1232,37 @@ function renderPred(){
     { mk: 'hd', sd: 'a', ln: hd, pr: hc.away, done: false },
   ]);
   renderAB();
+  renderHud({ over, under, hc, E, line, hd, mName });
 }
-$('#pred').addEventListener('click', ev => {
-  const b = ev.target.closest('[data-pa]'); if (!b) return;
+/* 手机：比分下面的数据条（开赛前是开始按钮），点一下拉出详情 */
+function renderHud(x){
+  const el = $('#hud');
+  if (M.st === 2){ el.innerHTML = '<div class="hud-row"><span>这场已经结束记录</span><button class="pill green" data-pa="new">开始新比赛</button></div>'; return; }
+  if (startVisible()){ el.innerHTML = '<div class="hud-row"><button class="pill green" data-pa="kick1">比赛刚开球</button><button class="pill" data-pa="join">比赛已经开始了</button></div>'; return; }
+  if (!x){ el.innerHTML = ''; return; }
+  const c1 = x.over >= x.under ? [`${x.mName} 大 ${fmtLine(x.line)}`, x.over] : [`${x.mName} 小 ${fmtLine(x.line)}`, x.under];
+  const c2 = x.hc.home >= x.hc.away ? [`让球 主 ${hdShort(x.hd)}`, x.hc.home] : [`让球 客 ${hdShort(-x.hd)}`, x.hc.away];
+  el.innerHTML = `<button class="hud-c ${c1[1] >= 0.6 ? 'hot' : ''}" data-pa="open"><small>${c1[0]}</small><b>${pct(c1[1])}</b></button>
+    <button class="hud-c ${c2[1] >= 0.6 ? 'hot' : ''}" data-pa="open"><small>${c2[0]}</small><b>${pct(c2[1])}</b></button>
+    <button class="hud-c" data-pa="open"><small>预计${M.ab.on ? ' · 自动投注中' : ''}</small><b>${x.E.toFixed(1)}</b></button>`;
+}
+function renderNetPill(){
+  const b = $('#netPill');
+  if (!NET.key){ b.hidden = true; return; }
+  b.hidden = false;
+  const a = M.api;
+  let cls = 'off', txt = '联网';
+  if (a){
+    const rec = curCounts(false).ft, on = LIVE_ST.includes(a.st) || DONE_ST.includes(a.st);
+    const ago = a.at ? Math.max(0, Math.round((nowSec() - a.at) / 60)) : null;
+    if (a.err){ cls = 'bad'; txt = '联网出错'; }
+    else if (on && a.ck && (a.ck[0] !== rec[0] || a.ck[1] !== rec[1])){ cls = 'bad'; txt = `角球对不上 ${a.ck[0]}–${a.ck[1]}`; }
+    else { cls = ''; txt = ago == null ? '联网' : `联网 · ${ago ? ago + ' 分钟前' : '刚刚'}`; }
+  } else txt = M.h.trim() && M.a.trim() ? '联网 · 未连上' : '联网';
+  b.className = 'netpill ' + cls;
+  b.innerHTML = `<i></i><span>${esc(txt)}</span>`;
+}
+function predAction(b){
   const p = M.tm.ht ? 2 : M.tm.p, d = +b.dataset.d || 0, v = +b.dataset.v, full = M.mk[p - 1] === 'f';
   switch (b.dataset.pa){
     case 'scope': M.mk[p - 1] = b.dataset.v; break;
@@ -1046,18 +1274,35 @@ $('#pred').addEventListener('click', ev => {
     case 'exp0': M.exp = null; break;
     case 'add': { const cur = M.add[p - 1] == null ? H.addDef[p - 1] : M.add[p - 1]; M.add[p - 1] = clamp(cur + d, 0, 20); break; }
     case 'add0': M.add[p - 1] = null; break;
+    case 'more': predMore = !predMore; renderPred(); return;
+    case 'open': openMid('pred'); return;
     case 'kick1': kick(1); saveNow(); syncWake(); renderAll(); showToast('上半场开球，从 0:00 开始计时'); return;
-    case 'new': startNew(); return;
+    case 'new': closeMid(); startNew(); return;
     case 'reopen': M.st = 1; M.stop = null; saveNow(); H = history(); renderAll(); showToast('已重新打开，可以继续记录'); return;
-    case 'join': openJoin(); return;
+    case 'join': closeMid(); openJoin(); return;
     case 'nsync': apiSync(true); return;
-    case 'nfind': apiFind(true); return;
+    case 'nfind': closeMid(); apiFind(true); return;
     case 'nset': openSheet('net'); return;
     case 'nfin': finishFromNet(); return;
   }
   save(); renderPred(); renderCounts();
-});
-
+}
+['#pred', '#hud'].forEach(sel => $(sel).addEventListener('click', ev => { const b = ev.target.closest('[data-pa]'); if (b) predAction(b); }));
+/* 中间面板：盘口／自动投注／数据 分页；手机上是从底部拉出的面板 */
+const mid = $('#mid'), scrim = $('#scrim');
+const TABS = ['pred', 'ab', 'data'];
+function setTab(t){
+  if (!TABS.includes(t)) t = 'pred';
+  mid.dataset.tab = t;
+  $$('.tabs [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  LS.set('corner-sb-tab', t);
+}
+$('.tabs').addEventListener('click', ev => { const b = ev.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
+function openMid(t){ if (t) setTab(t); mid.classList.add('open'); scrim.hidden = false; mid.scrollTop = 0; }
+function closeMid(){ mid.classList.remove('open'); scrim.hidden = true; }
+$('#midClose').addEventListener('click', closeMid);
+scrim.addEventListener('click', closeMid);
+setTab(LS.get('corner-sb-tab', 'pred'));
 /* ================= 自动投注（模拟，只看命中率，不管赔率） =================
    监控画面上现在的大小盘两边和让球两边。任一边的赢盘率连续 hold 秒（比赛时间）都在某个档位以上，
    就记一笔；中间只要掉到档位以下，就从头算。同一个盘口、同一边、同一档位每场只记一次。 */
@@ -1106,7 +1351,8 @@ function abEval(s, mkts){
 const resTxt = r => r == null ? '<span class="pend">待结算</span>' : r === 1 ? '<span class="win">命中</span>' : r === 0 ? '<span class="lose">没中</span>' : '<span class="push">走盘</span>';
 function renderAB(){
   const el = $('#ab'), bets = M.ab.bets, v = abView, live = M.st === 1;
-  if (!live && !bets.length){ el.innerHTML = ''; return; }
+  const bd = $('#abBadge'); bd.textContent = bets.length ? bets.length : M.ab.on ? '开' : ''; bd.classList.toggle('on', !!M.ab.on && live);
+  if (!live && !bets.length){ el.innerHTML = '<p class="msg">这场没有自动投注。</p><div class="row"><button class="pill" data-ab="stats">命中率统计</button></div>'; return; }
   const pend = bets.filter(b => b.r == null).length;
   let ctl = '';
   if (live){
@@ -1560,6 +1806,7 @@ function netBar(){
   if (M.api){
     const a = M.api, ck = a.ck, rec = curCounts(false).ft, ago = a.at ? Math.max(0, Math.round((nowSec() - a.at) / 60)) : null;
     const on = LIVE_ST.includes(a.st) || DONE_ST.includes(a.st), diff = on && ck && (ck[0] !== rec[0] || ck[1] !== rec[1]);
+    if (!a.err && !diff && !(DONE_ST.includes(a.st) && M.st === 1)) return '';  // 一切正常时只在上方显示小标记
     return `<div class="net"><i class="${a.err ? 'bad' : ''}"></i><span class="nt"><b>联网</b>${a.st ? ` ${ST_ZH[a.st] || a.st}${a.el && LIVE_ST.includes(a.st) ? ' ' + a.el + "'" : ''}` : ''}${on && a.g ? `　比分 ${a.g[0]}–${a.g[1]}` : ''}${on ? (ck ? `　角球 ${ck[0]}–${ck[1]}` : '　这场没有角球统计') : ''}${diff ? `<em>你记录 ${rec[0]}–${rec[1]}</em>` : ''}${ago != null ? `<small>${ago ? ago + ' 分钟前' : '刚刚'}</small>` : ''}${a.err ? `<small class="er">${esc(a.err)}</small>` : ''}</span>
       ${DONE_ST.includes(a.st) && M.st === 1 ? '<button class="fin" data-pa="nfin">结束记录</button>' : `<button data-pa="nsync" ${netBusy ? 'disabled' : ''}>${netBusy ? '同步中…' : '同步'}</button>`}<button data-pa="nset" aria-label="联网数据设定">⋯</button></div>`;
   }
@@ -1635,6 +1882,7 @@ function renderSheet(){
           <button data-a="clock">比赛时间<span>${M.tm.ht ? '中场休息' : PER[M.tm.p][2]} ${fmtClock(M.tm.p, clockOf(M))}</span></button>
           <button data-a="join">补录／校正比分和角球<span>也可以直接点上方的比分或“角球”数字</span></button>
           <button data-a="list">全部事件<span>${M.ev.length} 笔</span></button>
+          <button data-a="defs" class="mdefs">按键定义<span>每个按键怎么算</span></button>
           <button data-a="net">联网数据<span>${NET.key ? (M.api ? `已连上 ${esc(M.api.h)} vs ${esc(M.api.a)}` : '已设定') : '未设定'}</span></button>
           <button data-a="abstats">自动投注命中率<span>${(() => { const k = Object.values(store).reduce((a, m) => a + m.ab.bets.filter(b => b.r == null).length, 0); return k ? `${k} 笔待结算` : '全部比赛'; })()}</span></button>
           <button data-a="arch">比赛列表<span>${n} 场</span></button>
@@ -1725,7 +1973,7 @@ function renderSheet(){
         <div class="chips">${[[120, '2 分钟'], [180, '3 分钟'], [300, '5 分钟'], [0, '不自动同步']].map(([v, l]) => `<button class="chip" data-a="niv" data-v="${v}" aria-pressed="${NET.iv === v}">${l}</button>`).join('')}</div>
         <p class="hint">今天这台设备大约用了 ${used} 次请求。免费方案每天 100 次：查找一场用 1–3 次，每 3 分钟同步一次的话，一场比赛约 35 次。</p>
         ${a ? `<div class="lbl">目前这场</div><div class="mrow"><div class="t1">${esc(a.h)} vs ${esc(a.a)}</div><div class="t2">${esc(a.lg || '')}${a.sw ? '，主客跟你输入的相反（已自动对调）' : ''}</div>
-          <div class="row"><button class="pill" data-a="nre">换一场</button><button class="pill" data-a="noff">解除连接</button></div></div>`
+          <div class="row"><button class="pill dark" data-a="nsync">立即同步</button><button class="pill" data-a="nre">换一场</button><button class="pill" data-a="noff">解除连接</button></div></div>`
           : (M.h.trim() && M.a.trim() && NET.key ? '<button class="pill green" data-a="nfind">查找这场比赛</button>' : '')}
         <div class="defs"><div><h4>怎么拿 API key</h4><p>到 dashboard.api-football.com 免费注册，登录后在 Account → My Access 复制 API key，贴到上面。key 只存在这台设备上。免费方案能查哪些赛季有限制；如果测试或查找时出现“方案查不到这个赛季”，就需要升级到付费方案（Pro 每月 19 美元）。</p></div></div>`;
       break;
@@ -1836,6 +2084,8 @@ card.addEventListener('click', ev => {
     case 'nauto': NET.auto = b.dataset.v === '1'; saveNet(); renderSheet(); break;
     case 'niv': NET.iv = +b.dataset.v; saveNet(); renderSheet(); break;
     case 'nshot': NET.shots = b.dataset.v === '1'; saveNet(); renderSheet(); break;
+    case 'nsync': closeSheet(); apiSync(true); break;
+    case 'defs': openSheet('defs'); break;
     case 'nfind': closeSheet(); M.apiNo = null; apiFind(true); break;
     case 'nre': closeSheet(); M.api = null; M.apiNo = null; saveNow(); renderPred(); apiFind(true); break;
     case 'noff': M.api = null; M.apiNo = namesKey(); saveNow(); closeSheet(); renderPred(); showToast('已解除联网连接'); break;
@@ -2011,7 +2261,7 @@ function startNew(){
 
 /* ================= 时间轴（沿用 corner-log 的画法：主队在上、客队在下，越高越接近球门） ================= */
 const tlWrap = $('#tlWrap'), tlSvg = $('#tl'), tlSec = $('#tlSec');
-const tlPref = Object.assign({ fold: false, curve: true, legend: false }, LS.get('corner-sb-tl', {}) || {});
+const tlPref = Object.assign({ fold: false, curve: true, legend: false, full: false }, LS.get('corner-sb-tl', {}) || {});
 const tv = { z: 1, off: 0 };
 let tlHeads = [], tlLast = null;
 const Z_MAX = 12, PAD_L = 22, PAD_R = 8, GAP = 16;
@@ -2099,6 +2349,7 @@ function renderLegend(){
   $('#legend').classList.toggle('open', !!tlPref.legend);
   tlSec.classList.toggle('fold', !!tlPref.fold);
   $('#tlFold').textContent = tlPref.fold ? '展开' : '收起';
+  $('#tlMore').textContent = tlPref.full ? '精简时间轴' : '完整时间轴';
   $('#tlFold').setAttribute('aria-expanded', String(!tlPref.fold));
   $('#curveBtn').setAttribute('aria-pressed', String(!!tlPref.curve));
   $('#lgdBtn').setAttribute('aria-pressed', String(!!tlPref.legend));
@@ -2121,11 +2372,13 @@ function renderTimeline(){
     }
     return PAD_L;
   };
-  const LV = compact ? [6, 12, 20, 29, 42] : short ? [6, 11, 18, 26, 38] : [9, 17, 27, 38, 54];
+  // 手机默认是精简时间轴：只画传中、射门、角球、进球、红牌，高度也压低
+  const slim = compact && !tlPref.full;
+  const LV = slim ? [3, 6, 10, 15, 22] : compact ? [6, 12, 20, 29, 42] : short ? [6, 11, 18, 26, 38] : [9, 17, 27, 38, 54];
   const x0v = PAD_L - 12, x1v = W - PAD_R + 12;
   const evs = M.ev.filter(e => !e.b);
   const items = [[], []];
-  for (const e of evs){ const x = +X(e.p, e.t).toFixed(1); if (x >= x0v && x <= x1v) items[e.i].push({ e, x, y: LV[LVL[e.c]] }); }
+  for (const e of evs){ if (slim && (e.c === 'f3' || e.c === 'bx')) continue; const x = +X(e.p, e.t).toFixed(1); if (x >= x0v && x <= x1v) items[e.i].push({ e, x, y: LV[LVL[e.c]] }); }
   const top = LV[4] + 12, bot = LV[4] + 12;
   const axisY = top + 2, H = axisY + bot + 18, base = H - 5;
   let gx = '';
@@ -2248,6 +2501,7 @@ $('#zNow').addEventListener('click', () => {
 });
 const saveTlPref = () => LS.set('corner-sb-tl', tlPref);
 $('#curveBtn').addEventListener('click', () => { tlPref.curve = !tlPref.curve; saveTlPref(); renderLegend(); renderTimeline(); });
+$('#tlMore').addEventListener('click', () => { tlPref.full = !tlPref.full; saveTlPref(); renderLegend(); renderTimeline(); });
 $('#tlFold').addEventListener('click', () => { tlPref.fold = !tlPref.fold; saveTlPref(); renderLegend(); renderTimeline(); });
 $('#lgdBtn').addEventListener('click', () => { tlPref.legend = !tlPref.legend; saveTlPref(); renderLegend(); });
 /* 手势：单指左右拖动（含惯性）、双指缩放、点一下打开事件 */
@@ -2339,6 +2593,7 @@ $('#runBtn').addEventListener('click', () => {
 });
 $('#clkBtn').addEventListener('click', openClock);
 $('#menuBtn').addEventListener('click', () => openSheet('menu'));
+$('#netPill').addEventListener('click', () => openSheet('net'));
 $('#defBtn').addEventListener('click', () => openSheet('defs'));
 $('#listBtn').addEventListener('click', () => openSheet('list'));
 ['#glH', '#glA', '#ckH', '#ckA'].forEach(x => $(x).addEventListener('click', openJoin));
