@@ -100,6 +100,7 @@ button.gl:active,.cks:active{background:var(--rule)}
 .tl .mi.home{fill:var(--home);opacity:.3} .tl .mi.away{fill:var(--away);opacity:.3}
 .tl .sm{stroke-linecap:round} .tl .sm.home{stroke:var(--home)} .tl .sm.away{stroke:var(--away)}
 .tl .sm.s0{stroke-width:1.1;opacity:.35} .tl .sm.s1{stroke-width:1.4;opacity:.6} .tl .sm.s2{stroke-width:2.6} .tl .sm.s3{stroke-width:2.2} .tl .sm.s4{stroke-width:3}
+.tl .sm.au{stroke-dasharray:3 2}
 .tl .ckb{stroke:var(--flag);stroke-width:9;stroke-linecap:round;opacity:.4}
 .tl .hd.home.l1{fill:var(--home);opacity:.5} .tl .hd.away.l1{fill:var(--away);opacity:.5}
 .tl .hd.home.l1b{fill:var(--home);opacity:.75} .tl .hd.away.l1b{fill:var(--away);opacity:.75}
@@ -318,6 +319,16 @@ button.gl:active,.cks:active{background:var(--rule)}
 .net button.fin{background:var(--ink);color:var(--paper);box-shadow:none}
 .netnote{margin:0;font-size:13px;line-height:1.5;color:var(--ink2);background:var(--paper);border-radius:10px;padding:8px 10px}
 .picks{display:grid;gap:6px}
+.sugg{margin:2px 16px 10px;background:var(--raise);border-radius:14px;padding:10px 12px 12px;box-shadow:0 0 0 2px var(--flag);display:grid;gap:8px}
+.sugg[hidden]{display:none}
+.sg-h{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.sg-h b{font-size:15px}
+.sg-h span{flex:1;font-size:12.5px;color:var(--muted);min-width:12em}
+.sg-h button{border:0;background:none;color:var(--ink2);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:4px}
+.sg-list{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.sg-f{display:flex;gap:8px;align-items:center}
+.sg-f .fi{flex:1;height:38px}
+@media (max-width:599px){.sugg{margin:2px 10px 8px}}
 .picks button{border:0;text-align:left;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule);border-radius:12px;padding:10px 12px;display:grid;gap:3px}
 .picks button:active{background:var(--rule)}
 .picks .t1{font-weight:600;font-size:15px}
@@ -437,6 +448,7 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
       <button class="tbtn" id="menuBtn" aria-label="菜单">菜单</button>
     </div>
   </header>
+  <section class="sugg" id="sugg" hidden aria-live="polite"></section>
 
   <section class="tl" id="tlSec" aria-label="时间轴">
     <div class="tl-head">
@@ -893,7 +905,7 @@ $$('.pad').forEach(el => el.addEventListener('click', ev => {
 $$('.pad .z').forEach(b => b.addEventListener('animationend', () => b.classList.remove('hit')));
 
 const fH = $('#fH'), fA = $('#fA'), fLg = $('#fLg');
-[[fH, 'h'], [fA, 'a'], [fLg, 'lg']].forEach(([el, k]) => el.addEventListener('input', () => { M[k] = el.value; save(); renderNames(); if (k !== 'lg'){ M.apiErr = null; scheduleFind(); } }));
+[[fH, 'h'], [fA, 'a'], [fLg, 'lg']].forEach(([el, k]) => el.addEventListener('input', () => { M[k] = el.value; save(); renderNames(); if (k !== 'lg'){ M.apiErr = null; if (SG) closeSugg(); scheduleFind(); } }));
 [fH, fA].forEach(el => el.addEventListener('change', () => scheduleFind(400)));
 function renderNames(){
   $$('[data-name]').forEach(el => { el.textContent = teamName(+el.dataset.name); });
@@ -1165,7 +1177,7 @@ function abStats(){
    输入主客队名字后，在今天的比赛里找这场；确定是同一场就直接连上，不确定就弹出候选让你点。
    连上后：中途加入时自动填好时间、比分、角球、红牌；记录时每隔几分钟同步一次，漏点的角球、进球、红牌会补上（标“联网”）；
    结算时自动填最后的角球数。 */
-const NET = Object.assign({ key: '', auto: true, iv: 180, used: {} }, LS.get('corner-sb-net', {}) || {});
+const NET = Object.assign({ key: '', auto: true, iv: 180, shots: true, used: {} }, LS.get('corner-sb-net', {}) || {});
 const saveNet = () => LS.set('corner-sb-net', NET);
 let ALIAS = LS.get('corner-sb-alias', {}) || {};
 const API_BASE = 'https://v3.football.api-sports.io';
@@ -1240,7 +1252,7 @@ const TEAM_ZH = ('阿森纳:Arsenal|切尔西:Chelsea|利物浦:Liverpool|曼联
   .split('|').map(x => { const [zh, en] = x.split(':'); return [zh.split('/'), en.split('/')]; });
 const STOP = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'as', 'ss', 'us', 'club', 'de', 'calcio', 'cd', 'ud', 'sd', 'rc', 'sv', 'vfb', 'vfl', 'tsg', 'fk', 'sk', 'bk', 'if', 'ca', 'se', 'ec', '1', '04', '05', '1899']);
 function normName(s){
-  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ø/g, 'o').replace(/ß/g, 'ss').replace(/ı/g, 'i')
+  return String(s || '').replace(/\./g, '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ø/g, 'o').replace(/ß/g, 'ss').replace(/ı/g, 'i')
     .replace(/[^a-z0-9一-鿿぀-ヿ가-힯]+/g, ' ').trim();
 }
 const core = s => s.split(' ').filter(w => w && !STOP.has(w));
@@ -1260,7 +1272,38 @@ function sim(a, b){
 function nameKeys(u){
   const raw = String(u || '').trim(), cn = raw.replace(/\s+/g, '').toUpperCase(), keys = new Set([normName(raw)]);
   for (const [zh, en] of TEAM_ZH) if (zh.some(z => z.toUpperCase() === cn)) en.forEach(e => keys.add(normName(e)));
+  const w = WDC[normName(raw)];
+  if (w) w.en.forEach(e => keys.add(normName(e)));
   return [...keys].filter(Boolean);
+}
+/* 内置译名查不到的中文队名，去维基数据（Wikidata，免费、不用 key）查英文名和别名，查过的存起来 */
+const WD_API = 'https://www.wikidata.org/w/api.php';
+const WDC = LS.get('corner-sb-wd', {}) || {};
+const hasCJK = x => /[\u4e00-\u9fff]/.test(x);
+const inDict = raw => { const cn = raw.replace(/\s+/g, '').toUpperCase(); return TEAM_ZH.some(([zh]) => zh.some(z => z.toUpperCase() === cn)); };
+async function wdPrep(u){
+  const raw = String(u || '').trim(), k = normName(raw);
+  if (!raw || !hasCJK(raw) || ALIAS[k] || inDict(raw)) return;
+  const c = WDC[k];
+  if (c && (c.en.length || nowSec() - c.t < 7 * 86400)) return;
+  try {
+    const q = new URLSearchParams({ action: 'wbsearchentities', search: raw, language: 'zh', uselang: 'zh', type: 'item', limit: '12', format: 'json', origin: '*' });
+    const r = await (await fetch(`${WD_API}?${q}`)).json();
+    const FOOT = /足球|球会|球會|球队|球隊|俱乐部|俱樂部|football|soccer/i;
+    const ids = ((r && r.search) || []).filter(x => FOOT.test(`${x.label || ''} ${x.description || ''}`)).slice(0, 3).map(x => x.id);
+    const en = [];
+    if (ids.length){
+      const q2 = new URLSearchParams({ action: 'wbgetentities', ids: ids.join('|'), props: 'labels|aliases', languages: 'en', format: 'json', origin: '*' });
+      const g = await (await fetch(`${WD_API}?${q2}`)).json();
+      for (const id of ids){
+        const e = g && g.entities && g.entities[id]; if (!e) continue;
+        if (e.labels && e.labels.en) en.push(e.labels.en.value);
+        for (const a of (e.aliases && e.aliases.en) || []) en.push(a.value);
+      }
+    }
+    WDC[k] = { t: nowSec(), en: [...new Set(en)].slice(0, 15) };
+    LS.set('corner-sb-wd', WDC);
+  } catch(e){}
 }
 function teamSim(u, team){
   const a = ALIAS[normName(u)];
@@ -1280,7 +1323,8 @@ function rankFixtures(list, h, a){
   }
   return out.sort((x, y) => y.score - x.score);
 }
-const isSure = r => r.length && r[0].lo >= 0.9 && (r.length === 1 || r[1].score < r[0].score - 0.15);
+// 确定是同一场：两队都几乎一样而且明显比第二名好；或两队都相当像、而且只有这一场两队都像
+const isSure = r => r.length > 0 && (r[0].lo >= 0.9 && (r.length === 1 || r[1].score < r[0].score - 0.15) || r[0].lo >= 0.72 && r.filter(c => c.lo >= 0.5).length === 1);
 const namesKey = () => `${M.h.trim()}|${M.a.trim()}`;
 /* 手动输入英文关键字筛选（不会再发请求，只筛已经拿到的今天比赛） */
 function rankQuery(list, q){
@@ -1298,6 +1342,7 @@ async function apiFind(manual){
   netBusy = true; renderPred();
   const id = M.id;
   try {
+    await Promise.all([wdPrep(h), wdPrep(a)]);
     if (Date.now() - netList.at > 120000) netList = { at: Date.now(), list: await apiGet('/fixtures?live=all') || [], day: false };
     let r = rankFixtures(netList.list, h, a);
     if (!isSure(r) && !netList.day){
@@ -1307,13 +1352,53 @@ async function apiFind(manual){
       r = rankFixtures(netList.list, h, a);
     }
     if (M.id !== id) return;
-    if (isSure(r)){ netBusy = false; await apiLink(r[0]); return; }
-    if (r.length || manual) openSheet('pick', { cands: r.slice(0, 8), q: '' });
+    if (isSure(r)){ netBusy = false; closeSugg(); await apiLink(r[0]); return; }
+    if (r.length || manual) openSugg(r.slice(0, 8));
     else M.apiErr = '今天的比赛里没找到这两队，可以按“查找”手动选';
   } catch(e){
     if (manual) showToast('联网查找失败：' + e.message); else M.apiErr = '联网查找失败：' + e.message;
   } finally { netBusy = false; renderPred(); }
 }
+/* ---------- 候选比赛：直接显示在队名输入框下面，不用往下找 ---------- */
+const sugg = $('#sugg');
+let SG = null;
+function fixWhen(f){
+  const st = f.fixture.status || {};
+  if (LIVE_ST.includes(st.short)) return `${ST_ZH[st.short] || st.short}${st.elapsed ? ' ' + st.elapsed + "'" : ''}`;
+  if (st.short === 'NS' || st.short === 'TBD'){ const t = new Date(f.fixture.date); return `${pad2(t.getHours())}:${pad2(t.getMinutes())} 开球`; }
+  return ST_ZH[st.short] || st.short || '';
+}
+const suggList = () => SG.q ? rankQuery(netList.list, SG.q).slice(0, 8) : SG.cands;
+const suggItems = list => list.map((c, i) => { const f = c.f, g = f.goals || {}; return `<button data-sg="pick" data-i="${i}"><span class="t1">${esc(f.teams.home.name)} <b>${g.home ?? ''}${g.home != null ? '–' : 'vs'}${g.away ?? ''}</b> ${esc(f.teams.away.name)}</span>
+  <span class="t2">${esc(f.league ? f.league.name : '')}　${fixWhen(f)}${c.sw ? '　<em>主客跟你输入的相反</em>' : ''}</span></button>`; }).join('');
+function openSugg(cands){ SG = { cands, q: '' }; renderSugg(); try { sugg.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch(e){} }
+function closeSugg(){ SG = null; sugg.hidden = true; sugg.innerHTML = ''; }
+function suggHint(list){ return list.length ? `点正确的那一场。确认后会记住“${esc(M.h.trim())}”“${esc(M.a.trim())}”是哪一队，下次自动对上。` : '今天的比赛里没找到名字相近的，可以输入英文队名筛选。'; }
+function renderSugg(){
+  if (!SG){ closeSugg(); return; }
+  const list = suggList();
+  sugg.innerHTML = `<div class="sg-h"><b>是哪一场？</b><span id="sgHint">${suggHint(list)}</span><button data-sg="x">关闭</button></div>
+    <div class="picks sg-list" id="sgList">${suggItems(list)}</div>
+    <div class="sg-f"><input class="fi" id="sgQ" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="都不对？输入英文队名筛选，例如 Liverpool" value="${esc(SG.q)}"><button class="pill" data-sg="none">都不是</button></div>`;
+  sugg.hidden = false;
+}
+sugg.addEventListener('input', ev => {
+  if (ev.target.id !== 'sgQ' || !SG) return;
+  SG.q = ev.target.value.trim();
+  const list = suggList(); $('#sgList').innerHTML = suggItems(list); $('#sgHint').innerHTML = suggHint(list);
+});
+sugg.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-sg]'); if (!b || !SG) return;
+  switch (b.dataset.sg){
+    case 'x': closeSugg(); break;
+    case 'none': M.apiNo = namesKey(); saveNow(); closeSugg(); renderPred(); showToast('这场先不连。之后要连，按预测上方的“查找”'); break;
+    case 'pick': {
+      const c = suggList()[+b.dataset.i]; if (!c) break;
+      if (SG.q){ const H = c.f.teams.home, A = c.f.teams.away; c.sw = teamSim(M.a, H) + teamSim(M.h, A) > teamSim(M.h, H) + teamSim(M.a, A); }
+      closeSugg(); apiLink(c); break;
+    }
+  }
+});
 async function apiLink(c){
   const f = c.f, H = f.teams.home, A = f.teams.away;
   M.api = { id: f.fixture.id, h: H.name, a: A.name, hid: H.id, aid: A.id, lg: f.league ? f.league.name : '', sw: c.sw ? 1 : 0, at: 0 };
@@ -1327,7 +1412,10 @@ async function apiLink(c){
   try {
     const s = await apiFetch(M);
     if (!isRecording() && M.st === 1 && LIVE_ST.includes(s.st)){ netBusy = false; await openJoinFromApi(s); }
-    else { applySync(s); showToast(`已连上：${M.api.h} vs ${M.api.a}（${ST_ZH[s.st] || s.st}）${isRecording() ? '' : '，开球后按“比赛刚开球”'}`); }
+    else {
+      // 开球前就连上：之后所有射门都算你看到的
+      if (!isRecording() && (s.st === 'NS' || s.st === 'TBD')) M.api.base = [0, 1].map(() => ({ sb: 0, ss: 0, so: 0 }));
+      applySync(s); showToast(`已连上：${M.api.h} vs ${M.api.a}（${ST_ZH[s.st] || s.st}）${isRecording() ? '' : '，开球后按“比赛刚开球”'}`); }
   } catch(e){ M.api.err = e.message; showToast('已连上，但读取资料失败：' + e.message); }
   finally { netBusy = false; renderPred(); }
 }
@@ -1342,7 +1430,10 @@ function parseFix(f, m){
   const ck = has ? ids.map(id => stat(f.statistics, id, 'Corner Kicks')) : null;
   let rc = has ? ids.map(id => stat(f.statistics, id, 'Red Cards')) : null;
   if (!rc || rc.some(x => x == null)) rc = ids.map(id => (f.events || []).filter(e => e && e.type === 'Card' && e.team && e.team.id === id && /red|second yellow/i.test(e.detail || '')).length);
-  return { st: st.short || '', el: num(st.elapsed) || 0, ex: num(st.extra) || 0, g: g.map(x => num(x) || 0), ck: ck && ck.every(x => x != null) ? ck : null, rc };
+  // 射门：被扑＝射正减进球；偏出、被挡直接用
+  const sv = (id, type) => stat(f.statistics, id, type) || 0;
+  const sh = has ? ids.map((id, j) => ({ ss: Math.max(0, sv(id, 'Shots on Goal') - (num(g[j]) || 0)), so: sv(id, 'Shots off Goal'), sb: sv(id, 'Blocked Shots') })) : null;
+  return { st: st.short || '', el: num(st.elapsed) || 0, ex: num(st.extra) || 0, g: g.map(x => num(x) || 0), ck: ck && ck.every(x => x != null) ? ck : null, rc, sh };
 }
 async function apiFetch(m){
   const res = await apiGet(`/fixtures?id=${m.api.id}`);
@@ -1352,7 +1443,7 @@ async function apiFetch(m){
   if (!s.ck && (LIVE_ST.includes(s.st) || DONE_ST.includes(s.st))){
     const st = await apiGet(`/fixtures/statistics?fixture=${m.api.id}`);
     const t = parseFix(Object.assign({}, f, { statistics: st }), m);
-    s.ck = t.ck;
+    s.ck = t.ck; s.sh = t.sh;
   }
   return s;
 }
@@ -1383,6 +1474,7 @@ async function openJoinFromApi(s){
   if (s.ck && c && c.p === 2) ck1 = await apiHalf(M).catch(() => null);
   if (ck1) M.api.ck1 = ck1.slice();
   if (s.ck && c && c.p === 1) M.api.ck1 = null;
+  M.api.base = s.sh ? s.sh.map(x => Object.assign({}, x)) : null;  // 加入前的射门不补，只补之后的
   const d = { mode: 'join', p: 1, tp: c ? { p: c.p, v: c.v } : { p: 1, v: 20 * 60 }, sc: s.g.slice(), rc: s.rc.slice(), net: true, ht: !!(c && c.ht) };
   if (s.ck){ d.ft = s.ck.slice(); d.ck1 = c && c.p === 2 ? (ck1 || s.ck.slice()) : s.ck.slice(); d.lk = !!(c && c.p === 2 && !ck1); }
   else { d.ft = cur.ft.slice(); d.ck1 = cur.ck1.slice(); d.lk = true; d.nock = true; }
@@ -1395,22 +1487,36 @@ function applySnap(s){
   if (s.st === 'HT' && s.ck && !a.ck1) a.ck1 = s.ck.slice();
 }
 /* 同步：联网的数字比你记录的多，就补上（标“联网”）；你记录的比较多（联网数据有延迟）就不动 */
+const SHC = ['sb', 'ss', 'so'];
+const recCount = (c, i) => M.ev.reduce((n, e) => n + (e.c === c && e.i === i ? 1 : 0), 0);
 function applySync(s){
   applySnap(s);
-  const added = [];
+  const a = M.api, added = {};
   if (M.st === 1 && isRecording()){
-    const cur = curCounts(false);
-    const p = M.tm.ht ? 1 : M.tm.p, t = M.tm.ht ? (M.pe[1] || PER[1][1]) : Math.floor(clockOf(M));
-    const add = (c, n, i) => { for (let k = 0; k < n; k++) M.ev.push({ t, p, i, c, b: 0, a: 1, k: ++seq }); if (n > 0) added.push(`${teamName(i)} ${c === 'sg' ? '进球' : LABEL[c]} ${n}`); };
+    const cur = curCounts(false), ht = !!M.tm.ht;
+    const p = ht ? 1 : M.tm.p, now = ht ? (M.pe[1] || PER[1][1]) : Math.floor(clockOf(M));
+    // 补上的事件平均摆在上次同步到现在之间，时间轴才不会全挤在同一点
+    const o = M.obs || { p: 1, t: 0 };
+    let from = a.cp === p && a.ct != null && a.ct <= now ? a.ct : now - 120;
+    from = Math.max(from, PER[p][0], o.p === p ? o.t : PER[p][0]);
+    const add = (c, n, i) => {
+      for (let k = 0; k < n; k++) M.ev.push({ t: ht ? now : Math.round(from + (now - from) * (k + 1) / (n + 1)), p, i, c, b: 0, a: 1, k: ++seq });
+      if (n > 0){ const key = `${teamName(i)} ${c === 'sg' ? '进球' : SHC.includes(c) ? '射门' : LABEL[c]}`; added[key] = (added[key] || 0) + n; }
+    };
+    const shots = s.sh && NET.shots !== false;
+    if (shots && !a.base) a.base = s.sh.map((x, i) => { const b = {}; for (const c of SHC) b[c] = Math.max(0, x[c] - recCount(c, i)); return b; });
     for (const i of [0, 1]){
       if (s.ck) add('ck', s.ck[i] - cur.ft[i], i);
       add('sg', s.g[i] - cur.sc[i], i);
       add('rc', (s.rc[i] || 0) - cur.rc[i], i);
+      if (shots && a.base) for (const c of SHC) add(c, s.sh[i][c] - a.base[i][c] - recCount(c, i), i);
     }
-    if (added.length) sortEv(M);
+    sortEv(M);
+    a.ct = now; a.cp = p;
   }
   saveNow(); renderAll();
-  if (added.length) showToast('联网同步补上：' + added.join('，'));
+  const msg = Object.entries(added).map(([k, n]) => `${k} ${n}`);
+  if (msg.length) showToast('联网同步补上：' + msg.join('，'));
   if (DONE_ST.includes(s.st) && M.st === 1 && !M.api.done){
     M.api.done = 1; save();
     showToast('联网数据显示比赛已经结束', finishFromNet, '结束记录');
@@ -1500,7 +1606,7 @@ function renderAll(){ renderHeader(); renderNames(); renderPads(); renderPred();
 /* ================= 弹出视窗 ================= */
 const sheet = $('#sheet'), card = $('#card');
 let sheetKind = null, sheetData = {};
-function openSheet(kind, data){ sheetKind = kind; sheetData = data || {}; renderSheet(); sheet.hidden = false; card.scrollTop = 0; }
+function openSheet(kind, data){ const ae = document.activeElement; if (ae && ae !== document.body && ae.blur && !card.contains(ae)) ae.blur(); sheetKind = kind; sheetData = data || {}; renderSheet(); sheet.hidden = false; card.scrollTop = 0; }
 function closeSheet(){ sheet.hidden = true; sheetKind = null; card.innerHTML = ''; }
 sheet.addEventListener('click', ev => { if (ev.target === sheet) closeSheet(); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !sheet.hidden) closeSheet(); });
@@ -1605,13 +1711,16 @@ function renderSheet(){
     case 'net': {
       const used = (NET.used || {})[dayKey(new Date())] || 0, a = M.api;
       h = `<div class="card-h"><h3>联网数据</h3><button class="pill" data-a="close">完成</button></div>
-        <p class="hint">输入主客队名字后，自动在网上找这场比赛：中途加入时帮你填好时间、比分、角球和红牌；记录时每隔几分钟同步一次，你漏点的角球、进球、红牌会自动补上（标“联网”）；结算时自动填最后的角球数。数据来源：API-Football。</p>
+        <p class="hint">输入主客队名字后，自动在网上找这场比赛：中途加入时帮你填好时间、比分、角球和红牌；记录时每隔几分钟同步一次，你漏点的角球、进球、红牌和射门会自动补上（标“联网”，时间轴上是虚线）；结算时自动填最后的角球数。中文队名先用内置译名，再查维基数据，还是对不上就让你点选一次，之后记住。数据来源：API-Football、Wikidata。</p>
         <div class="lbl">API key</div>
         <input class="fi" id="netKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="贴上 API-Football 的 API key" value="${esc(NET.key)}">
         <div class="row"><button class="pill dark" data-a="nkey">保存并测试</button>${NET.key ? '<button class="pill" data-a="nkey0">清除</button>' : ''}</div>
         ${d.msg ? `<p class="netnote">${esc(d.msg)}</p>` : ''}
         <div class="lbl">输入两队名字后自动查找</div>
         <div class="chips"><button class="chip" data-a="nauto" data-v="1" aria-pressed="${!!NET.auto}">开</button><button class="chip" data-a="nauto" data-v="0" aria-pressed="${!NET.auto}">关（只在按“查找”时找）</button></div>
+        <div class="lbl">同步射门（被挡／被扑／偏出）</div>
+        <div class="chips"><button class="chip" data-a="nshot" data-v="1" aria-pressed="${NET.shots !== false}">开</button><button class="chip" data-a="nshot" data-v="0" aria-pressed="${NET.shots === false}">关</button></div>
+        <p class="hint" style="margin-top:-4px">只补加入之后的射门。进入前场、进入禁区和传中 API-Football 没有提供，还是要自己点；预测主要靠这三项。</p>
         <div class="lbl">记录时多久同步一次</div>
         <div class="chips">${[[120, '2 分钟'], [180, '3 分钟'], [300, '5 分钟'], [0, '不自动同步']].map(([v, l]) => `<button class="chip" data-a="niv" data-v="${v}" aria-pressed="${NET.iv === v}">${l}</button>`).join('')}</div>
         <p class="hint">今天这台设备大约用了 ${used} 次请求。免费方案每天 100 次：查找一场用 1–3 次，每 3 分钟同步一次的话，一场比赛约 35 次。</p>
@@ -1619,17 +1728,6 @@ function renderSheet(){
           <div class="row"><button class="pill" data-a="nre">换一场</button><button class="pill" data-a="noff">解除连接</button></div></div>`
           : (M.h.trim() && M.a.trim() && NET.key ? '<button class="pill green" data-a="nfind">查找这场比赛</button>' : '')}
         <div class="defs"><div><h4>怎么拿 API key</h4><p>到 dashboard.api-football.com 免费注册，登录后在 Account → My Access 复制 API key，贴到上面。key 只存在这台设备上。免费方案能查哪些赛季有限制；如果测试或查找时出现“方案查不到这个赛季”，就需要升级到付费方案（Pro 每月 19 美元）。</p></div></div>`;
-      break;
-    }
-    case 'pick': {
-      const list = d.q ? rankQuery(netList.list, d.q).slice(0, 8) : d.cands;
-      const when = f => { const st = f.fixture.status || {}; if (LIVE_ST.includes(st.short)) return `${ST_ZH[st.short] || st.short}${st.elapsed ? ' ' + st.elapsed + "'" : ''}`; if (st.short === 'NS' || st.short === 'TBD'){ const t = new Date(f.fixture.date); return `${pad2(t.getHours())}:${pad2(t.getMinutes())} 开球`; } return ST_ZH[st.short] || st.short || ''; };
-      h = `<div class="card-h"><h3>是哪一场？</h3><button class="pill" data-a="close">关闭</button></div>
-        <p class="hint">${list.length ? `联网找到${d.q ? '' : '名字相近的'}比赛，点正确的那一场。确认后会记住“${esc(M.h.trim())}”“${esc(M.a.trim())}”是哪一队，下次自动对上。` : '没找到名字相近的比赛。可以输入英文队名筛选今天的比赛。'}</p>
-        <div class="picks">${list.map((c, i) => { const f = c.f; const g = f.goals || {}; return `<button data-a="npick" data-i="${i}"><span class="t1">${esc(f.teams.home.name)} <b>${g.home ?? ''}${g.home != null ? '–' : 'vs'}${g.away ?? ''}</b> ${esc(f.teams.away.name)}</span>
-          <span class="t2">${esc(f.league ? f.league.name : '')}　${when(f)}${c.sw ? '　<em>主客跟你输入的相反</em>' : ''}</span></button>`; }).join('')}</div>
-        <input class="fi" id="pickQ" autocomplete="off" autocapitalize="off" placeholder="都不对？输入英文队名筛选，例如 Liverpool" value="${esc(d.q || '')}">
-        <button class="pill" data-a="nnone">都不是，这场先不连</button>`;
       break;
     }
     case 'list': {
@@ -1737,16 +1835,10 @@ card.addEventListener('click', ev => {
     case 'nkey0': NET.key = ''; saveNet(); sheetData.msg = '已清除。'; renderSheet(); renderPred(); break;
     case 'nauto': NET.auto = b.dataset.v === '1'; saveNet(); renderSheet(); break;
     case 'niv': NET.iv = +b.dataset.v; saveNet(); renderSheet(); break;
+    case 'nshot': NET.shots = b.dataset.v === '1'; saveNet(); renderSheet(); break;
     case 'nfind': closeSheet(); M.apiNo = null; apiFind(true); break;
     case 'nre': closeSheet(); M.api = null; M.apiNo = null; saveNow(); renderPred(); apiFind(true); break;
     case 'noff': M.api = null; M.apiNo = namesKey(); saveNow(); closeSheet(); renderPred(); showToast('已解除联网连接'); break;
-    case 'npick': {
-      const list = d.q ? rankQuery(netList.list, d.q).slice(0, 8) : d.cands, c = list[+b.dataset.i];
-      closeSheet(); if (!c) break;
-      if (d.q){ const H = c.f.teams.home, A = c.f.teams.away; c.sw = teamSim(M.a, H) + teamSim(M.h, A) > teamSim(M.h, H) + teamSim(M.a, A); }
-      apiLink(c); break;
-    }
-    case 'nnone': M.apiNo = namesKey(); saveNow(); closeSheet(); renderPred(); showToast('这场先不连。之后要连，按预测上方的“查找”'); break;
     case 'abhold': AB.hold = +b.dataset.v; LS.set('corner-sb-ab', AB); abTrack = {}; renderSheet(); renderAB(); break;
     case 'msettle': openSettle(b.dataset.id); break;
     case 'ss': { const f = b.dataset.f, i = +b.dataset.i; d[f][i] = clamp(d[f][i] + (+b.dataset.d), 0, 40); renderSheet(); break; }
@@ -1764,7 +1856,7 @@ card.addEventListener('click', ev => {
     case 'exp1': openExport([M]); break;
     case 'expall': openExport(Object.values(store).filter(m => m.ev.length || m.h || m.a)); break;
     case 'mexp': { const m = store[b.dataset.id]; if (m) openExport([m]); break; }
-    case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; abTrack = {}; H = history(); tv.z = 1; tv.off = 0; saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
+    case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; abTrack = {}; closeSugg(); H = history(); tv.z = 1; tv.off = 0; saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
     case 'mdel': {
       const id = b.dataset.id;
       if (d.del !== id){ sheetData.del = id; renderSheet(); break; }
@@ -1840,12 +1932,6 @@ function openClock(){
   openSheet('clock', { tp: { p, v: clamp(v, TPR[p][0], TPR[p][1]) } });
 }
 card.addEventListener('input', ev => {
-  if (ev.target.id === 'pickQ' && sheetKind === 'pick'){
-    sheetData.q = ev.target.value.trim();
-    const pos = ev.target.selectionStart; renderSheet();
-    const q = $('#pickQ'); if (q){ q.focus(); try { q.setSelectionRange(pos, pos); } catch(e){} }
-    return;
-  }
   if (ev.target.id !== 'tpR' || !sheetData.tp) return;
   sheetData.tp.v = +ev.target.value; tpShow(sheetData.tp);
 });
@@ -1918,7 +2004,7 @@ $('#toastUndo').addEventListener('click', () => {
 });
 function startNew(){
   saveNow(); pauseOther();
-  M = newMatch(M); undoStack = []; abTrack = {}; H = history(); tv.z = 1; tv.off = 0;
+  M = newMatch(M); undoStack = []; abTrack = {}; closeSugg(); H = history(); tv.z = 1; tv.off = 0;
   saveNow(); renderAll(); syncWake(); showToast('已开始新比赛');
 }
 
@@ -2009,7 +2095,7 @@ const LGI = {
   mo: '<svg class="w2" viewBox="-12 -8 24 16"><path class="mo home" d="M-12 7L-6 -3L0 -1L6 -7L12 -2L12 7Z"/><path class="mi home" d="M-12 7L-6 2L0 3L6 -1L12 3L12 7Z"/></svg>',
 };
 function renderLegend(){
-  $('#legend').innerHTML = `<span>线越长越显眼：进球＝角球 ＞ 射门 ＞ 传中 ＞ 进入禁区 ＞ 进入前场</span><span>${LGI.gl}进球</span><span>${LGI.ck}角球</span><span>${LGI.sh}射门 被扑／被挡／偏出</span><span>${LGI.cr}传中 到人／没到人</span><span>${LGI.bx}进入禁区</span><span>${LGI.f3}进入前场</span><span>${LGI.rc}红牌</span><span>${LGI.mo}密度：浅色＝所有进攻，深色＝其中的传中＋射门（前后 5 分钟）</span>`;
+  $('#legend').innerHTML = `<span>线越长越显眼：进球＝角球 ＞ 射门 ＞ 传中 ＞ 进入禁区 ＞ 进入前场</span><span>${LGI.gl}进球</span><span>${LGI.ck}角球</span><span>${LGI.sh}射门 被扑／被挡／偏出</span><span>${LGI.cr}传中 到人／没到人</span><span>${LGI.bx}进入禁区</span><span>${LGI.f3}进入前场</span><span>${LGI.rc}红牌</span><span>竖线是虚线＝联网同步补上的</span><span>${LGI.mo}密度：浅色＝所有进攻，深色＝其中的传中＋射门（前后 5 分钟）</span>`;
   $('#legend').classList.toggle('open', !!tlPref.legend);
   tlSec.classList.toggle('fold', !!tlPref.fold);
   $('#tlFold').textContent = tlPref.fold ? '展开' : '收起';
@@ -2117,7 +2203,7 @@ function renderTimeline(){
     const team = s ? 'away' : 'home', dir = s ? 1 : -1;
     for (const it of items[s].slice().sort((a, b) => LVL[a.e.c] - LVL[b.e.c] || a.x - b.x)){
       const e = it.e, ys = +(axisY + dir * it.y).toFixed(1);
-      gx += `<line class="sm ${team} ${STEM[e.c]}" x1="${it.x}" y1="${axisY + dir * 2}" x2="${it.x}" y2="${ys}"/>`;
+      gx += `<line class="sm ${team} ${STEM[e.c]}${e.a ? ' au' : ''}" x1="${it.x}" y1="${axisY + dir * 2}" x2="${it.x}" y2="${ys}"/>`;
       gx += headSVG(e.c, it.x, ys, s);
       tlHeads.push({ x: it.x, y: e.c === 'ck' ? ys + (s ? -5 : 5) : ys, k: e.k });
     }
