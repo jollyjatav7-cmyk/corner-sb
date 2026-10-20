@@ -94,7 +94,7 @@ async function run(browser, name, vp, opts){
   await page.click('#card [data-a="js"][data-f="ft"][data-i="1"][data-d="1"]'); await page.click('#card [data-a="jgo"]');
   console.log(`[${name}:fixed] ${await txt('#ckA')} | ${(await txt('#pred .sub2'))}`);
   // clock sheet: picker, then set
-  await page.click('#clkBtn'); await page.click('#card [data-a="tpn"][data-d="300"]'); await page.click('#card [data-a="tpset"]');
+  await page.click('#clkBtn'); for (let k = 0; k < 5; k++) await page.click('#card [data-a="tpn"][data-d="60"]'); await page.click('#card [data-a="tpset"]');
   console.log(`[${name}:clockset] ${await txt('#clkT')} ${await txt('#perL')}`);
   await page.click('#card [data-a="close"]');
   await tap(1, 'f3', 3); await tap(1, 'bx', 2); await tap(1, 'cf', 2); await tap(1, 'sb', 1); await tap(0, 'f3', 2); await tap(0, 'ss', 1);

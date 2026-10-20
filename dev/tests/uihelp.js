@@ -12,7 +12,7 @@ module.exports = function wrap(page, isPhone){
     const tab = sel.startsWith('#ab') ? 'ab' : sel.startsWith('#counts') ? 'data' : 'pred';
     if (isPhone) await setOpen(true);
     if (await page.$eval('#mid', e => e.dataset.tab) !== tab) await raw(`.tabs [data-tab="${tab}"]`);
-    if (/data-pa="(exp|add|exp0|add0)"/.test(sel) && !(await page.$('#pred .more'))) await raw('#pred [data-pa="more"]');
+    if (/data-pa="(exp|add|exp0|add0|expc)"/.test(sel) && !(await page.$('#pred .more'))) await raw('#pred [data-pa="more"]');
   }
   page.click = async (sel, opts) => {
     if (typeof sel === 'string' && /^#(pred|ab|counts)\b/.test(sel)){

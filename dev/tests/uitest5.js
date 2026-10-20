@@ -75,6 +75,7 @@ async function run(browser, name, vp, opts){
   console.log(`[${name}:wrongkey] ${await txt('#card .netnote')}`);
   await page.fill('#netKey', 'TESTKEY'); await page.click('#card [data-a="nkey"]'); await settle();
   console.log(`[${name}:key] ${await txt('#card .netnote')}`);
+  await page.click('#card [data-a="niv"][data-v="180"]');
   await page.screenshot({ path: `${out}/${name}_n1_settings.png` });
   await page.click('#card [data-a="close"]');
 
@@ -94,7 +95,7 @@ async function run(browser, name, vp, opts){
 
   // --- C. sync: API sees one more home corner → added; user taps an away corner before the API → no double count
   FX[1001].ck = [7, 3]; FX[1001].el = 70; FX[1001].sh = { on: [6, 2], off: [4, 3], blk: [4, 1] };
-  await page.clock.runFor(3 * 60000); await settle(600);
+  await page.clock.runFor(3 * 60000 + 40000); await settle(600);
   console.log(`[${name}:sync1] toast=${await txt('#toast')} | ck=${await txt('#ckH')}/${await txt('#ckA')} | strip=${(await txt('#recent')).slice(0, 60)}`);
   console.log(`[${name}:sync1-times] ${await page.evaluate(() => JSON.parse(localStorage.getItem('corner-sb-matches')) && Object.values(JSON.parse(localStorage.getItem('corner-sb-matches'))).flatMap(m => m.ev.filter(e => e.a).map(e => e.c + '@' + e.t)).join(' '))} | dashed stems=${await page.$$eval('#tl .sm.au', a => a.length)}`);
   await tap(1, 'ck', 1, 10000);

@@ -253,6 +253,7 @@ button.gl:active,.cks:active{background:var(--rule)}
 .ctls{display:grid;gap:6px;margin-top:12px}
 .ctl{display:grid;grid-template-columns:1fr 34px 4.2em 34px 2.8em;align-items:center;gap:4px;font-size:13.5px;color:var(--ink2)}
 .ctl>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl.c6{grid-template-columns:1fr 34px 4.2em 34px 2.8em 3.4em}
 .ctl button{height:34px;border:0;border-radius:17px;background:var(--raise);font-size:17px;font-weight:600;box-shadow:inset 0 0 0 1px var(--rule)}
 .ctl button:active{background:var(--rule)}
 .ctl b{text-align:center;font:600 16px var(--f-num);color:var(--ink)}
@@ -367,6 +368,7 @@ small.auto{font-size:10.5px;color:var(--grass);margin-left:4px;font-weight:600}
 .tps{position:relative;height:14px;margin:-6px 15px 0;font-size:11px;color:var(--muted)}
 .tps span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .tpb{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+@media (max-width:560px){.tpb{display:grid;grid-template-columns:repeat(3,1fr)}}
 
 /* ---------- 底部事件列 ---------- */
 .strip{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--raise);border-top:1px solid var(--rule);
@@ -416,6 +418,13 @@ textarea.fi{height:140px;padding:10px 12px;font:13px/1.4 ui-monospace,Menlo,mono
 .mrow{border-bottom:1px solid var(--rule);padding:10px 0;display:grid;gap:6px}
 .mrow .t1{font-weight:600}
 .mrow .t2{font-size:12.5px;color:var(--muted)}
+.xrows{display:grid;gap:10px}
+.xrow{display:grid;grid-template-columns:minmax(0,9em) 1fr 3em;align-items:center;gap:10px;font-size:13.5px}
+.xrow b{font:600 17px/1 var(--f-num);text-align:right}
+.xres{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:14px}
+.xres b{font:600 30px/1 var(--f-num)}
+.xres small{color:var(--muted)}
+.mrow .apt{color:var(--ink2)} .mrow .apt em{font-style:normal;color:var(--warn);margin-left:6px}
 .defs{display:grid;gap:12px}
 .defs h4{margin:0 0 2px;font-size:15px}
 .defs p{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink2)}
@@ -437,6 +446,9 @@ body{background:var(--paper)}
 .netpill i{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
 .netpill.off i{background:var(--faint)}
 .netpill.bad{color:var(--warn);border-color:var(--warn)} .netpill.bad i{background:var(--warn)}
+.netpill svg{width:14px;height:14px;flex:none}
+.netpill span{overflow:hidden;text-overflow:ellipsis}
+.netpill.sync{color:var(--ink)}
 .menu .mdefs{display:none}
 .toast{left:0;right:0;margin:0 auto;width:fit-content;max-width:calc(100vw - 24px);transform:none}
 #toastMsg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -764,6 +776,19 @@ function kick(p){
     if (!observed(M).some(e => e.p === 1)) M.obs = { p: 2, t: PER[2][0] };
   }
   M.tm = { p, b: PER[p][0], r: 1, at: Date.now(), ht: 0 };
+  M.kw = Object.assign({}, M.kw, { [p]: nowSec() });
+  delayFromKick();
+}
+/* 你在画面上看到开球才按：联网的开球时间戳跟你按的时间差，就是你的画面延迟（联网还没有时间戳时，下次同步再算） */
+function delayFromKick(){
+  const a = M.api;
+  if (!a || !a.per || !M.kw) return;
+  for (const p of [1, 2]){
+    const ps = p === 1 ? a.per.first : a.per.second, kw = M.kw[p];
+    if (!ps || !kw || a.dlk === p) continue;
+    const d = kw - ps;
+    if (d >= 0 && d <= 900){ a.dl = Math.round(d); a.dlk = p; NET.delay = a.dl; saveNet(); }
+  }
 }
 function endFirstHalf(){
   pauseClock();
@@ -771,6 +796,7 @@ function endFirstHalf(){
   M.tm.ht = 1;
 }
 function finishMatch(){
+  if (M.api && M.api.hold && M.api.hold.length) flushHold(true);  // 结束前把还在等画面的联网补录放进去
   const ht = M.tm.ht;
   pauseClock();
   const p = ht ? 1 : M.tm.p;
@@ -783,26 +809,29 @@ function finishMatch(){
 /* 选时间（不用打字）：半场按钮＋拖动条＋加减按钮。tp = { p 半场, v 比赛时钟秒数 } */
 const TPR = { 1: [0, 3600], 2: [2700, 6300] };
 const TPL = { 1: ["0'", "15'", "30'", "45'", '+15'], 2: ["45'", "60'", "75'", "90'", '+15'] };
+/* tp.live：比赛在进行，选好的时间会跟着走（tp.at＝最后一次设定的时间点），按“开始”时用走到的时间，不会因为你调了几秒而慢掉 */
+const tpNow = tp => tp.live && tp.at ? clamp(tp.v + Math.floor((Date.now() - tp.at) / 1000), TPR[tp.p][0], TPR[tp.p][1]) : tp.v;
+function tpSet(tp, v){ tp.v = clamp(Math.round(v), TPR[tp.p][0], TPR[tp.p][1]); if (tp.live) tp.at = Date.now(); }
 function tpHTML(tp){
-  const [a, b] = TPR[tp.p];
+  const [a, b] = TPR[tp.p], v = tpNow(tp);
   return `<div class="tp">
     <div class="chips">${[1, 2].map(q => `<button class="chip" data-a="tpp" data-p="${q}" aria-pressed="${tp.p === q}">${PER[q][2]}</button>`).join('')}</div>
-    <div class="tpv" id="tpV">${fmtClock(tp.p, tp.v)}</div>
-    <input type="range" class="tpr" id="tpR" min="${a}" max="${b}" step="60" value="${tp.v}" aria-label="比赛时间">
+    <div class="tpv" id="tpV">${fmtClock(tp.p, v)}</div>
+    <input type="range" class="tpr" id="tpR" min="${a}" max="${b}" step="60" value="${Math.floor(v / 60) * 60}" aria-label="比赛时间">
     <div class="tps" aria-hidden="true">${TPL[tp.p].map((x, j) => `<span style="left:${j * 25}%">${x}</span>`).join('')}</div>
-    <div class="tpb">${[-5, -1, 1, 5].map(x => `<button class="chip" data-a="tpn" data-d="${x * 60}">${x > 0 ? '＋' : '−'}${Math.abs(x)} 分</button>`).join('')}<button class="chip" data-a="tpn" data-d="30">＋30 秒</button></div>
+    <div class="tpb">${[[-60, '−1 分'], [-30, '−30 秒'], [-10, '−10 秒'], [10, '＋10 秒'], [30, '＋30 秒'], [60, '＋1 分']].map(([x, l]) => `<button class="chip" data-a="tpn" data-d="${x}">${l}</button>`).join('')}</div>
   </div>`;
 }
 function tpShow(tp){
-  const v = $('#tpV'), r = $('#tpR'), g = $('#jgoT');
-  if (v) v.textContent = fmtClock(tp.p, tp.v);
-  if (r && +r.value !== tp.v) r.value = tp.v;
-  if (g) g.textContent = fmtClock(tp.p, tp.v);
+  const v = $('#tpV'), r = $('#tpR'), g = $('#jgoT'), x = tpNow(tp);
+  if (v) v.textContent = fmtClock(tp.p, x);
+  if (r && document.activeElement !== r && +r.value !== Math.floor(x / 60) * 60) r.value = Math.floor(x / 60) * 60;
+  if (g) g.textContent = fmtClock(tp.p, x);
 }
 function tpHalf(tp, q){
   if (q === tp.p) return;
-  tp.v = q === 2 ? tp.v + PER[2][0] : tp.v - PER[2][0];
-  tp.p = q; tp.v = clamp(tp.v, TPR[q][0], TPR[q][1]);
+  const v = tpNow(tp);
+  tp.p = q; tpSet(tp, q === 2 ? v + PER[2][0] : v - PER[2][0]);
 }
 /* 中途加入／校正：设定比分、本半场角球、红牌（补录的事件 b=1，时间不详） */
 function curCounts(onlyObserved){
@@ -854,12 +883,15 @@ function addEv(i, c){
   if (M.st === 2){ showToast('这场已经结束记录了。', startNew, '开始新比赛'); return; }
   if (M.tm.ht){ showToast('中场休息中。下半场开球后再记录，或点时间按“下半场开球”。'); return; }
   const e = { t: Math.floor(clockOf(M)), p: M.tm.p, i, c, k: ++seq };
+  // 联网刚补上同一队同一种事件（90 秒内），多半就是你现在才看到的这一个：用你点的时间取代，不重复计算
+  const dup = M.ev.filter(x => x.a && x.aw && x.i === i && x.c === c && Date.now() - x.aw < 90000).pop();
+  if (dup) M.ev = M.ev.filter(x => x !== dup);
   M.ev.push(e); sortEv(M); undoStack.push(e.k);
   lastTap[i] = { k: e.k, c, until: Date.now() + 5000 };
   clearTimeout(lastTap.t); lastTap.t = setTimeout(renderUndo, 5100);
   save(); renderAll();
   const nm = teamName(i);
-  showToast(`${fmtClock(e.p, e.t)}　${nm} ${LABEL[c]}${M.tm.r ? '' : '（计时器没有在走）'}`, () => removeEv(e.k));
+  showToast(`${fmtClock(e.p, e.t)}　${nm} ${LABEL[c]}${dup ? '（跟联网补上的合并了）' : ''}${M.tm.r ? '' : '（计时器没有在走）'}`, () => removeEv(e.k));
 }
 /* 每队球场上方的撤销：刚点完 5 秒内显示刚点的是什么，一点就撤掉这一队最后一下 */
 const lastTap = [null, null];
@@ -1067,6 +1099,7 @@ function startPanel(){
   return `<div class="start"><h2>开始记录</h2>
     <div class="grid2"><button class="pill green" data-pa="kick1">比赛刚开球</button><button class="pill" data-pa="join">比赛已经开始了</button></div>
     <p class="note" style="margin:0">中途加入：拖动选电视上的时间，再补录目前的比分和角球，就能接着预测。${NET.key ? '输入两队名字后会自动联网查找这场，填好时间、比分和角球。' : ''}</p>
+    <button class="fixb" style="justify-self:start" data-pa="expc">赛前全场预期：${M.exp == null ? '未填，点这里查两队场均或手动算' : `${M.exp.toFixed(1)}（点这里修改）`}</button>
     ${NET.key ? '' : '<button class="fixb" style="justify-self:start" data-pa="nset">设定联网数据：输入队名后自动查找比分和角球</button>'}</div>`;
 }
 /* 盘口快选：以预计结果为中心的几个常见盘口，一点就设定；两端的 −／＋ 微调 */
@@ -1126,7 +1159,7 @@ function renderPred(){
       <div class="factor" title="攻势系数">${fx(0)}${fx(1)}</div>
       <p class="note">攻势系数：根据你看到的这段时间里的进入前场、进入禁区和传中，这队接下来的角球节奏是平均的几倍。${full && s.p === 1 ? `全场盘＝上半场剩下的时间＋整个下半场（下半场补时按 ${s.add2} 分钟算），下半场也先用目前的攻势系数。` : ''}</p>
       <div class="ctls">
-        <div class="ctl"><span>全场预期</span><button data-pa="exp" data-d="-0.5" aria-label="全场预期减少">−</button><b>${M.exp == null ? '未填' : fmtLine(M.exp)}</b><button data-pa="exp" data-d="0.5" aria-label="全场预期增加">＋</button>${M.exp == null ? '<i></i>' : '<button class="x" data-pa="exp0">清除</button>'}</div>
+        <div class="ctl c6"><span>全场预期</span><button data-pa="exp" data-d="-0.5" aria-label="全场预期减少">−</button><b>${M.exp == null ? '未填' : fmtLine(M.exp)}</b><button data-pa="exp" data-d="0.5" aria-label="全场预期增加">＋</button>${M.exp == null ? '<i></i>' : '<button class="x" data-pa="exp0">清除</button>'}<button class="x" data-pa="expc">查／算</button></div>
         <div class="ctl"><span>${half}补时</span><button data-pa="add" data-d="-1" aria-label="补时减一分钟">−</button><b>${s.add} 分</b><button data-pa="add" data-d="1" aria-label="补时加一分钟">＋</button>${addAuto ? '<i></i>' : '<button class="x" data-pa="add0">默认</button>'}</div>
       </div>
       <p class="note">“全场预期”填赛前的全场角球盘口或两队平均角球，预测会更准。补时默认 ${H.addDef[s.p - 1]} 分钟${H.n >= 3 ? '（根据你已结束的比赛）' : ''}，第四官员举牌后再调整。</p>
@@ -1162,15 +1195,21 @@ function renderNetPill(){
   b.hidden = false;
   const a = M.api;
   let cls = 'off', txt = '联网';
+  let sync = false;
   if (a){
     const rec = curCounts(false).ft, on = LIVE_ST.includes(a.st) || DONE_ST.includes(a.st);
     const ago = a.at ? Math.max(0, Math.round((nowSec() - a.at) / 60)) : null;
-    if (a.err){ cls = 'bad'; txt = '联网出错'; }
-    else if (on && a.ck && (a.ck[0] !== rec[0] || a.ck[1] !== rec[1])){ cls = 'bad'; txt = `角球对不上 ${a.ck[0]}–${a.ck[1]}`; }
-    else { cls = ''; txt = ago == null ? '联网' : `联网 · ${ago ? ago + ' 分钟前' : '刚刚'}`; }
+    sync = M.st === 1 && !DONE_ST.includes(a.st);
+    const hold = a.hold && a.hold.length ? ' · 等画面' : '';
+    if (netBusy){ cls = ''; txt = '同步中…'; }
+    else if (M.st === 1 && DONE_ST.includes(a.st)){ cls = 'bad'; txt = '已完场 · 结束记录'; }
+    else if (a.err){ cls = 'bad'; txt = '同步失败 · 再试'; }
+    else if (on && a.ck && (a.ck[0] !== rec[0] || a.ck[1] !== rec[1])){ cls = 'bad'; txt = `${sync ? '同步 · ' : ''}联网角球 ${a.ck[0]}–${a.ck[1]}${hold}`; }
+    else { cls = ''; txt = sync ? `同步 · ${ago == null ? '还没同步' : ago ? ago + ' 分钟前' : '刚刚'}${hold}` : '联网'; }
   } else txt = M.h.trim() && M.a.trim() ? '联网 · 未连上' : '联网';
-  b.className = 'netpill ' + cls;
-  b.innerHTML = `<i></i><span>${esc(txt)}</span>`;
+  b.className = 'netpill ' + cls + (sync ? ' sync' : '');
+  b.setAttribute('aria-label', sync ? '立即同步联网数据' : '联网数据设定');
+  b.innerHTML = `${sync ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<i></i>'}<span>${esc(txt)}</span>`;
 }
 function predAction(b){
   const p = M.tm.ht ? 2 : M.tm.p, d = +b.dataset.d || 0, v = +b.dataset.v, full = M.mk[p - 1] === 'f';
@@ -1194,6 +1233,7 @@ function predAction(b){
     case 'nfind': closeMid(); apiFind(true); return;
     case 'nset': openSheet('net'); return;
     case 'nfin': finishFromNet(); return;
+    case 'expc': closeMid(); openExpCalc(); return;
   }
   save(); renderPred(); renderCounts();
 }
@@ -1333,7 +1373,8 @@ function abStats(){
    输入主客队名字后，在今天的比赛里找这场；确定是同一场就直接连上，不确定就弹出候选让你点。
    连上后：中途加入时自动填好时间、比分、角球、红牌；记录时每隔几分钟同步一次，漏点的角球、进球、红牌会补上（标“联网”）；
    结算时自动填最后的角球数。 */
-const NET = Object.assign({ key: '', auto: true, iv: 180, shots: true, used: {} }, LS.get('corner-sb-net', {}) || {});
+// iv：自动同步间隔（秒，0＝只在按“同步”时）；delay：你的画面比实时慢几秒（自动测出，null＝还不知道）
+const NET = Object.assign({ key: '', auto: true, iv: 0, shots: true, used: {}, delay: null, quota: null, form: {} }, LS.get('corner-sb-net', {}) || {});
 const saveNet = () => LS.set('corner-sb-net', NET);
 let ALIAS = LS.get('corner-sb-alias', {}) || {};
 const API_BASE = 'https://v3.football.api-sports.io';
@@ -1393,6 +1434,11 @@ const TEAM_ZH = ('阿森纳:Arsenal|切尔西:Chelsea|利物浦:Liverpool|曼联
   + '|阿贾克斯:Ajax|埃因霍温/PSV:PSV Eindhoven/PSV|费耶诺德:Feyenoord|阿尔克马尔/AZ:AZ Alkmaar|特温特:Twente|乌德勒支:Utrecht'
   + '|本菲卡:Benfica|波尔图:Porto|葡萄牙体育/里斯本竞技:Sporting CP|布拉加:Braga|凯尔特人:Celtic|流浪者/格拉斯哥流浪者:Rangers'
   + '|加拉塔萨雷:Galatasaray|费内巴切:Fenerbahce|贝西克塔斯:Besiktas|布鲁日:Club Brugge|安德莱赫特:Anderlecht'
+  + '|博德闪耀/博德格林特/博德:Bodo/Glimt|雅典AEK/AEK雅典/AEK:AEK Athens|奥林匹亚科斯:Olympiakos Piraeus/Olympiacos|帕纳辛奈科斯:Panathinaikos|PAOK/塞萨洛尼基:PAOK'
+  + '|布拉格斯拉维亚/斯拉维亚:Slavia Praha/Slavia Prague|布拉格斯巴达/斯巴达:Sparta Praha|萨巴赫:Sabah|斯洛万/布拉迪斯拉发斯洛万:Slovan Bratislava|维京/维京人:Viking'
+  + '|林茨/LASK:LASK|萨尔茨堡/萨尔茨堡红牛:Red Bull Salzburg/Salzburg|顿涅茨克矿工/矿工:Shakhtar Donetsk|基辅迪纳摩:Dynamo Kyiv|萨格勒布迪纳摩:Dinamo Zagreb'
+  + '|贝尔格莱德红星/红星:Crvena Zvezda/Red Star Belgrade|年轻人/伯尔尼年轻人:Young Boys|哥本哈根:FC Copenhagen|中日德兰:Midtjylland|圣吉罗斯联合:Union St. Gilloise'
+  + '|奈梅亨/NEC:NEC Nijmegen|阿拉木图凯拉特:Kairat|卡拉巴赫:Qarabag|塞尔维特:Servette|布雷斯特:Stade Brestois 29'
   + '|利雅得新月/新月:Al-Hilal|利雅得胜利/胜利:Al-Nassr|吉达联合:Al-Ittihad|吉达国民:Al-Ahli|迈阿密国际:Inter Miami|洛杉矶银河:LA Galaxy|洛杉矶FC:Los Angeles FC'
   + '|上海海港:Shanghai Port|上海申花:Shanghai Shenhua|山东泰山/山东鲁能:Shandong Taishan/Shandong Luneng|北京国安:Beijing Guoan|成都蓉城:Chengdu Rongcheng'
   + '|天津津门虎:Tianjin Jinmen Tiger|武汉三镇:Wuhan Three Towns|浙江/浙江队:Zhejiang|河南/河南队:Henan|长春亚泰:Changchun Yatai|青岛海牛:Qingdao Hainiu'
@@ -1589,7 +1635,8 @@ function parseFix(f, m){
   // 射门：被扑＝射正减进球；偏出、被挡直接用
   const sv = (id, type) => stat(f.statistics, id, type) || 0;
   const sh = has ? ids.map((id, j) => ({ ss: Math.max(0, sv(id, 'Shots on Goal') - (num(g[j]) || 0)), so: sv(id, 'Shots off Goal'), sb: sv(id, 'Blocked Shots') })) : null;
-  return { st: st.short || '', el: num(st.elapsed) || 0, ex: num(st.extra) || 0, g: g.map(x => num(x) || 0), ck: ck && ck.every(x => x != null) ? ck : null, rc, sh };
+  const per = f.fixture && f.fixture.periods ? { first: num(f.fixture.periods.first), second: num(f.fixture.periods.second) } : null;
+  return { st: st.short || '', el: num(st.elapsed) || 0, ex: num(st.extra) || 0, g: g.map(x => num(x) || 0), ck: ck && ck.every(x => x != null) ? ck : null, rc, sh, per, at: nowSec() };
 }
 async function apiFetch(m){
   const res = await apiGet(`/fixtures?id=${m.api.id}`);
@@ -1616,14 +1663,32 @@ async function apiHalf(m){
   });
   return out.every(x => x != null) ? out : null;
 }
-/* API 的“第 67 分钟”= 66:00–66:59，取中间 */
-function apiClock(s){
+/* 实时的比赛时间：API 有每个半场开球的时间戳就精确到秒；没有就用“第 67 分钟”= 66:00–66:59 取中间，再加上距离上次读取过了多久 */
+function apiClock(s, now){
+  now = now == null ? nowSec() : now;
+  const per = s.per || {}, gone = Math.max(0, now - (s.at || now));
+  if (s.st === '1H' && per.first && now - per.first > 0 && now - per.first < 4500) return { p: 1, v: clamp(now - per.first, 0, TPR[1][1]), exact: true };
+  if (s.st === '2H' && per.second && now - per.second > 0 && now - per.second < 4500) return { p: 2, v: clamp(PER[2][0] + now - per.second, PER[2][0], TPR[2][1]), exact: true };
   const m = s.el + (s.ex || 0);
-  if (s.st === '1H') return { p: 1, v: clamp((m - 1) * 60 + 30, 0, TPR[1][1]) };
-  if (s.st === '2H') return { p: 2, v: clamp((m - 1) * 60 + 30, PER[2][0], TPR[2][1]) };
+  if (s.st === '1H') return { p: 1, v: clamp((m - 1) * 60 + 30 + gone, 0, TPR[1][1]) };
+  if (s.st === '2H') return { p: 2, v: clamp((m - 1) * 60 + 30 + gone, PER[2][0], TPR[2][1]) };
   if (s.st === 'HT') return { p: 1, v: PER[1][1], ht: true };
   return null;
 }
+/* 画面延迟：你看的画面比实时慢几秒。开球、中途加入或对时的时候，用联网的实时时间减去 app 的时间自动测出来，存在这台设备上，下次中途加入会自动扣掉 */
+function fmtDelay(sec){ sec = Math.round(Math.abs(sec)); return sec >= 60 ? `${Math.floor(sec / 60)} 分 ${pad2(sec % 60)} 秒` : `${sec} 秒`; }
+function learnDelay(appSec, why){
+  const a = M.api;
+  if (!a || !a.st || nowSec() - (a.at || 0) > 900) return;
+  const r = apiClock(a);
+  if (!r || r.ht || r.p !== (M.tm.ht ? 1 : M.tm.p)) return;
+  if (!r.exact && why === 'kick') return;
+  let d = Math.round(r.v - appSec);
+  if (d < -45 || d > 900) return;
+  if (!r.exact && d < 30) d = 0;  // 只知道联网的分钟数时，差 30 秒以内分不出来，当作没有延迟
+  a.dl = Math.max(0, d); NET.delay = a.dl; saveNet();
+}
+const myDelay = () => M.api && M.api.dl != null ? M.api.dl : NET.delay;
 async function openJoinFromApi(s){
   const c = apiClock(s), cur = curCounts(false);
   let ck1 = null;
@@ -1631,48 +1696,87 @@ async function openJoinFromApi(s){
   if (ck1) M.api.ck1 = ck1.slice();
   if (s.ck && c && c.p === 1) M.api.ck1 = null;
   M.api.base = s.sh ? s.sh.map(x => Object.assign({}, x)) : null;  // 加入前的射门不补，只补之后的
-  const d = { mode: 'join', p: 1, tp: c ? { p: c.p, v: c.v } : { p: 1, v: 20 * 60 }, sc: s.g.slice(), rc: s.rc.slice(), net: true, ht: !!(c && c.ht) };
+  // 先扣掉你上次测出的画面延迟，跟画面对一下就能开始
+  const dl = NET.delay || 0;
+  const tp = c ? { p: c.p, v: c.ht ? c.v : clamp(Math.round((c.v - dl) / 5) * 5, TPR[c.p][0], TPR[c.p][1]), live: !c.ht, at: Date.now() } : { p: 1, v: 20 * 60, live: true, at: Date.now() };
+  const d = { mode: 'join', p: 1, tp, sc: s.g.slice(), rc: s.rc.slice(), net: true, ht: !!(c && c.ht), real: c && !c.ht ? c : null, dl: NET.delay };
   if (s.ck){ d.ft = s.ck.slice(); d.ck1 = c && c.p === 2 ? (ck1 || s.ck.slice()) : s.ck.slice(); d.lk = !!(c && c.p === 2 && !ck1); }
   else { d.ft = cur.ft.slice(); d.ck1 = cur.ck1.slice(); d.lk = true; d.nock = true; }
   applySnap(s);
   openSheet('join', d);
 }
 function applySnap(s){
-  const a = M.api; a.at = nowSec(); a.st = s.st; a.el = s.el; a.ex = s.ex; a.g = s.g; a.rc = s.rc; a.err = null;
+  const a = M.api; a.at = s.at || nowSec(); a.st = s.st; a.el = s.el; a.ex = s.ex; a.g = s.g; a.rc = s.rc; a.err = null;
+  if (s.per){ a.per = s.per; delayFromKick(); }
   if (s.ck) a.ck = s.ck;
+  if (s.sh) a.sh = s.sh;
   if (s.st === 'HT' && s.ck && !a.ck1) a.ck1 = s.ck.slice();
 }
-/* 同步：联网的数字比你记录的多，就补上（标“联网”）；你记录的比较多（联网数据有延迟）就不动 */
+/* 同步：联网的数字比你记录的多，就补上（标“联网”）；你记录的比较多（联网数据有延迟）就不动。
+   联网数据几乎是实时的，你的画面通常慢一些：刚同步到的角球你可能还没看到。所以先等画面追上（画面延迟＋30 秒），
+   到时你还没点的才补上；等的期间你自己点了，就不会重复。 */
 const SHC = ['sb', 'ss', 'so'];
 const recCount = (c, i) => M.ev.reduce((n, e) => n + (e.c === c && e.i === i ? 1 : 0), 0);
-function applySync(s){
-  applySnap(s);
+const holdWait = () => clamp((myDelay() == null ? 60 : myDelay()) + 30, 20, 600);
+function missingFrom(s){
+  const a = M.api, cur = curCounts(false), out = [];
+  const shots = s.sh && NET.shots !== false;
+  if (shots && !a.base) a.base = s.sh.map((x, i) => { const b = {}; for (const c of SHC) b[c] = Math.max(0, x[c] - recCount(c, i)); return b; });
+  for (const i of [0, 1]){
+    if (s.ck) out.push(['ck', s.ck[i] - cur.ft[i], i]);
+    out.push(['sg', s.g[i] - cur.sc[i], i]);
+    out.push(['rc', (s.rc[i] || 0) - cur.rc[i], i]);
+    if (shots && a.base) for (const c of SHC) out.push([c, s.sh[i][c] - a.base[i][c] - recCount(c, i), i]);
+  }
+  return out.filter(x => x[1] > 0);
+}
+function commitHold(s){
   const a = M.api, added = {};
+  if (!(M.st === 1 && isRecording())) return added;
+  const miss = missingFrom(s);
+  if (!miss.length) return added;
+  const ht = !!M.tm.ht;
+  const p = ht ? 1 : M.tm.p, clk = ht ? (M.pe[1] || PER[1][1]) : Math.floor(clockOf(M));
+  // 补上的事件平均摆在上次补到画面追上之前，时间轴才不会全挤在同一点
+  const now = ht ? clk : Math.max(PER[p][0], clk - 30);
+  const o = M.obs || { p: 1, t: 0 };
+  let from = a.cp === p && a.ct != null && a.ct <= now ? a.ct : now - 120;
+  from = Math.max(from, PER[p][0], o.p === p ? o.t : PER[p][0]);
+  for (const [c, n, i] of miss){
+    for (let k = 0; k < n; k++) M.ev.push({ t: ht ? now : Math.round(from + (now - from) * (k + 1) / (n + 1)), p, i, c, b: 0, a: 1, aw: Date.now(), k: ++seq });
+    const key = `${teamName(i)} ${c === 'sg' ? '进球' : SHC.includes(c) ? '射门' : LABEL[c]}`; added[key] = (added[key] || 0) + n;
+  }
+  sortEv(M);
+  a.ct = now; a.cp = p;
+  return added;
+}
+function addedMsg(added){ const m = Object.entries(added).map(([k, n]) => `${k} ${n}`); if (m.length) showToast('联网同步补上：' + m.join('，')); }
+/* 到时间的暂存就补上（不用再发请求） */
+function flushHold(force){
+  const a = M.api;
+  if (!a || !a.hold || !a.hold.length) return;
+  const due = a.hold.filter(h => force || nowSec() >= h.due);
+  if (!due.length) return;
+  a.hold = a.hold.filter(h => !due.includes(h));
+  const added = {};
+  for (const h of due) Object.entries(commitHold(h.s)).forEach(([k, n]) => { added[k] = (added[k] || 0) + n; });
+  saveNow(); renderAll(); addedMsg(added);
+}
+function applySync(s, manual){
+  applySnap(s);
+  const a = M.api;
   if (M.st === 1 && isRecording()){
-    const cur = curCounts(false), ht = !!M.tm.ht;
-    const p = ht ? 1 : M.tm.p, now = ht ? (M.pe[1] || PER[1][1]) : Math.floor(clockOf(M));
-    // 补上的事件平均摆在上次同步到现在之间，时间轴才不会全挤在同一点
-    const o = M.obs || { p: 1, t: 0 };
-    let from = a.cp === p && a.ct != null && a.ct <= now ? a.ct : now - 120;
-    from = Math.max(from, PER[p][0], o.p === p ? o.t : PER[p][0]);
-    const add = (c, n, i) => {
-      for (let k = 0; k < n; k++) M.ev.push({ t: ht ? now : Math.round(from + (now - from) * (k + 1) / (n + 1)), p, i, c, b: 0, a: 1, k: ++seq });
-      if (n > 0){ const key = `${teamName(i)} ${c === 'sg' ? '进球' : SHC.includes(c) ? '射门' : LABEL[c]}`; added[key] = (added[key] || 0) + n; }
-    };
-    const shots = s.sh && NET.shots !== false;
-    if (shots && !a.base) a.base = s.sh.map((x, i) => { const b = {}; for (const c of SHC) b[c] = Math.max(0, x[c] - recCount(c, i)); return b; });
-    for (const i of [0, 1]){
-      if (s.ck) add('ck', s.ck[i] - cur.ft[i], i);
-      add('sg', s.g[i] - cur.sc[i], i);
-      add('rc', (s.rc[i] || 0) - cur.rc[i], i);
-      if (shots && a.base) for (const c of SHC) add(c, s.sh[i][c] - a.base[i][c] - recCount(c, i), i);
-    }
-    sortEv(M);
-    a.ct = now; a.cp = p;
+    const miss = missingFrom(s);
+    if (miss.length){
+      const wait = holdWait();
+      a.hold = (a.hold || []).concat([{ due: nowSec() + wait, s: { ck: s.ck, g: s.g, rc: s.rc, sh: s.sh } }]).slice(-4);
+      if (manual){
+        const ck = s.ck ? `角球 ${s.ck[0]}–${s.ck[1]}（你记录 ${curCounts(false).ft.join('–')}）` : '比分有变化';
+        showToast(`联网：${ck}。等画面追上（约 ${fmtDelay(wait)}）还没点的会自动补上`);
+      }
+    } else if (manual) showToast(`已同步：${s.ck ? `角球 ${s.ck[0]}–${s.ck[1]}，` : ''}跟你记录的一样`);
   }
   saveNow(); renderAll();
-  const msg = Object.entries(added).map(([k, n]) => `${k} ${n}`);
-  if (msg.length) showToast('联网同步补上：' + msg.join('，'));
   if (DONE_ST.includes(s.st) && M.st === 1 && !M.api.done){
     M.api.done = 1; save();
     showToast('联网数据显示比赛已经结束', finishFromNet, '结束记录');
@@ -1688,9 +1792,165 @@ async function apiSync(manual){
   if (!M.api || netBusy) return;
   netBusy = true; renderPred();
   const id = M.id;
-  try { const s = await apiFetch(M); if (M.id === id) applySync(s); }
+  try { const s = await apiFetch(M); if (M.id === id) applySync(s, manual); }
   catch(e){ if (M.api){ M.api.err = e.message; M.api.at = nowSec(); save(); } if (manual) showToast('同步失败：' + e.message); }
   finally { netBusy = false; renderPred(); }
+}
+/* 顶部的“联网”按钮：连上这场、正在记录时，点一下就同步；其他时候打开联网设定 */
+function netPillTap(){
+  if (M.api && M.st === 1 && NET.key && !DONE_ST.includes(M.api.st)){ apiSync(true); return; }
+  if (M.api && M.st === 1 && DONE_ST.includes(M.api.st)){ finishFromNet(); return; }
+  openSheet('net');
+}
+/* ---------- 赛前全场预期：两队近 10 场的场均角球（得／失）
+   主队预期 =（主队场均得 + 客队场均失）÷ 2，客队同理，两队相加——跟模型训练时用的算法一样。
+   联网自动查：每队先拿最近完场的 10 场（各 1 次请求），再用 ids 一次读完这些场的统计（1 次），大约 3 次。 */
+async function teamRecent(id){
+  let list = [], err = null;
+  try { list = await apiGet(`/fixtures?team=${id}&last=10`) || []; } catch(e){ err = e; }
+  if (!list.length){  // 有些方案不能用 last：改成拿整个赛季再挑最近完场的
+    const d = new Date(), y = d.getFullYear(), s0 = d.getMonth() >= 6 ? y : y - 1;
+    for (const season of [...new Set([s0, y])]){
+      try { list = list.concat(await apiGet(`/fixtures?team=${id}&season=${season}`) || []); } catch(e){ err = e; }
+    }
+  }
+  const fin = list.filter(f => f && f.fixture && DONE_ST.includes((f.fixture.status || {}).short))
+    .sort((a, b) => (b.fixture.timestamp || 0) - (a.fixture.timestamp || 0));
+  const seen = new Set(), out = [];
+  for (const f of fin){ if (!seen.has(f.fixture.id)){ seen.add(f.fixture.id); out.push(f); } if (out.length >= 10) break; }
+  if (!out.length && err) throw err;
+  return out;
+}
+function cornersOf(f, id){
+  const st = f && Array.isArray(f.statistics) ? f.statistics : [];
+  const me = st.find(x => x && x.team && x.team.id === id), op = st.find(x => x && x.team && x.team.id !== id);
+  const v = t => { const s = t && (t.statistics || []).find(x => x.type === 'Corner Kicks'); return s && s.value != null ? parseInt(s.value, 10) || 0 : null; };
+  const a = v(me), b = v(op);
+  return a == null || b == null ? null : [a, b];
+}
+async function apiForm(){
+  const a = M.api;
+  if (!a || !a.hid || !a.aid) throw new Error('先连上这场比赛（输入两队名字后会自动查找）');
+  const ids = a.sw ? [a.aid, a.hid] : [a.hid, a.aid];  // 你的主队、客队
+  const lists = [];
+  for (const id of ids) lists.push(await teamRecent(id));
+  const all = [...new Set(lists.flat().map(f => f.fixture.id))];
+  let stats = {};
+  try {
+    for (let k = 0; k < all.length; k += 20){
+      const r = await apiGet(`/fixtures?ids=${all.slice(k, k + 20).join('-')}`) || [];
+      for (const f of r) if (f && f.fixture) stats[f.fixture.id] = f;
+    }
+  } catch(e){
+    // 读不到 ids：每队只补读最近 5 场的统计
+    stats = {};
+    for (const L of lists) for (const f of L.slice(0, 5)){
+      const st = await apiGet(`/fixtures/statistics?fixture=${f.fixture.id}`).catch(() => null);
+      if (st) stats[f.fixture.id] = Object.assign({}, f, { statistics: st });
+    }
+  }
+  return ids.map((id, j) => {
+    const rows = lists[j].map(f => cornersOf(stats[f.fixture.id], id)).filter(Boolean);
+    const n = rows.length;
+    return { n, f: n ? rows.reduce((s, r) => s + r[0], 0) / n : null, a: n ? rows.reduce((s, r) => s + r[1], 0) / n : null, name: j === 0 ? (a.sw ? a.a : a.h) : (a.sw ? a.h : a.a) };
+  });
+}
+const expOf = v => (v[0] + v[3]) / 2 + (v[2] + v[1]) / 2;  // v = [主得, 主失, 客得, 客失]
+function openExpCalc(){
+  const last = M.expIn && M.expIn.length === 4 ? M.expIn.slice() : [5, 5, 5, 5];
+  openSheet('expc', { v: last, msg: '', src: M.expSrc || null });
+}
+async function expFetch(){
+  const d = sheetData;
+  d.msg = '联网查找两队最近的比赛…'; renderSheet();
+  try {
+    const r = await apiForm();
+    if (sheetKind !== 'expc') return;
+    if (!r[0].n || !r[1].n){ d.msg = `查到的比赛没有角球统计（${r[0].name} ${r[0].n} 场、${r[1].name} ${r[1].n} 场），请手动拖动下面的数字。`; renderSheet(); return; }
+    d.v = [r[0].f, r[0].a, r[1].f, r[1].a].map(x => Math.round(x * 10) / 10);
+    d.src = `联网：${r[0].name} 最近 ${r[0].n} 场、${r[1].name} 最近 ${r[1].n} 场（含杯赛和欧战）`;
+    d.msg = '';
+  } catch(e){ d.msg = '自动查找失败：' + e.message + '。可以手动拖动下面的数字。'; }
+  if (sheetKind === 'expc') renderSheet();
+}
+/* ---------- 赛后同步：比赛列表里没连上联网的比赛，找到那一场，读最后的比分、角球（含上半场）和射门，有待结算的自动投注就顺便结算 ---------- */
+let pastBusy = null;
+const pastLists = {};
+function shiftDay(d, k){ const t = new Date(d + 'T12:00:00'); t.setDate(t.getDate() + k); return dayKey(t); }
+async function pastList(day){
+  if (!pastLists[day]) pastLists[day] = await apiGet(`/fixtures?date=${day}&timezone=${encodeURIComponent(TZ)}`) || [];
+  return pastLists[day];
+}
+async function findPast(m){
+  await Promise.all([wdPrep(m.h), wdPrep(m.a)]);
+  let list = await pastList(m.d), r = rankFixtures(list, m.h, m.a);
+  for (const k of [1, -1]){  // 半夜的比赛：记录的日期可能跟开球日期差一天
+    if (isSure(r)) break;
+    const more = await pastList(shiftDay(m.d, k)), seen = new Set(list.map(f => f.fixture.id));
+    list = list.concat(more.filter(f => f && f.fixture && !seen.has(f.fixture.id)));
+    r = rankFixtures(list, m.h, m.a);
+  }
+  if (isSure(r)) return { one: r[0] };
+  return r.length ? { cands: r.slice(0, 6) } : null;
+}
+function linkPast(m, c){
+  const f = c.f, H = f.teams.home, A = f.teams.away;
+  m.api = { id: f.fixture.id, h: H.name, a: A.name, hid: H.id, aid: A.id, lg: f.league ? f.league.name : '', sw: c.sw ? 1 : 0, at: 0 };
+  const mine = c.sw ? [A, H] : [H, A];
+  [m.h, m.a].forEach((u, i) => { const k = normName(u); if (k) ALIAS[k] = { id: mine[i].id, n: mine[i].name }; });
+  LS.set('corner-sb-alias', ALIAS);
+}
+async function fetchPast(m){
+  const s = await apiFetch(m), a = m.api, done = DONE_ST.includes(s.st);
+  a.at = s.at; a.st = s.st; a.el = s.el; a.g = s.g; a.rc = s.rc; a.err = null;
+  if (s.per) a.per = s.per;
+  if (s.ck) a.ck = s.ck;
+  if (s.sh) a.sh = s.sh;
+  if (s.ck && (done || s.st === '2H') && !a.ck1) a.ck1 = await apiHalf(m).catch(() => null);
+  a.fin = done ? 1 : 0;
+  const msg = [`${ST_ZH[s.st] || s.st}，比分 ${s.g[0]}–${s.g[1]}`];
+  if (s.ck) msg.push(`角球 ${s.ck[0]}–${s.ck[1]}${a.ck1 ? `（上半场 ${a.ck1[0]}–${a.ck1[1]}）` : ''}`); else msg.push('这场没有角球统计');
+  // 待结算的自动投注：用联网的最后角球数结算
+  const pend = m.ab.bets.filter(b => b.r == null);
+  if (done && s.ck && pend.length){
+    const need = needRes(m);
+    if (!need.h1 || a.ck1){
+      m.res = { h1: a.ck1 ? a.ck1.slice() : (m.res && m.res.h1) || null, ft: s.ck.slice() };
+      let w = 0, l = 0, pu = 0;
+      for (const x of m.ab.bets){ x.r = settleBet(x, m.res); if (x.r === 1) w++; else if (x.r === 0) l++; else if (x.r === 0.5) pu++; }
+      msg.push(`已结算自动投注：命中 ${w}，没中 ${l}${pu ? `，走盘 ${pu}` : ''}`);
+    } else msg.push('自动投注要上半场角球才能结算，这场联网没有分半场的统计，请自己结算');
+  }
+  store[m.id] = m;
+  return msg.join('，');
+}
+async function syncPast(id){
+  const m = store[id] || (M.id === id ? M : null);
+  if (!m || pastBusy) return;
+  if (!NET.key){ openSheet('net'); return; }
+  if (m.id === M.id && M.st === 1){ closeSheet(); if (M.api) apiSync(true); else apiFind(true); return; }
+  if (!(m.h || '').trim() || !(m.a || '').trim()){ sheetData.note = { id, t: '这场没有队名，没办法查找' }; renderSheet(); return; }
+  pastBusy = id; sheetData.note = { id, t: '查找中…' }; renderSheet();
+  try {
+    if (!m.api){
+      const c = await findPast(m);
+      if (!c){ sheetData.note = { id, t: `${m.d} 前后的比赛里没找到 ${m.h} vs ${m.a}` }; return; }
+      if (c.cands){ sheetData.pick = { id, cands: c.cands }; sheetData.note = { id, t: '是哪一场？点正确的那一场' }; return; }
+      linkPast(m, c.one);
+    }
+    sheetData.note = { id, t: '已同步：' + await fetchPast(m) };
+    saveNow(); H = history();
+  } catch(e){ sheetData.note = { id, t: '同步失败：' + e.message }; }
+  finally { pastBusy = null; if (sheetKind === 'arch') renderSheet(); renderAll(); }
+}
+async function pickPast(id, i){
+  const m = store[id], p = sheetData.pick;
+  if (!m || !p || p.id !== id || !p.cands[i] || pastBusy) return;
+  linkPast(m, p.cands[i]); sheetData.pick = null;
+  pastBusy = id; sheetData.note = { id, t: '读取中…' }; renderSheet();
+  try { sheetData.note = { id, t: '已同步：' + await fetchPast(m) }; saveNow(); H = history(); }
+  catch(e){ sheetData.note = { id, t: '同步失败：' + e.message }; }
+  finally { pastBusy = null; if (sheetKind === 'arch') renderSheet(); renderAll(); }
 }
 /* 结算时用联网的最后角球数 */
 async function settleFromApi(m){
@@ -1763,7 +2023,17 @@ function renderAll(){ renderHeader(); renderNames(); renderPads(); renderPred();
 /* ================= 弹出视窗 ================= */
 const sheet = $('#sheet'), card = $('#card');
 let sheetKind = null, sheetData = {};
-function openSheet(kind, data){ const ae = document.activeElement; if (ae && ae !== document.body && ae.blur && !card.contains(ae)) ae.blur(); sheetKind = kind; sheetData = data || {}; renderSheet(); sheet.hidden = false; card.scrollTop = 0; }
+function openSheet(kind, data){ const ae = document.activeElement; if (ae && ae !== document.body && ae.blur && !card.contains(ae)) ae.blur(); sheetKind = kind; sheetData = data || {}; renderSheet(); sheet.hidden = false; card.scrollTop = 0; if (kind === 'net') refreshQuota(); }
+/* 查今天还剩几次请求（API-Football 的 status 不算次数） */
+let quotaAt = 0;
+function refreshQuota(){
+  if (!NET.key || navigator.onLine === false || Date.now() - quotaAt < 120000) return;
+  quotaAt = Date.now();
+  apiGet('/status').then(r => {
+    const x = Array.isArray(r) ? r[0] : r, rq = x && x.requests;
+    if (rq){ NET.quota = { cur: rq.current, lim: rq.limit_day, t: new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' }) }; saveNet(); if (sheetKind === 'net') renderSheet(); }
+  }).catch(() => {});
+}
 function closeSheet(){ sheet.hidden = true; sheetKind = null; card.innerHTML = ''; }
 sheet.addEventListener('click', ev => { if (ev.target === sheet) closeSheet(); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !sheet.hidden) closeSheet(); });
@@ -1809,12 +2079,13 @@ function renderSheet(){
       const p = M.tm.p;
       h = `<div class="card-h"><h3>比赛时间</h3><button class="pill" data-a="close">完成</button></div>
         <div class="big-clk" id="shClk">${fmtClock(p, clockOf(M))}</div>
-        <p class="hint" style="text-align:center">${M.tm.ht ? '中场休息' : PER[p][2]}　${M.tm.r ? '计时中' : '已暂停'}</p>
+        <p class="hint" style="text-align:center">${M.tm.ht ? '中场休息' : PER[p][2]}　${M.tm.r ? '计时中' : '已暂停'}${(() => { const r = M.api && M.st === 1 && M.api.st && nowSec() - (M.api.at || 0) < 900 ? apiClock(M.api) : null;
+          return r && !r.ht ? `<br>联网实时约 ${fmtClock(r.p, r.v)}${myDelay() != null ? `，你的画面慢 ${fmtDelay(myDelay())}` : ''}` : ''; })()}</p>
         <div class="grid2"><button class="pill green" data-a="kick" data-p="1">上半场开球</button><button class="pill green" data-a="kick" data-p="2">下半场开球</button></div>
         <div class="grid2"><button class="pill" data-a="toggle">${M.tm.r ? '暂停' : '继续计时'}</button><button class="pill" data-a="endh">上半场结束</button></div>
         <div class="lbl">微调</div>
         <div class="row"><button class="chip" data-a="nudge" data-d="-60">−1 分</button><button class="chip" data-a="nudge" data-d="-10">−10 秒</button><button class="chip" data-a="nudge" data-d="10">＋10 秒</button><button class="chip" data-a="nudge" data-d="60">＋1 分</button></div>
-        <div class="lbl">跳到电视上的时间（拖动或按加减，不用打字）</div>
+        <div class="lbl">对准画面上的时间（拖动或按加减，不用打字）</div>
         ${tpHTML(d.tp)}
         <button class="pill dark" data-a="tpset">设定为 <span id="jgoT">${fmtClock(d.tp.p, d.tp.v)}</span></button>
         <div class="grid2"><button class="pill" data-a="join">补录／校正比分和角球</button>${M.st === 2 ? '' : '<button class="pill danger" data-a="finish">结束记录</button>'}</div>
@@ -1830,13 +2101,28 @@ function renderSheet(){
         <div class="jgrp"><h4>其中上半场<small>${d.lk ? '不知道可以不填，只有“下半场单独”的盘才用得到' : `下半场到现在 ${d.ft[0] - d.ck1[0]}–${d.ft[1] - d.ck1[1]}`}</small></h4>
           ${d.lk ? '<button class="pill" data-a="jlk">我知道上半场各几个</button>' : stp('ck1', 0) + stp('ck1', 1)}</div>`;
       h = `<div class="card-h"><h3>${join ? '中途加入' : '补录／校正比分和角球'}</h3><button class="pill" data-a="close">取消</button></div>
-        ${d.net && M.api ? `<p class="netnote">已用联网数据填好（${esc(M.api.h)} vs ${esc(M.api.a)}）。联网的时间会慢几十秒，跟电视对一下再按开始。${d.ht ? '现在是中场休息：开始后会停在中场休息，下半场开球时再按 ▶。' : ''}${d.nock ? '这场联网没有角球统计，角球请自己填。' : ''}</p>` : ''}
-        ${join ? `<div class="jgrp"><h4>电视上现在的比赛时间</h4>${tpHTML(d.tp)}</div>` : ''}
+        ${d.net && M.api ? `<p class="netnote">已用联网数据填好（${esc(M.api.h)} vs ${esc(M.api.a)}）。${d.ht ? '现在是中场休息：开始后会停在中场休息，下半场开球时再按 ▶。'
+          : d.real ? (d.dl != null && d.dl >= 10 ? `联网的实时时间比你的画面快，已按你上次的画面延迟（慢 ${fmtDelay(d.dl)}）往回调。跟画面上的时间对一下再开始。`
+          : d.dl != null ? '上次测到你的画面跟联网的实时时间差不多。跟画面上的时间对一下再开始。'
+          : '下面先填的是联网的实时时间。你看的画面通常会慢一些：请调到画面上现在显示的时间再开始，app 会记住这个延迟，下次自动扣掉。') : ''}${d.nock ? '这场联网没有角球统计，角球请自己填。' : ''}</p>` : ''}
+        ${join ? `<div class="jgrp"><h4>画面上现在的比赛时间<small>${d.tp.live ? '时间会跟着走，对准画面就行' : ''}</small></h4>${tpHTML(d.tp)}</div>` : ''}
         <div class="jgrp"><h4>目前比分</h4>${stp('sc', 0)}${stp('sc', 1)}</div>
         ${ck}
         <div class="jgrp"><h4>红牌（全场）</h4>${stp('rc', 0)}${stp('rc', 1)}</div>
         <button class="pill green" data-a="jgo">${join ? `从 <span id="jgoT">${fmtClock(d.tp.p, d.tp.v)}</span> 开始记录` : '保存'}</button>
         <p class="hint">${join ? '加入前的进入前场、禁区和传中没办法补，模型会只用你看到的这段时间来算攻势系数。之后要改比分或角球，直接点上方的比分或“角球”数字。' : '只会调整补录的数字，你已经点过的事件不会被删除。'}</p>`;
+      break;
+    }
+    case 'expc': {
+      const v = d.v, e = expOf(v), n0 = esc(teamName(0)), n1 = esc(teamName(1));
+      const L = [[0, `${n0} 场均得角球`], [1, `${n0} 场均失角球`], [2, `${n1} 场均得角球`], [3, `${n1} 场均失角球`]];
+      h = `<div class="card-h"><h3>赛前全场预期</h3><button class="pill" data-a="close">取消</button></div>
+        <p class="hint">用两队最近 10 场的场均角球算：${n0}预期 =（${n0}场均得 + ${n1}场均失）÷ 2，${n1}同理，两队相加。填了这个数，预测会更准，尤其是比赛前段记录还少的时候。</p>
+        ${NET.key ? `<button class="pill dark" data-a="xfetch">联网自动查两队近 10 场</button>` : '<p class="hint">设定联网数据（菜单 → 联网数据）后，可以一键自动查。</p>'}
+        ${d.msg ? `<p class="netnote">${esc(d.msg)}</p>` : d.src ? `<p class="netnote">${esc(d.src)}</p>` : ''}
+        <div class="xrows">${L.map(([i, l]) => `<label class="xrow"><span>${l}</span><input type="range" class="tpr" data-x="${i}" min="0" max="12" step="0.1" value="${v[i]}"><b id="xv${i}">${v[i].toFixed(1)}</b></label>`).join('')}</div>
+        <div class="xres">全场预期 <b id="xres">${e.toFixed(1)}</b><small id="xsplit">${n0} ${((v[0] + v[3]) / 2).toFixed(1)} + ${n1} ${((v[2] + v[1]) / 2).toFixed(1)}</small></div>
+        <button class="pill green" data-a="xuse">用这个数</button>`;
       break;
     }
     case 'settle': {
@@ -1869,7 +2155,7 @@ function renderSheet(){
     case 'net': {
       const used = (NET.used || {})[dayKey(new Date())] || 0, a = M.api;
       h = `<div class="card-h"><h3>联网数据</h3><button class="pill" data-a="close">完成</button></div>
-        <p class="hint">输入主客队名字后，自动在网上找这场比赛：中途加入时帮你填好时间、比分、角球和红牌；记录时每隔几分钟同步一次，你漏点的角球、进球、红牌和射门会自动补上（标“联网”，时间轴上是虚线）；结算时自动填最后的角球数。中文队名先用内置译名，再查维基数据，还是对不上就让你点选一次，之后记住。数据来源：API-Football、Wikidata。</p>
+        <p class="hint">输入主客队名字后，自动在网上找这场比赛：中途加入时帮你填好时间、比分、角球和红牌；记录时按顶部的“同步”，你漏点的角球、进球、红牌和射门会在画面追上后自动补上（标“联网”，时间轴上是虚线）；结算时自动填最后的角球数；比赛列表里没同步过的比赛，也可以赛后再同步。中文队名先用内置译名，再查维基数据，还是对不上就让你点选一次，之后记住。数据来源：API-Football、Wikidata。</p>
         <div class="lbl">API key</div>
         <input class="fi" id="netKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="贴上 API-Football 的 API key" value="${esc(NET.key)}">
         <div class="row"><button class="pill dark" data-a="nkey">保存并测试</button>${NET.key ? '<button class="pill" data-a="nkey0">清除</button>' : ''}</div>
@@ -1879,9 +2165,12 @@ function renderSheet(){
         <div class="lbl">同步射门（被挡／被扑／偏出）</div>
         <div class="chips"><button class="chip" data-a="nshot" data-v="1" aria-pressed="${NET.shots !== false}">开</button><button class="chip" data-a="nshot" data-v="0" aria-pressed="${NET.shots === false}">关</button></div>
         <p class="hint" style="margin-top:-4px">只补加入之后的射门。进入前场、进入禁区和传中 API-Football 没有提供，还是要自己点；预测主要靠这三项。</p>
-        <div class="lbl">记录时多久同步一次</div>
-        <div class="chips">${[[120, '2 分钟'], [180, '3 分钟'], [300, '5 分钟'], [0, '不自动同步']].map(([v, l]) => `<button class="chip" data-a="niv" data-v="${v}" aria-pressed="${NET.iv === v}">${l}</button>`).join('')}</div>
-        <p class="hint">今天这台设备大约用了 ${used} 次请求。免费方案每天 100 次：查找一场用 1–3 次，每 3 分钟同步一次的话，一场比赛约 35 次。</p>
+        <div class="lbl">记录时自动同步</div>
+        <div class="chips">${[[0, '关（只在按“同步”时）'], [300, '每 5 分钟'], [180, '每 3 分钟'], [120, '每 2 分钟']].map(([v, l]) => `<button class="chip" data-a="niv" data-v="${v}" aria-pressed="${NET.iv === v}">${l}</button>`).join('')}</div>
+        <p class="hint">要同步时按顶部的“同步”按钮（连上比赛后会出现），每按一次用 1 次请求。${NET.quota ? `API-Football 显示今天已用 ${NET.quota.cur} / ${NET.quota.lim} 次（${esc(NET.quota.t)} 查询）。` : `今天这台设备大约用了 ${used} 次请求。`}查找一场用 1–3 次；开着每 3 分钟自动同步的话，一场比赛约 35 次。</p>
+        <div class="lbl">画面延迟</div>
+        <p class="hint" style="margin-top:0">${NET.delay != null && NET.delay < 10 ? '你看的画面跟联网的实时时间差不多（相差不到 10 秒）。' : NET.delay != null ? `你看的画面大约比实时慢 <b>${fmtDelay(NET.delay)}</b>。中途加入时会自动扣掉；联网同步到的角球，会等画面追上之后，你还没点的才补上。` : '还没测出来。连上比赛后，在画面上看到开球时按“比赛刚开球”，或中途加入时把时间对准画面，app 会自动算出你的画面比实时慢多少。'}</p>
+        ${NET.delay != null ? '<div class="row"><button class="pill" data-a="ndl0">重新测（换了看球的地方时）</button></div>' : ''}
         ${a ? `<div class="lbl">目前这场</div><div class="mrow"><div class="t1">${esc(a.h)} vs ${esc(a.a)}</div><div class="t2">${esc(a.lg || '')}${a.sw ? '，主客跟你输入的相反（已自动对调）' : ''}</div>
           <div class="row"><button class="pill dark" data-a="nsync">立即同步</button><button class="pill" data-a="nre">换一场</button><button class="pill" data-a="noff">解除连接</button></div></div>`
           : (M.h.trim() && M.a.trim() && NET.key ? '<button class="pill green" data-a="nfind">查找这场比赛</button>' : '')}
@@ -1922,9 +2211,15 @@ function renderSheet(){
         ${arr.map(m => {
           const c = [0, 0], g = [0, 0];
           for (const e of m.ev){ if (e.c === 'ck') c[e.i]++; if (GOALC.includes(e.c)) g[e.i]++; }
+          const ap = m.api, live = m.id === M.id && M.st === 1;
+          const apTxt = ap && ap.st ? `联网：${ST_ZH[ap.st] || ap.st}，比分 ${(ap.g || [0, 0]).join('–')}${ap.ck ? `，角球 ${ap.ck[0]}–${ap.ck[1]}${ap.ck1 ? `（上半场 ${ap.ck1[0]}–${ap.ck1[1]}）` : ''}${ap.ck[0] !== c[0] || ap.ck[1] !== c[1] ? `<em>你记录 ${c[0]}–${c[1]}</em>` : ''}` : ''}` : '';
+          const canSync = NET.key && (m.h || '').trim() && (m.a || '').trim() && (live || !ap || !ap.fin);
+          const note = d.note && d.note.id === m.id ? `<p class="netnote">${esc(d.note.t)}</p>` : '';
+          const pick = d.pick && d.pick.id === m.id ? `<div class="picks sg-list">${d.pick.cands.map((x, i) => { const f = x.f, gl = f.goals || {}; return `<button data-a="ppick" data-id="${esc(m.id)}" data-i="${i}"><span class="t1">${esc(f.teams.home.name)} <b>${gl.home ?? ''}${gl.home != null ? '–' : 'vs'}${gl.away ?? ''}</b> ${esc(f.teams.away.name)}</span><span class="t2">${esc(f.league ? f.league.name : '')}　${fixWhen(f)}${x.sw ? '　<em>主客跟你输入的相反</em>' : ''}</span></button>`; }).join('')}</div>` : '';
           return `<div class="mrow"><div class="t1">${esc(m.h || '主队')} ${g[0]}–${g[1]} ${esc(m.a || '客队')}${m.id === M.id ? '（目前这场）' : ''}</div>
             <div class="t2">${esc(m.d)}${m.lg ? '，' + esc(m.lg) : ''}，事件 ${m.ev.length} 笔，角球 ${c[0]}–${c[1]}${m.st === 2 ? '，已结束' : ''}${m.ab.bets.length ? `，自动投注 ${m.ab.bets.length} 笔${m.ab.bets.some(b => b.r == null) ? '（有待结算）' : ''}` : ''}</div>
-            <div class="row">${m.ab.bets.some(b => b.r == null) ? `<button class="pill dark" data-a="msettle" data-id="${esc(m.id)}">结算</button>` : ''}${m.id === M.id ? '' : `<button class="pill" data-a="mopen" data-id="${esc(m.id)}">打开</button>`}<button class="pill" data-a="mexp" data-id="${esc(m.id)}">导出</button><button class="pill ${d.del === m.id ? 'danger' : ''}" data-a="mdel" data-id="${esc(m.id)}">${d.del === m.id ? '确定删除' : '删除'}</button></div></div>`;
+            ${apTxt ? `<div class="t2 apt">${apTxt}</div>` : ''}${note}${pick}
+            <div class="row">${canSync ? `<button class="pill ${ap ? '' : 'green'}" data-a="msync" data-id="${esc(m.id)}" ${pastBusy ? 'disabled' : ''}>${pastBusy === m.id ? '同步中…' : ap ? '再同步' : '联网同步'}</button>` : ''}${m.ab.bets.some(b => b.r == null) ? `<button class="pill dark" data-a="msettle" data-id="${esc(m.id)}">结算</button>` : ''}${m.id === M.id ? '' : `<button class="pill" data-a="mopen" data-id="${esc(m.id)}">打开</button>`}<button class="pill" data-a="mexp" data-id="${esc(m.id)}">导出</button><button class="pill ${d.del === m.id ? 'danger' : ''}" data-a="mdel" data-id="${esc(m.id)}">${d.del === m.id ? '确定删除' : '删除'}</button></div></div>`;
         }).join('') || '<p class="hint">还没有比赛。</p>'}`;
       break;
     }
@@ -1986,6 +2281,7 @@ card.addEventListener('click', ev => {
       sheetData.msg = '测试中…'; renderSheet();
       apiGet('/status').then(r => {
         const x = Array.isArray(r) ? r[0] : r, sub = x && x.subscription, rq = x && x.requests;
+        if (rq){ NET.quota = { cur: rq.current, lim: rq.limit_day, t: new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' }) }; saveNet(); }
         sheetData.msg = `已连上 API-Football${sub ? `：方案 ${sub.plan}${sub.active === false ? '（未启用）' : ''}` : ''}${rq ? `，今天已用 ${rq.current} / ${rq.limit_day} 次` : ''}。`;
       }).catch(e => { sheetData.msg = '测试失败：' + e.message; }).finally(() => { if (sheetKind === 'net'){ renderSheet(); } renderPred(); if (NET.key) scheduleFind(300); });
       break;
@@ -1993,6 +2289,7 @@ card.addEventListener('click', ev => {
     case 'nkey0': NET.key = ''; saveNet(); sheetData.msg = '已清除。'; renderSheet(); renderPred(); break;
     case 'nauto': NET.auto = b.dataset.v === '1'; saveNet(); renderSheet(); break;
     case 'niv': NET.iv = +b.dataset.v; saveNet(); renderSheet(); break;
+    case 'ndl0': NET.delay = null; if (M.api){ M.api.dl = null; M.api.dlk = null; } saveNet(); saveNow(); renderSheet(); showToast('已清除画面延迟，下次开球或中途加入时重新测'); break;
     case 'nshot': NET.shots = b.dataset.v === '1'; saveNet(); renderSheet(); break;
     case 'nsync': closeSheet(); apiSync(true); break;
     case 'defs': openSheet('defs'); break;
@@ -2016,6 +2313,13 @@ card.addEventListener('click', ev => {
     case 'exp1': openExport([M]); break;
     case 'expall': openExport(Object.values(store).filter(m => m.ev.length || m.h || m.a)); break;
     case 'mexp': { const m = store[b.dataset.id]; if (m) openExport([m]); break; }
+    case 'msync': syncPast(b.dataset.id); break;
+    case 'xfetch': expFetch(); break;
+    case 'xuse': {
+      M.exp = Math.round(expOf(d.v) * 10) / 10; M.expIn = d.v.slice(); M.expSrc = d.src || null;
+      saveNow(); closeSheet(); renderAll(); showToast(`全场预期设为 ${M.exp.toFixed(1)}`); break;
+    }
+    case 'ppick': pickPast(b.dataset.id, +b.dataset.i); break;
     case 'mopen': { const m = store[b.dataset.id]; if (m){ saveNow(); pauseOther(); M = m; undoStack = []; abTrack = {}; closeSugg(); H = history(); tv.z = 1; tv.off = 0; saveNow(); closeSheet(); renderAll(); syncWake(); } break; }
     case 'mdel': {
       const id = b.dataset.id;
@@ -2042,22 +2346,24 @@ card.addEventListener('click', ev => {
     case 'jlk': d.lk = false; d.ck1 = d.ft.slice(); renderSheet(); break;
     case 'jgo': {
       const join = d.mode === 'join';
-      if (applyJoin({ mode: d.mode, p: join ? d.tp.p : d.p, v: d.tp.v, sc: d.sc, rc: d.rc, ck1: d.ck1, ft: d.ft, lk: d.lk })){
+      if (applyJoin({ mode: d.mode, p: join ? d.tp.p : d.p, v: tpNow(d.tp), sc: d.sc, rc: d.rc, ck1: d.ck1, ft: d.ft, lk: d.lk })){
         closeSheet();
         if (join && d.ht){ endFirstHalf(); saveNow(); syncWake(); renderAll(); showToast('已从中场休息开始记录，下半场开球时按 ▶'); }
-        if (M.api) M.api.at = nowSec();
+        // 你按画面设定的时间跟联网实时的差＝画面延迟，记下来
+        if (join && !d.ht && M.api){ learnDelay(clockOf(M), 'join'); saveNow(); }
       }
       break;
     }
     case 'tpp': tpHalf(d.tp, +b.dataset.p); renderSheet(); break;
-    case 'tpn': d.tp.v = clamp(d.tp.v + (+b.dataset.d), TPR[d.tp.p][0], TPR[d.tp.p][1]); tpShow(d.tp); break;
+    case 'tpn': tpSet(d.tp, tpNow(d.tp) + (+b.dataset.d)); tpShow(d.tp); break;
     case 'tpset': {
-      const tp = d.tp, first = M.st === 1 && !observed(M).length;
-      M.tm.p = tp.p; setClock(tp.v); M.tm.ht = 0;
-      if (first) M.obs = { p: tp.p, t: tp.v };
+      const tp = d.tp, first = M.st === 1 && !observed(M).length, v = tpNow(tp);
+      M.tm.p = tp.p; setClock(v); M.tm.ht = 0;
+      if (first) M.obs = { p: tp.p, t: v };
+      if (M.api) learnDelay(clockOf(M), 'set');
       saveNow(); renderAll(); renderSheet();
-      if (first) showToast(`已设定为 ${fmtClock(tp.p, tp.v)}，要补录之前的比分和角球吗？`, openJoin, '补录');
-      else showToast(`已设定为 ${fmtClock(tp.p, tp.v)}`);
+      if (first) showToast(`已设定为 ${fmtClock(tp.p, v)}，要补录之前的比分和角球吗？`, openJoin, '补录');
+      else showToast(`已设定为 ${fmtClock(tp.p, v)}`);
       break;
     }
     case 'kick': kick(+b.dataset.p); saveNow(); syncWake(); renderAll(); renderSheet(); break;
@@ -2067,7 +2373,7 @@ card.addEventListener('click', ev => {
         if (M.ab.bets.some(x => x.mt === 'h1' && x.r == null)) showToast('上半场结束。上半场的自动投注可以结算了', () => openSettle(M.id), '结算');
         else showToast('上半场结束，预测已换成下半场');
       } else showToast('现在已经是下半场'); break;
-    case 'nudge': setClock(clockOf(M) + (+b.dataset.d)); saveNow(); renderAll(); renderSheet(); break;
+    case 'nudge': setClock(clockOf(M) + (+b.dataset.d)); if (M.api) learnDelay(clockOf(M), 'set'); saveNow(); renderAll(); renderSheet(); break;
     case 'edit': openSheet('edit', { k: +b.dataset.k }); break;
     case 'eteam': { const e = findEv(d.k); if (e){ e.i = +b.dataset.i; saveNow(); renderAll(); renderSheet(); } break; }
     case 'ecode': { const e = findEv(d.k); if (e){ e.c = b.dataset.c; saveNow(); renderAll(); renderSheet(); } break; }
@@ -2085,21 +2391,28 @@ function openJoin(){
   const mode = observed(M).length || M.tm.r || M.tm.b ? 'fix' : 'join';
   const p = M.tm.ht ? 1 : M.tm.p;
   const c = curCounts(false);
-  openSheet('join', { mode, p, tp: { p: 1, v: 20 * 60 }, sc: c.sc.slice(), rc: c.rc.slice(), ck1: c.ck1.slice(), ft: c.ft.slice(), lk: mode === 'join' });
+  openSheet('join', { mode, p, tp: { p: 1, v: 20 * 60, live: mode === 'join', at: Date.now() }, sc: c.sc.slice(), rc: c.rc.slice(), ck1: c.ck1.slice(), ft: c.ft.slice(), lk: mode === 'join' });
 }
 function openClock(){
   const p = M.tm.ht ? 2 : M.tm.p, v = M.tm.ht ? PER[2][0] : Math.floor(clockOf(M));
-  openSheet('clock', { tp: { p, v: clamp(v, TPR[p][0], TPR[p][1]) } });
+  openSheet('clock', { tp: { p, v: clamp(v, TPR[p][0], TPR[p][1]), live: !!M.tm.r && !M.tm.ht, at: Date.now() } });
 }
 card.addEventListener('input', ev => {
+  const x = ev.target.dataset && ev.target.dataset.x;
+  if (x != null && sheetKind === 'expc'){
+    const v = sheetData.v; v[+x] = Math.round(+ev.target.value * 10) / 10; sheetData.src = '手动设定';
+    $('#xv' + x).textContent = v[+x].toFixed(1); $('#xres').textContent = expOf(v).toFixed(1);
+    $('#xsplit').textContent = `${teamName(0)} ${((v[0] + v[3]) / 2).toFixed(1)} + ${teamName(1)} ${((v[2] + v[1]) / 2).toFixed(1)}`;
+    return;
+  }
   if (ev.target.id !== 'tpR' || !sheetData.tp) return;
-  sheetData.tp.v = +ev.target.value; tpShow(sheetData.tp);
+  tpSet(sheetData.tp, +ev.target.value); tpShow(sheetData.tp);
 });
 
 /* ================= 导出与导入 ================= */
 const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、hd 上下半场角球让球(主队，负数=主队让)、pe 各半场结束时的比赛时钟秒数、obs 开始观看的位置{p 半场, t 比赛时钟秒数}、stop 结束记录的位置(未结束为 null)、mk 上下半场预测用的盘(h本半场/f全场)、fl 全场大小盘、fh 全场让球(主队)、ev 事件阵列。只有 obs 到 stop 之间是实际观看的时间。'
   + 'ab.bets 是自动投注（模拟）记录：mt 盘(h1上半场/h2下半场/ft全场)、mk(ou大小/hd让球)、sd(o大/u小/h主/a客)、ln 盘口(让球以主队为准)、pr 投注当下模型的赢盘率、tier 档位(%)、p 与 t 投注时的半场与比赛时钟秒数、hold 需要稳定的秒数、sc 当时比分、ck 当时这个盘已有的角球、r 结果(1命中/0没中/0.5走盘/null待结算)。res 是结算用的最后角球 {h1 上半场[主,客], ft 全场[主,客]}。'
-  + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码, b(可省略；1=中途加入时补录、时间不详), a(可省略；1=联网同步自动补上的，时间是同步当下)]。api 是联网连上的比赛(API-Football fixture id、两队英文名、sw=1 表示主客跟输入相反、最后同步到的 st 状态/el 分钟/g 比分/ck 角球/ck1 上半场角球)。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
+  + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码, b(可省略；1=中途加入时补录、时间不详), a(可省略；1=联网同步自动补上的，时间是同步当下)]。api 是联网连上的比赛(API-Football fixture id、两队英文名、sw=1 表示主客跟输入相反、最后同步到的 st 状态/el 分钟/g 比分/ck 角球/ck1 上半场角球/sh 射门、dl 你的画面比实时慢几秒、fin=1 表示赛后同步到了完场数据)。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
 function openExport(list){
   const ds = new Date().toISOString().slice(0, 10);
   const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, line: m.line, hd: m.hd, mk: m.mk, fl: m.fl, fh: m.fh, add: m.add, pe: m.pe, obs: m.obs, stop: m.stop,
@@ -2503,7 +2816,7 @@ $('#runBtn').addEventListener('click', () => {
 });
 $('#clkBtn').addEventListener('click', openClock);
 $('#menuBtn').addEventListener('click', () => openSheet('menu'));
-$('#netPill').addEventListener('click', () => openSheet('net'));
+$('#netPill').addEventListener('click', netPillTap);
 $('#defBtn').addEventListener('click', () => openSheet('defs'));
 $('#listBtn').addEventListener('click', () => openSheet('list'));
 ['#glH', '#glA', '#ckH', '#ckA'].forEach(x => $(x).addEventListener('click', openJoin));
@@ -2515,6 +2828,8 @@ setInterval(() => {
   if (M.tm.r && Date.now() - lastTL > 5000 && !tg.pts.size && !tg.inert){ lastTL = Date.now(); renderTimeline(); }
   if (M.api && NET.key && NET.iv > 0 && M.st === 1 && !netBusy && isRecording() && !DONE_ST.includes(M.api.st) && document.visibilityState === 'visible'
     && navigator.onLine !== false && nowSec() - (M.api.at || 0) >= NET.iv) apiSync(false);
+  if (M.api && M.api.hold && M.api.hold.length && M.st === 1) flushHold(false);
+  if (!sheet.hidden && sheetData && sheetData.tp && sheetData.tp.live) tpShow(sheetData.tp);
 }, 500);
 
 let offline = '离线使用：请从主屏幕的图示打开，联网时打开一次后就能离线使用。';

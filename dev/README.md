@@ -39,6 +39,7 @@ node uitest2.js http://localhost:8766 out            # join mid-match, backfill,
 node uitest3.js http://localhost:8766 out            # timeline
 node uitest4.js http://localhost:8766 out            # auto-bet, full-match lines
 node uitest5.js http://localhost:8766 out            # online lookup and sync (mocked)
+node uitest6.js http://localhost:8766 out            # screen delay, held sync, sync buttons, expectation lookup, post-match sync (mocked)
 node fitphone.js http://localhost:8766 out           # phone layouts fit the screen
 node compat.js  http://localhost:8766                # old saved data still loads
 ```
