@@ -71,5 +71,12 @@ python3 -I dev/model/backtest_prematch.py work2 work3/backtest_prematch.json   #
 python3 -I dev/model/tonight.py work3/prematch_fit.json work3/state_by_strength.json dev/data/model.json work3/tonight.json
 ```
 
+Corner conversion of shots, low balls from the wing and cut-backs by score, time, team and location:
+
+```bash
+python3 -I dev/model/conv_events.py sb work3/conv_events.csv 6     # one row per event + what happened next
+python3 -I dev/model/conv_analysis.py work3/conv_events.csv work3/corners.csv work3/conv.json
+```
+
 `tonight.py` has the evening's team numbers (statz.ai) and odds typed in; copy it and change `T`, `MENT` and `MATCHES` for another round.
 Add `calib` to see the simulated spread against the backtest, `nospread` to switch the random effects off.
