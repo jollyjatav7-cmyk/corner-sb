@@ -777,19 +777,24 @@ function kick(p){
   }
   M.tm = { p, b: PER[p][0], r: 1, at: Date.now(), ht: 0 };
   M.kw = Object.assign({}, M.kw, { [p]: nowSec() });
-  delayFromKick();
+  return delayFromKick();
 }
-/* 你在画面上看到开球才按：联网的开球时间戳跟你按的时间差，就是你的画面延迟（联网还没有时间戳时，下次同步再算） */
+/* 你在画面上看到开球才按：联网的开球时间戳跟你按的时间差，就是你的画面延迟（联网还没有时间戳时，下次同步再算）。
+   只用对得上“第几分钟”的时间戳（a.pok），免得把排定的开赛时间当成实际开球。测到新的延迟就回传秒数 */
 function delayFromKick(){
   const a = M.api;
-  if (!a || !a.per || !M.kw) return;
+  if (!a || !a.per || !M.kw) return null;
+  let got = null;
   for (const p of [1, 2]){
     const ps = p === 1 ? a.per.first : a.per.second, kw = M.kw[p];
-    if (!ps || !kw || a.dlk === p) continue;
+    if (!ps || !kw || a.dlk === p || !(a.pok && a.pok[p])) continue;
     const d = kw - ps;
-    if (d >= 0 && d <= 900){ a.dl = Math.round(d); a.dlk = p; NET.delay = a.dl; saveNet(); }
+    if (d >= 0 && d <= 900){ a.dl = Math.round(d); a.dlk = p; NET.delay = a.dl; saveNet(); got = a.dl; }
   }
+  return got;
 }
+/* 提示里说一句测到的画面延迟 */
+const delayNote = d => d == null ? '' : d < 10 ? '，你的画面跟联网实时差不多' : `，你的画面比联网实时慢 ${fmtDelay(d)}`;
 function endFirstHalf(){
   pauseClock();
   M.pe[1] = Math.max(Math.round(clockOf(M)), maxT(M, 1), 2700);
@@ -1225,7 +1230,7 @@ function predAction(b){
     case 'add0': M.add[p - 1] = null; break;
     case 'more': predMore = !predMore; renderPred(); return;
     case 'open': openMid('pred'); return;
-    case 'kick1': kick(1); saveNow(); syncWake(); renderAll(); showToast('上半场开球，从 0:00 开始计时'); return;
+    case 'kick1': { const dl = kick(1); saveNow(); syncWake(); renderAll(); showToast('上半场开球，从 0:00 开始计时' + delayNote(dl)); return; }
     case 'new': closeMid(); startNew(); return;
     case 'reopen': M.st = 1; M.stop = null; saveNow(); H = history(); renderAll(); showToast('已重新打开，可以继续记录'); return;
     case 'join': closeMid(); openJoin(); return;
@@ -1663,12 +1668,20 @@ async function apiHalf(m){
   });
   return out.every(x => x != null) ? out : null;
 }
-/* 实时的比赛时间：API 有每个半场开球的时间戳就精确到秒；没有就用“第 67 分钟”= 66:00–66:59 取中间，再加上距离上次读取过了多久 */
+/* 开球时间戳可不可信：要跟同一次读取的“第几分钟”对得上（差 100 秒以内；补时阶段分钟数停在 45／90，时间戳可以更大）。
+   有的比赛给的是排定的开赛时间，晚开球几分钟就会差很多。回传 true／false，这次读取判断不了就回传 null */
+function perFits(s, p){
+  const per = s.per || {}, ps = p === 1 ? per.first : per.second;
+  if (!ps || !s.el || s.st !== (p === 1 ? '1H' : '2H')) return null;   // 没有分钟数（0 或空）就判断不了
+  const at = s.at || nowSec(), v = (p === 1 ? 0 : PER[2][0]) + at - ps, est = (s.el + (s.ex || 0) - 1) * 60 + 30;
+  return Math.abs(v - est) <= 100 || (s.el >= (p === 1 ? 45 : 90) && v > est && v - est < 900);
+}
+/* 实时的比赛时间：API 有每个半场开球的时间戳（而且对得上分钟数）就精确到秒；没有就用“第 67 分钟”= 66:00–66:59 取中间，再加上距离上次读取过了多久 */
 function apiClock(s, now){
   now = now == null ? nowSec() : now;
   const per = s.per || {}, gone = Math.max(0, now - (s.at || now));
-  if (s.st === '1H' && per.first && now - per.first > 0 && now - per.first < 4500) return { p: 1, v: clamp(now - per.first, 0, TPR[1][1]), exact: true };
-  if (s.st === '2H' && per.second && now - per.second > 0 && now - per.second < 4500) return { p: 2, v: clamp(PER[2][0] + now - per.second, PER[2][0], TPR[2][1]), exact: true };
+  if (s.st === '1H' && per.first && now - per.first > 0 && now - per.first < 4500 && perFits(s, 1) !== false) return { p: 1, v: clamp(now - per.first, 0, TPR[1][1]), exact: true };
+  if (s.st === '2H' && per.second && now - per.second > 0 && now - per.second < 4500 && perFits(s, 2) !== false) return { p: 2, v: clamp(PER[2][0] + now - per.second, PER[2][0], TPR[2][1]), exact: true };
   const m = s.el + (s.ex || 0);
   if (s.st === '1H') return { p: 1, v: clamp((m - 1) * 60 + 30 + gone, 0, TPR[1][1]) };
   if (s.st === '2H') return { p: 2, v: clamp((m - 1) * 60 + 30 + gone, PER[2][0], TPR[2][1]) };
@@ -1684,9 +1697,10 @@ function learnDelay(appSec, why){
   if (!r || r.ht || r.p !== (M.tm.ht ? 1 : M.tm.p)) return;
   if (!r.exact && why === 'kick') return;
   let d = Math.round(r.v - appSec);
-  if (d < -45 || d > 900) return;
+  if (d < -45 || d > 900) return null;
   if (!r.exact && d < 30) d = 0;  // 只知道联网的分钟数时，差 30 秒以内分不出来，当作没有延迟
   a.dl = Math.max(0, d); NET.delay = a.dl; saveNet();
+  return a.dl;
 }
 const myDelay = () => M.api && M.api.dl != null ? M.api.dl : NET.delay;
 async function openJoinFromApi(s){
@@ -1707,10 +1721,16 @@ async function openJoinFromApi(s){
 }
 function applySnap(s){
   const a = M.api; a.at = s.at || nowSec(); a.st = s.st; a.el = s.el; a.ex = s.ex; a.g = s.g; a.rc = s.rc; a.err = null;
-  if (s.per){ a.per = s.per; delayFromKick(); }
+  let dl = null;
+  if (s.per){
+    a.per = s.per;
+    for (const p of [1, 2]){ const f = perFits(s, p); if (f != null) a.pok = Object.assign({}, a.pok, { [p]: f }); }
+    dl = delayFromKick();
+  }
   if (s.ck) a.ck = s.ck;
   if (s.sh) a.sh = s.sh;
   if (s.st === 'HT' && s.ck && !a.ck1) a.ck1 = s.ck.slice();
+  return dl;   // 这次测到的画面延迟（按开球时间），没有就是 null
 }
 /* 同步：联网的数字比你记录的多，就补上（标“联网”）；你记录的比较多（联网数据有延迟）就不动。
    联网数据几乎是实时的，你的画面通常慢一些：刚同步到的角球你可能还没看到。所以先等画面追上（画面延迟＋30 秒），
@@ -1751,11 +1771,13 @@ function commitHold(s){
   return added;
 }
 function addedMsg(added){ const m = Object.entries(added).map(([k, n]) => `${k} ${n}`); if (m.length) showToast('联网同步补上：' + m.join('，')); }
-/* 到时间的暂存就补上（不用再发请求） */
+/* 到时间的暂存就补上（不用再发请求）。联网已经是下半场、你的画面还在上半场或中场休息时，先等你按“下半场开球”，
+   免得下半场的角球被记成上半场的 */
 function flushHold(force){
   const a = M.api;
   if (!a || !a.hold || !a.hold.length) return;
-  const due = a.hold.filter(h => force || nowSec() >= h.due);
+  const appP = M.tm.ht ? 1 : M.tm.p;
+  const due = a.hold.filter(h => force || (nowSec() >= h.due && !(h.p === 2 && appP === 1)));
   if (!due.length) return;
   a.hold = a.hold.filter(h => !due.includes(h));
   const added = {};
@@ -1763,19 +1785,24 @@ function flushHold(force){
   saveNow(); renderAll(); addedMsg(added);
 }
 function applySync(s, manual){
-  applySnap(s);
+  const dl = applySnap(s);
   const a = M.api;
+  let shown = false;
   if (M.st === 1 && isRecording()){
     const miss = missingFrom(s);
     if (miss.length){
-      const wait = holdWait();
-      a.hold = (a.hold || []).concat([{ due: nowSec() + wait, s: { ck: s.ck, g: s.g, rc: s.rc, sh: s.sh } }]).slice(-4);
+      const wait = holdWait(), c = apiClock(s), hp = c ? c.p : null;
+      const later = hp === 2 && (!!M.tm.ht || M.tm.p === 1);   // 联网已到下半场，你的画面还没有
+      a.hold = (a.hold || []).concat([{ due: nowSec() + wait, p: hp, s: { ck: s.ck, g: s.g, rc: s.rc, sh: s.sh } }]).slice(-4);
       if (manual){
         const ck = s.ck ? `角球 ${s.ck[0]}–${s.ck[1]}（你记录 ${curCounts(false).ft.join('–')}）` : '比分有变化';
-        showToast(`联网：${ck}。等画面追上（约 ${fmtDelay(wait)}）还没点的会自动补上`);
+        showToast(later ? `联网已经是下半场：${ck}。你按“下半场开球”后，等画面追上还没点的会自动补上`
+          : `联网：${ck}。等画面追上（约 ${fmtDelay(wait)}）还没点的会自动补上${delayNote(dl)}`);
+        shown = true;
       }
-    } else if (manual) showToast(`已同步：${s.ck ? `角球 ${s.ck[0]}–${s.ck[1]}，` : ''}跟你记录的一样`);
+    } else if (manual){ showToast(`已同步：${s.ck ? `角球 ${s.ck[0]}–${s.ck[1]}，` : ''}跟你记录的一样${delayNote(dl)}`); shown = true; }
   }
+  if (dl != null && !shown) showToast(`按开球时间测出${delayNote(dl).slice(1)}`);
   saveNow(); renderAll();
   if (DONE_ST.includes(s.st) && M.st === 1 && !M.api.done){
     M.api.done = 1; save();
@@ -2350,7 +2377,7 @@ card.addEventListener('click', ev => {
         closeSheet();
         if (join && d.ht){ endFirstHalf(); saveNow(); syncWake(); renderAll(); showToast('已从中场休息开始记录，下半场开球时按 ▶'); }
         // 你按画面设定的时间跟联网实时的差＝画面延迟，记下来
-        if (join && !d.ht && M.api){ learnDelay(clockOf(M), 'join'); saveNow(); }
+        if (join && !d.ht && M.api){ const dl = learnDelay(clockOf(M), 'join'); saveNow(); if (dl != null) showToast(`已从 ${fmtClock(M.tm.p, clockOf(M))} 开始记录${delayNote(dl)}`); }
       }
       break;
     }
@@ -2360,20 +2387,29 @@ card.addEventListener('click', ev => {
       const tp = d.tp, first = M.st === 1 && !observed(M).length, v = tpNow(tp);
       M.tm.p = tp.p; setClock(v); M.tm.ht = 0;
       if (first) M.obs = { p: tp.p, t: v };
-      if (M.api) learnDelay(clockOf(M), 'set');
-      saveNow(); renderAll(); renderSheet();
-      if (first) showToast(`已设定为 ${fmtClock(tp.p, v)}，要补录之前的比分和角球吗？`, openJoin, '补录');
-      else showToast(`已设定为 ${fmtClock(tp.p, v)}`);
+      const dl = M.api ? learnDelay(clockOf(M), 'set') : null;
+      d.tp = clockTp(); saveNow(); renderAll(); renderSheet();
+      if (first) showToast(`已设定为 ${fmtClock(tp.p, v)}${delayNote(dl)}，要补录之前的比分和角球吗？`, openJoin, '补录');
+      else showToast(`已设定为 ${fmtClock(tp.p, v)}${delayNote(dl)}`);
       break;
     }
-    case 'kick': kick(+b.dataset.p); saveNow(); syncWake(); renderAll(); renderSheet(); break;
-    case 'toggle': M.tm.r ? pauseClock() : startClock(); saveNow(); syncWake(); renderAll(); renderSheet(); break;
+    case 'kick': {
+      const p = +b.dataset.p, dl = kick(p); d.tp = clockTp(); saveNow(); syncWake(); renderAll(); renderSheet();
+      showToast(`${PER[p][2]}开球，从 ${fmtClock(p, PER[p][0])} 开始计时${delayNote(dl)}`);
+      break;
+    }
+    case 'toggle': M.tm.r ? pauseClock() : startClock(); d.tp = clockTp(); saveNow(); syncWake(); renderAll(); renderSheet(); break;
     case 'endh': if (M.tm.p === 1){
-        endFirstHalf(); saveNow(); syncWake(); renderAll(); renderSheet();
+        endFirstHalf(); d.tp = clockTp(); saveNow(); syncWake(); renderAll(); renderSheet();
         if (M.ab.bets.some(x => x.mt === 'h1' && x.r == null)) showToast('上半场结束。上半场的自动投注可以结算了', () => openSettle(M.id), '结算');
         else showToast('上半场结束，预测已换成下半场');
       } else showToast('现在已经是下半场'); break;
-    case 'nudge': setClock(clockOf(M) + (+b.dataset.d)); if (M.api) learnDelay(clockOf(M), 'set'); saveNow(); renderAll(); renderSheet(); break;
+    case 'nudge': {
+      setClock(clockOf(M) + (+b.dataset.d)); const dl = M.api ? learnDelay(clockOf(M), 'set') : null;
+      d.tp = clockTp(); saveNow(); renderAll(); renderSheet();
+      showToast(`已调到 ${fmtClock(M.tm.p, clockOf(M))}${delayNote(dl)}`);
+      break;
+    }
     case 'edit': openSheet('edit', { k: +b.dataset.k }); break;
     case 'eteam': { const e = findEv(d.k); if (e){ e.i = +b.dataset.i; saveNow(); renderAll(); renderSheet(); } break; }
     case 'ecode': { const e = findEv(d.k); if (e){ e.c = b.dataset.c; saveNow(); renderAll(); renderSheet(); } break; }
@@ -2393,10 +2429,12 @@ function openJoin(){
   const c = curCounts(false);
   openSheet('join', { mode, p, tp: { p: 1, v: 20 * 60, live: mode === 'join', at: Date.now() }, sc: c.sc.slice(), rc: c.rc.slice(), ck1: c.ck1.slice(), ft: c.ft.slice(), lk: mode === 'join' });
 }
-function openClock(){
+/* 比赛时间面板里的选时间器：从现在的计时出发（微调、开球、暂停之后也重新对上，免得“设定为”把刚才的微调改回去） */
+function clockTp(){
   const p = M.tm.ht ? 2 : M.tm.p, v = M.tm.ht ? PER[2][0] : Math.floor(clockOf(M));
-  openSheet('clock', { tp: { p, v: clamp(v, TPR[p][0], TPR[p][1]), live: !!M.tm.r && !M.tm.ht, at: Date.now() } });
+  return { p, v: clamp(v, TPR[p][0], TPR[p][1]), live: !!M.tm.r && !M.tm.ht, at: Date.now() };
 }
+function openClock(){ openSheet('clock', { tp: clockTp() }); }
 card.addEventListener('input', ev => {
   const x = ev.target.dataset && ev.target.dataset.x;
   if (x != null && sheetKind === 'expc'){
@@ -2412,7 +2450,7 @@ card.addEventListener('input', ev => {
 /* ================= 导出与导入 ================= */
 const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、hd 上下半场角球让球(主队，负数=主队让)、pe 各半场结束时的比赛时钟秒数、obs 开始观看的位置{p 半场, t 比赛时钟秒数}、stop 结束记录的位置(未结束为 null)、mk 上下半场预测用的盘(h本半场/f全场)、fl 全场大小盘、fh 全场让球(主队)、ev 事件阵列。只有 obs 到 stop 之间是实际观看的时间。'
   + 'ab.bets 是自动投注（模拟）记录：mt 盘(h1上半场/h2下半场/ft全场)、mk(ou大小/hd让球)、sd(o大/u小/h主/a客)、ln 盘口(让球以主队为准)、pr 投注当下模型的赢盘率、tier 档位(%)、p 与 t 投注时的半场与比赛时钟秒数、hold 需要稳定的秒数、sc 当时比分、ck 当时这个盘已有的角球、r 结果(1命中/0没中/0.5走盘/null待结算)。res 是结算用的最后角球 {h1 上半场[主,客], ft 全场[主,客]}。'
-  + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码, b(可省略；1=中途加入时补录、时间不详), a(可省略；1=联网同步自动补上的，时间是同步当下)]。api 是联网连上的比赛(API-Football fixture id、两队英文名、sw=1 表示主客跟输入相反、最后同步到的 st 状态/el 分钟/g 比分/ck 角球/ck1 上半场角球/sh 射门、dl 你的画面比实时慢几秒、fin=1 表示赛后同步到了完场数据)。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
+  + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码, b(可省略；1=中途加入时补录、时间不详), a(可省略；1=联网同步自动补上的，时间是同步当下)]。api 是联网连上的比赛(API-Football fixture id、两队英文名、sw=1 表示主客跟输入相反、最后同步到的 st 状态/el 分钟/g 比分/ck 角球/ck1 上半场角球/sh 射门、dl 你的画面比实时慢几秒、pok 各半场的开球时间戳是否跟分钟数对得上、fin=1 表示赛后同步到了完场数据)。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
 function openExport(list){
   const ds = new Date().toISOString().slice(0, 10);
   const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, line: m.line, hd: m.hd, mk: m.mk, fl: m.fl, fh: m.fh, add: m.add, pe: m.pe, obs: m.obs, stop: m.stop,
@@ -2810,7 +2848,7 @@ renderLegend();
 /* ================= 按钮与更新 ================= */
 $('#runBtn').addEventListener('click', () => {
   if (M.st === 2){ showToast('这场已经结束记录了。', startNew, '开始新比赛'); return; }
-  if (M.tm.ht){ kick(2); showToast('下半场开球，从 45:00 开始计时'); }
+  if (M.tm.ht){ const dl = kick(2); showToast('下半场开球，从 45:00 开始计时' + delayNote(dl)); }
   else M.tm.r ? pauseClock() : startClock();
   saveNow(); syncWake(); renderAll();
 });

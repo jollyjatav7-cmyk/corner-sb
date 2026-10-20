@@ -40,6 +40,7 @@ node uitest3.js http://localhost:8766 out            # timeline
 node uitest4.js http://localhost:8766 out            # auto-bet, full-match lines
 node uitest5.js http://localhost:8766 out            # online lookup and sync (mocked)
 node uitest6.js http://localhost:8766 out            # screen delay, held sync, sync buttons, expectation lookup, post-match sync (mocked)
+node uitest7.js http://localhost:8766 out            # kick-off stamps checked against the minute, second-half data waits for your kick-off, clock nudges (mocked)
 node fitphone.js http://localhost:8766 out           # phone layouts fit the screen
 node compat.js  http://localhost:8766                # old saved data still loads
 ```
@@ -59,3 +60,15 @@ python3 -I dev/model/make_model_js.py params3.json dev/data/model.json
 
 Analysis scripts: `extract3.py` (where each corner came from, extra candidate inputs),
 `origins_report.py` (numbers for the corner-origin report), `fit4.py` (tests extra buttons such as counters).
+
+Pre-match predictions from last-10 averages (used for the 2026-10-20 Champions League report):
+
+```bash
+python3 -I dev/model/prematch_fit.py work2 work3/prematch_fit.json             # corners, shots, crosses from last-10 averages + goal supremacy
+python3 -I dev/model/state_by_strength.py work2 work3/state_by_strength.json   # score-state multipliers for favourite / even / underdog
+python3 -I dev/model/backtest_prematch.py work2 work3/backtest_prematch.json   # leave-one-league-out check, spread per half, old +10% rule
+python3 -I dev/model/tonight.py work3/prematch_fit.json work3/state_by_strength.json dev/data/model.json work3/tonight.json
+```
+
+`tonight.py` has the evening's team numbers (statz.ai) and odds typed in; copy it and change `T`, `MENT` and `MATCHES` for another round.
+Add `calib` to see the simulated spread against the backtest, `nospread` to switch the random effects off.
