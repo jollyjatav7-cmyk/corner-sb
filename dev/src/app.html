@@ -420,6 +420,7 @@ small.auto{font-size:10.5px;color:var(--grass);margin-left:4px;font-weight:600}
 .myr.up .myp{color:var(--ok)} .myr.dn .myp{color:var(--red)}
 .myx{border:0;background:none;font-size:20px;line-height:1;color:var(--muted);width:32px;height:32px;flex-shrink:0}
 .myadd{display:block;margin:4px 0 0;text-align:left}
+.hdn{margin:6px 0 0;font-size:12px;color:var(--muted)}
 .oddsn{display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:12.5px;color:var(--muted);line-height:1.4}
 .oddsn span{flex:1;min-width:0}
 .oddsn .fixb{flex-shrink:0}
@@ -1241,13 +1242,14 @@ function renderPred(){
   }
   const r = predict(s), full = s.scope === 'f', half = PER[s.p][2], hv = s.have, have = hv[0] + hv[1];
   // 全场盘还没设定时，先用最接近预计结果的盘口
-  const E = have + r.mean, dE = hv[0] - hv[1] + r.meanT[0] - r.meanT[1];
-  const cT = Math.max(0.5, Math.floor(E) + 0.5), cH = -(Math.floor(dE) + 0.5);
+  const E = have + r.mean;
+  // 让球跟博彩 app 的滚球让球一样：从现在的角球比分起算（之前的角球不算），所以中心盘口只看接下来的差
+  const cT = Math.max(0.5, Math.floor(E) + 0.5), cH = -(Math.floor(r.meanT[0] - r.meanT[1]) + 0.5);
   if (full && M.fl == null){ M.fl = cT; s.line = cT; save(); }
   if (full && M.fh == null){ M.fh = cH; s.hd = cH; save(); }
   const line = s.line, hd = s.hd;
   const over = mOver(r, have, line), under = mUnder(r, have, line);
-  const hc = mHandicap(r, hv, hd), exT = [hv[0] + r.meanT[0], hv[1] + r.meanT[1]];
+  const hc = mHandicap(r, [0, 0], hd), exT = [hv[0] + r.meanT[0], hv[1] + r.meanT[1]];
   const hasPush = Math.abs(hd - Math.round(hd)) < 1e-9, pushT = Math.max(0, 1 - over - under);
   const mName = full ? '全场' : half;
   const fx = (i) => { const m = s.mult[i], w = clamp(Math.log(m) / Math.log(2) * 50, -50, 50); return `<span class="nm ${i ? 'a' : 'h'}">${esc(teamName(i))}</span><span class="bar2"><i style="${w >= 0 ? `left:50%;width:${w.toFixed(1)}%` : `left:${(50 + w).toFixed(1)}%;width:${(-w).toFixed(1)}%`}"></i></span><span class="v">${m.toFixed(2)}×</span>`; };
@@ -1261,7 +1263,8 @@ function renderPred(){
     ${lineRow(`${mName}大小盘`, 'line', line, chipVals(line, cT, 1, true), 1, fmtLine)}
     <div class="hrule"></div>
     <div class="hcr"><div class="hw ${hc.home > hc.away ? 'best' : ''}"><b>${pct(hc.home)}</b><span>主 ${hdShort(hd)} 赢盘</span></div><div><b>${hasPush ? pct(hc.push) : '—'}</b><span>走盘</span></div><div class="aw ${hc.away > hc.home ? 'best' : ''}"><b>${pct(hc.away)}</b><span>客 ${hdShort(-hd)} 赢盘</span></div></div>
-    ${lineRow(`${mName}让球（以主队为准）`, 'hd', hd, chipVals(hd, cH, 0.5, false), 0.5, hdShort)}
+    ${lineRow(`${mName}让球（以主队为准，跟滚球一样从现在 ${hv[0]}:${hv[1]} 起算）`, 'hd', hd, chipVals(hd, cH, 0.5, false), 0.5, hdShort)}
+    <p class="hdn">让球跟博彩 app 的滚球盘一样，从现在的角球 ${hv[0]}:${hv[1]} 起算，之前的不算</p>
     ${oddsRow()}
     ${myBets().length ? '' : '<button class="fixb myadd" data-pa="mybet">已经在博彩 app 投了一笔？记下来，看这笔现在的命中率</button>'}
     <div class="hrule"></div>
@@ -1396,7 +1399,7 @@ const WARM = 300;  // 记录满几秒（比赛时间）才开始自动投注
 let abTrack = {};
 const SIDE = { o: '大', u: '小', h: '主', a: '客' };
 function betLabel(b){
-  return b.mk === 'ou' ? `${MKT[b.mt]} ${SIDE[b.sd]} ${fmtLine(b.ln)}` : `${MKT[b.mt]} 让球 ${SIDE[b.sd]} ${hdShort(b.sd === 'h' ? b.ln : -b.ln)}`;
+  return b.mk === 'ou' ? `${MKT[b.mt]} ${SIDE[b.sd]} ${fmtLine(b.ln)}` : `${MKT[b.mt]} 让球 ${SIDE[b.sd]} ${hdShort(b.sd === 'h' ? b.ln : -b.ln)}${b.fr && b.ck ? `（${b.ck[0]}:${b.ck[1]} 起算）` : ''}`;
 }
 const fmtHold = s => s % 60 ? `${Math.floor(s / 60)}:${pad2(s % 60)}` : `${s / 60} 分钟`;
 function abEval(s, mkts){
@@ -1418,7 +1421,7 @@ function abEval(s, mkts){
       if (since == null || since > now) since = now;
       if (now - since >= AB.hold){
         placed.push({ key, mt: s.mt, mk: m.mk, sd: m.sd, ln: m.ln, pr: +m.pr.toFixed(3), tier, p: s.p, t: now, hold: AB.hold,
-          sc: s.gl.slice(), ck: s.have.slice(), r: null });
+          sc: s.gl.slice(), ck: s.have.slice(), fr: m.mk === 'hd' ? 1 : undefined, r: null });
       } else { next[key] = since; prog.push({ m, tier, left: AB.hold - (now - since) }); }
     }
   }
@@ -1480,7 +1483,8 @@ function settleBet(b, res){
   else if (b.mt === 'ft') c = res.ft;
   else if (res.h1 && res.ft) c = [res.ft[0] - res.h1[0], res.ft[1] - res.h1[1]];
   if (!c) return null;
-  const x = b.mk === 'ou' ? (b.sd === 'o' ? c[0] + c[1] - b.ln : b.ln - c[0] - c[1]) : (b.sd === 'h' ? 1 : -1) * (c[0] - c[1] + b.ln);
+  const base = b.mk === 'hd' && b.fr && b.ck ? b.ck[0] - b.ck[1] : 0;   // fr=1：滚球让球，从投注时的角球起算
+  const x = b.mk === 'ou' ? (b.sd === 'o' ? c[0] + c[1] - b.ln : b.ln - c[0] - c[1]) : (b.sd === 'h' ? 1 : -1) * (c[0] - c[1] - base + b.ln);
   return x > 1e-9 ? 1 : x < -1e-9 ? 0 : 0.5;
 }
 function openSettle(id){
@@ -1994,9 +1998,12 @@ async function apiSync(manual){
   if (!M.api || netBusy) return;
   netBusy = true; renderPred();
   const id = M.id;
-  try { const s = await apiFetch(M); if (M.id === id) applySync(s, manual); }
+  let ok = false;
+  try { const s = await apiFetch(M); if (M.id === id){ applySync(s, manual); ok = true; } }
   catch(e){ if (M.api){ M.api.err = e.message; M.api.at = nowSec(); save(); } if (manual) showToast('同步失败：' + e.message); }
   finally { netBusy = false; renderPred(); }
+  // 比赛进行中：同步时顺便更新滚球盘口（多 1 次请求），不另外弹提示
+  if (ok && M.api && LIVE_ST.includes(M.api.st) && NET.odds !== false) oddsFetch(false, true);
 }
 /* 顶部的“联网”按钮：连上这场、正在记录时，点一下就同步；其他时候打开联网设定 */
 function netPillTap(){
@@ -2147,15 +2154,15 @@ function applyOdds(o){
   for (const mt of ['h1', 'h2', 'ft']) for (const kind of ['ou', 'hd']){
     const x = g(mt + '|' + kind); if (!x) continue;
     let v = x.ln;
-    // 滚球让球通常从读到盘口这一刻 0:0 起算；预测卡上的让球按整个盘的总数算，所以换成等价的整盘让球数
-    if (o.live && kind === 'hd'){ const h = mktHave(mt); o.base[mt] = h; v = x.ln - (h[0] - h[1]); }
+    // 滚球让球从读到盘口这一刻的角球比分起算，跟预测卡上的让球一样，直接用
+    if (o.live && kind === 'hd') o.base[mt] = mktHave(mt);
     set(mt, kind, halfOf(v)); n++;
   }
   M.odds = o;
   return n;
 }
 var oddsBusy = false;   // var：渲染可能比这一行先跑
-async function oddsFetch(manual){
+async function oddsFetch(manual, quiet){
   if (!M.api || !NET.key || oddsBusy) return;
   oddsBusy = true; renderPred();
   const id = M.id;
@@ -2164,7 +2171,7 @@ async function oddsFetch(manual){
     if (M.id !== id) return;
     const n = applyOdds(o);
     saveNow(); renderAll();
-    if (n) showToast(`已按${o.live ? '滚球' : o.book}盘口设好：${oddsSummary(o)}`);
+    if (n && !quiet) showToast(`已按${o.live ? '滚球' : o.book}盘口设好：${oddsSummary(o)}`);
     else if (manual) showToast(o.live ? '联网现在没有这场的滚球角球盘' : '联网没有这场的角球盘口（有些联赛没有）');
   } catch(e){ if (manual) showToast('读取盘口失败：' + e.message); }
   finally { oddsBusy = false; renderPred(); }
@@ -2516,7 +2523,7 @@ function renderSheet(){
         ${d.msg ? `<p class="netnote">${esc(d.msg)}</p>` : ''}
         <div class="lbl">输入球队名字后自动查找</div>
         <div class="chips"><button class="chip" data-a="nauto" data-v="1" aria-pressed="${!!NET.auto}">开</button><button class="chip" data-a="nauto" data-v="0" aria-pressed="${!NET.auto}">关（只在按“查找”时找）</button></div>
-        <div class="lbl">连上比赛时读博彩的角球盘口（每次 1 次请求，盘口自动设好）</div>
+        <div class="lbl">读博彩的角球盘口：连上比赛时读一次，比赛中每次同步也更新滚球盘口（每次多 1 次请求）</div>
         <div class="chips"><button class="chip" data-a="nodds" data-v="1" aria-pressed="${NET.odds !== false}">开</button><button class="chip" data-a="nodds" data-v="0" aria-pressed="${NET.odds === false}">关（需要时在盘口下面按“读取”）</button></div>
         <div class="lbl">同步射门（被挡／被扑／偏出）</div>
         <div class="chips"><button class="chip" data-a="nshot" data-v="1" aria-pressed="${NET.shots !== false}">开</button><button class="chip" data-a="nshot" data-v="0" aria-pressed="${NET.shots === false}">关</button></div>
