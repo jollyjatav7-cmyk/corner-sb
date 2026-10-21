@@ -678,6 +678,11 @@ body{background:var(--paper)}
 .hlp p{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink2)}
 .hlp .where{font-size:12px;color:var(--muted);margin-top:2px}
 .bigp{height:46px;font-size:15px}
+.lnset{display:grid;grid-template-columns:1fr 44px minmax(84px,auto) 44px;align-items:center;gap:8px}
+.lnset span{font-size:14px;color:var(--ink2)}
+.lnset button{height:40px;border:0;border-radius:12px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule);font-size:20px;color:var(--ink)}
+.lnset button:active{background:var(--rule)}
+.lnset b{text-align:center;font:600 20px var(--f-num)}
 /* 比赛仓库 */
 .card.wide{width:min(720px,100%)}
 .wtabs{display:flex}
@@ -1433,7 +1438,7 @@ function myProbText(o){
   return `赢 ${pct(win)}${o.hw >= 0.005 ? `（含赢一半 ${pct(o.hw)}）` : ''}${o.p >= 0.005 ? ` · 走 ${pct(o.p)}` : ''} · 输 ${pct(lose)}${o.hl >= 0.005 ? `（含输一半 ${pct(o.hl)}）` : ''}`;
 }
 function myDefLine(mt, mk, sd){
-  const p = mt === 'ft' ? 0 : +mt[1], bk = M.odds && M.odds.mk[mt + '|' + mk];
+  const p = mt === 'ft' ? 0 : +mt[1], bk = !oddsMine() && M.odds && M.odds.mk[mt + '|' + mk];
   if (bk) return mk === 'hd' && sd === 'a' ? -bk.ln : bk.ln;   // 有博彩盘口就用它（含四分之一盘）
   let v = mk === 'hd' ? (mt === 'ft' ? (M.fh == null ? -0.5 : M.fh) : M.hd[p - 1]) : (mt === 'ft' ? (M.fl == null ? 9.5 : M.fl) : M.line[p - 1]);
   if (mk === 'hd' && sd === 'a') v = -v;
@@ -1725,7 +1730,8 @@ function predAction(b){
     case 'expc': closeMid(); openExpCalc(); return;
     case 'expauto': expAuto(); return;
     case 'mybet': closeMid(); openMyBet(); return;
-    case 'odds': oddsFetch(true); return;
+    case 'odds': if (oddsMine()) openSheet('lines'); else oddsFetch(true); return;
+    case 'lines': openSheet('lines'); return;
     case 'mydel': {
       const k = +b.dataset.k, L = myBets(), i = L.findIndex(x => x.k === k); if (i < 0) return;
       const [gone] = L.splice(i, 1); saveNow(); renderAll();
@@ -1753,6 +1759,9 @@ setTab(LS.get('corner-sb-tab', 'pred'));
 /* ================= 自动投注（模拟，只看命中率，不管赔率） =================
    监控画面上现在的大小盘两边和让球两边。任一边的赢盘率连续 hold 秒（比赛时间）都在某个档位以上，
    就记一笔；中间只要掉到档位以下，就从头算。同一个盘口、同一边、同一档位每场只记一次。 */
+/* 盘口来源：联网自动（赛前 Bet365、比赛中 API-Football 的滚球盘），或跟你的网站（自己填，联网不会改） */
+const ODP = Object.assign({ src: 'api' }, LS.get('corner-sb-odds', {}) || {});
+const oddsMine = () => ODP.src === 'me';
 const AB = Object.assign({ hold: 180 }, LS.get('corner-sb-ab', {}) || {});
 const WARM = 300;  // 记录满几秒（比赛时间）才开始自动投注
 let abTrack = {};
@@ -1761,9 +1770,18 @@ function betLabel(b){
   return b.mk === 'ou' ? `${MKT[b.mt]} ${SIDE[b.sd]} ${fmtLine(b.ln)}` : `${MKT[b.mt]} 让球 ${SIDE[b.sd]} ${hdShort(b.sd === 'h' ? b.ln : -b.ln)}${b.fr && b.ck ? `（${b.ck[0]}:${b.ck[1]} 起算）` : ''}`;
 }
 const fmtHold = s => s % 60 ? `${Math.floor(s / 60)}:${pad2(s % 60)}` : `${s / 60} 分钟`;
+/* 每个半场最后五分钟（40:00、85:00 起）不再自动投注：开着的话自动结束，已经记下的照常结算。中场休息时算下半场 */
+const AB_END = { 1: 2400, 2: 5100 };
+const abLate = () => { const p = M.tm.ht ? 2 : M.tm.p, c = M.tm.ht ? PER[2][0] : clockOf(M); return c >= AB_END[p] ? p : 0; };
 function abEval(s, mkts){
   const on = M.ab.on;
   if (!on || M.st !== 1) return null;
+  const late = abLate();
+  if (late){
+    M.ab.on = null; abTrack = {}; save();
+    showToast(`自动投注在 ${late === 1 ? '40:00' : '85:00'} 自动结束：每个半场最后五分钟不下注，已经记下的照常结算`);
+    return null;
+  }
   if (on.mt !== s.mt){ abTrack = {}; return { paused: true, mt: s.mt }; }
   // 计时器停着时不累积时间、也不开始新的计时，但掉到档位以下照样重新算
   const run = !!M.tm.r && !M.tm.ht, now = Math.floor(clockOf(M)), next = {}, prog = [], placed = [];
@@ -1804,9 +1822,12 @@ function renderAB(){
   let ctl = '';
   if (live){
     const s = predState(), mt = s.msg ? null : s.mt;
-    if (!M.ab.on) ctl = `<button class="pill green" data-ab="on" ${mt ? '' : 'disabled'}>开始自动投注</button>
+    const late = abLate();
+    if (!M.ab.on && late) ctl = `<button class="pill green" data-ab="on" disabled>开始自动投注</button>
+      <p class="note" style="margin:0">${late === 1 ? '上半场 40:00' : '下半场 85:00'} 以后是这个半场的最后五分钟，不自动投注。${late === 1 ? '下半场开球后可以再开始。' : ''}</p>`;
+    else if (!M.ab.on) ctl = `<button class="pill green" data-ab="on" ${mt ? '' : 'disabled'}>开始自动投注</button>
       <div class="row hold"><span class="lbl" style="margin:0">需要稳定</span>${[60, 120, 180, 300].map(x => `<button class="chip" data-ab="hold" data-v="${x}" aria-pressed="${AB.hold === x}">${x / 60} 分钟</button>`).join('')}</div>
-      <p class="note" style="margin:0">开始后，监控画面上现在的${mt ? MKT[mt] : ''}大小盘两边和让球两边：任一边的赢盘率连续 ${fmtHold(AB.hold)}（比赛时间）都在 60%、70% 或 80% 以上，就在那一档记一笔。中间掉下去就重新计时，所以在档位上下波动不会算。这场记录满 5 分钟后才开始计算。</p>`;
+      <p class="note" style="margin:0">开始后，监控画面上现在的${mt ? MKT[mt] : ''}大小盘两边和让球两边：任一边的赢盘率连续 ${fmtHold(AB.hold)}（比赛时间）都在 60%、70% 或 80% 以上，就在那一档记一笔。中间掉下去就重新计时，所以在档位上下波动不会算。这场记录满 5 分钟后才开始计算；到每个半场最后五分钟（40:00、85:00）会自动结束。</p>`;
     else if (v && v.paused) ctl = `<p class="msg">${MKT[M.ab.on.mt]}的自动投注已经暂停：现在显示的是${MKT[v.mt]}的盘。盘口设好后点开始。</p>
       <div class="grid2"><button class="pill green" data-ab="on">开始（${MKT[v.mt]}）</button><button class="pill" data-ab="off">停止</button></div>`;
     else ctl = `<div class="abon"><i></i><span>自动投注中（${MKT[M.ab.on.mt]}）</span><span class="sp"></span><button class="pill" data-ab="off">停止</button></div>
@@ -1823,7 +1844,7 @@ function renderAB(){
 $('#ab').addEventListener('click', ev => {
   const b = ev.target.closest('[data-ab]'); if (!b) return;
   switch (b.dataset.ab){
-    case 'on': { const s = predState(); if (s.msg) return; M.ab.on = { mt: s.mt }; abTrack = {}; saveNow(); renderPred(); showToast(`开始自动投注：${MKT[s.mt]} 大小 ${fmtLine(s.line)}、让球 ${hdText(s.hd)}`); return; }
+    case 'on': { const s = predState(); if (s.msg || abLate()) return; M.ab.on = { mt: s.mt }; abTrack = {}; saveNow(); renderPred(); showToast(`开始自动投注：${MKT[s.mt]} 大小 ${fmtLine(s.line)}、让球 ${hdText(s.hd)}`); return; }
     case 'off': M.ab.on = null; abTrack = {}; saveNow(); renderPred(); showToast('已停止自动投注'); return;
     case 'hold': AB.hold = +b.dataset.v; LS.set('corner-sb-ab', AB); abTrack = {}; renderAB(); return;
     case 'settle': openSettle(M.id); return;
@@ -2161,7 +2182,7 @@ async function apiLink(c){
       applySync(s);
       const pre = M.exp == null && !isRecording();   // 开赛前连上：顺便提供一键查赛前预期
       showToast(`已连上：${M.api.h} vs ${M.api.a}（${ST_ZH[s.st] || s.st}）${isRecording() ? '' : '，开球后按“比赛刚开球”'}`, pre ? expAuto : null, '查赛前预期');
-      if (NET.odds !== false) setTimeout(() => oddsFetch(false), 4500); }   // 连上就顺便读这场的角球盘口（提示看完再读，免得盖掉）
+      if (NET.odds !== false && !oddsMine()) setTimeout(() => oddsFetch(false), 4500); }   // 连上就顺便读这场的角球盘口（提示看完再读，免得盖掉）
   } catch(e){ M.api.err = e.message; showToast('已连上，但读取资料失败：' + e.message); }
   finally { netBusy = false; renderPred(); }
 }
@@ -2377,7 +2398,7 @@ async function apiSync(manual){
     showToast(`联网：${ST_ZH[s.st] || s.st}。${t}开球时按“比赛刚开球”`);
   }
   // 比赛进行中：同步时顺便更新滚球盘口（多 1 次请求），不另外弹提示
-  if (M.api && LIVE_ST.includes(M.api.st) && NET.odds !== false) oddsFetch(false, true);
+  if (M.api && LIVE_ST.includes(M.api.st) && NET.odds !== false && !oddsMine()) oddsFetch(false, true);
 }
 /* “比赛已经开始了”：连上联网、比赛正在踢的话，直接用联网的时间、比分、角球、红牌填好；不然就手动填 */
 async function joinSmart(){
@@ -2736,7 +2757,7 @@ async function oddsFetch(manual, quiet){
     if (M.id !== id) return;
     const n = applyOdds(o);
     saveNow(); renderAll();
-    if (n && !quiet) showToast(`已按${o.live ? '滚球' : o.book}盘口设好：${oddsSummary(o)}`);
+    if (n && !quiet) showToast(`已按${o.live ? '滚球' : o.book}盘口设好：${oddsSummary(o)}`, () => openSheet('lines'), '对不上？');
     else if (manual) showToast(o.live ? '联网现在没有这场的滚球角球盘' : '联网没有这场的角球盘口（有些联赛没有）');
   } catch(e){ if (manual) showToast('读取盘口失败：' + e.message); }
   finally { oddsBusy = false; renderPred(); renderQBar(); }
@@ -2750,10 +2771,11 @@ function oddsSummary(o){
   return ['h1', 'h2', 'ft'].map(part).filter(Boolean).join('；');
 }
 function oddsRow(){
+  if (oddsMine()) return `<p class="oddsn"><span>盘口跟你的网站（自己填，联网不会改）</span><button class="fixb" data-pa="lines">改盘口</button></p>`;
   if (!M.api || !NET.key) return '';
   const o = M.odds, ago = o ? Math.max(0, Math.round((nowSec() - o.at) / 60)) : null;
   const what = o && Object.keys(o.mk).length ? `${o.live ? '滚球' : esc(o.book)}盘口（${ago ? ago + ' 分钟前' : '刚刚'}）：${oddsSummary(o)}` : o ? '联网没有这场的角球盘口' : '还没读博彩盘口';
-  return `<p class="oddsn"><span>${what}</span><button class="fixb" data-pa="odds" ${oddsBusy ? 'disabled' : ''}>${oddsBusy ? '读取中…' : o ? '更新' : '读取'}</button></p>`;
+  return `<p class="oddsn"><span>${what}</span><button class="fixb" data-pa="odds" ${oddsBusy ? 'disabled' : ''}>${oddsBusy ? '读取中…' : o ? '更新' : '读取'}</button><button class="fixb" data-pa="lines">跟我的网站对不上？</button></p>`;
 }
 /* 预测卡上的赛前预期一行（没填时最显眼） */
 function expRow(){
@@ -2973,9 +2995,17 @@ function renderQBar(){
   sb.innerHTML = `${ICON.sync}<span>${ss.l}</span><small>${esc(ss.s)}</small>${ss.alert ? '<i class="dot"></i>' : ''}`;
   sb.setAttribute('aria-label', `${ss.l}：${ss.s}`);
   const o = M.odds, ob = $('#qbOdds'), oago = o ? Math.max(0, Math.round((nowSec() - o.at) / 60)) : 0;
+  if (oddsMine()){   // 跟你的网站：这个按钮是“填盘口”，小字是现在用的盘口
+    const p = M.tm.ht ? 2 : M.tm.p, full = M.mk[p - 1] === 'f';
+    const ln = full ? M.fl : M.line[p - 1], hd = full ? M.fh : M.hd[p - 1];
+    ob.disabled = false;
+    ob.innerHTML = `${ICON.odds}<span>填盘口</span><small>${ln == null ? '还没填' : `大小 ${fmtLine(ln)} · 让 ${hdShort(hd == null ? 0 : hd)}`}</small>`;
+    ob.setAttribute('aria-label', '按你的网站填盘口');
+  } else {
   ob.disabled = !!oddsBusy;
   ob.innerHTML = `${ICON.odds}<span>更新盘口</span><small>${!NET.key ? '未设联网' : !M.api ? '先连上比赛' : oddsBusy ? '读取中…' : !o ? '点一下读取' : Object.keys(o.mk).length ? `${o.live ? '滚球' : '赛前'} ${oago ? oago + ' 分前' : '刚刚'}` : '没有盘口'}</small>`;
   ob.setAttribute('aria-label', '更新博彩盘口');
+  }
   const live = my.map(b => [b, betProb(b, s0)]).find(([, o]) => !o.over);
   const mb = $('#qbMy');
   mb.className = 'qb' + (live && live[1].w + live[1].hw >= 0.6 ? ' hot' : '');
@@ -2992,13 +3022,13 @@ function quickSync(){
   if (ss.k === 'busy') return;
   if (ss.k === 'join'){ apiSync(true); return; }   // 重新读一次，按最新的时间打开“中途加入”
   // 比赛中：apiSync 会顺便更新滚球盘口；还没开赛时另外读赛前盘口
-  apiSync(true).then(() => { if (M.api && !LIVE_ST.includes(M.api.st) && !DONE_ST.includes(M.api.st) && NET.odds !== false) oddsFetch(true); });
+  apiSync(true).then(() => { if (M.api && !LIVE_ST.includes(M.api.st) && !DONE_ST.includes(M.api.st) && NET.odds !== false && !oddsMine()) oddsFetch(true); });
 }
 $('#strip').addEventListener('click', ev => {
   const b = ev.target.closest('[data-q]'); if (!b || b.dataset.q === 'undo') return;
   switch (b.dataset.q){
     case 'sync': quickSync(); return;
-    case 'odds': if (!NET.key) openSheet('net'); else if (!M.api) quickSync(); else oddsFetch(true); return;
+    case 'odds': if (oddsMine()) openSheet('lines'); else if (!NET.key) openSheet('net'); else if (!M.api) quickSync(); else oddsFetch(true); return;
     case 'my': myBets().length ? openSheet('mybets') : openMyBet(); return;
     case 'more': openSheet('menu'); return;
   }
@@ -3020,10 +3050,10 @@ const HELP = {
   sync: ['同步', '底部“同步”', '连上联网的比赛后，点一下就读取最新的比分、角球、红牌和射门，比赛中还会顺便更新博彩的滚球角球盘口（赛前就读赛前盘口）。你漏点的角球，等画面追上后会自动补上。没设定联网时这个按钮是“联网”，还没连上这场时是“查找”；连上了但还没开始记录、比赛已经在踢时是“加入”，点一下就按联网的时间、比分、角球和红牌中途加入；联网显示已完场时变成“结束”。'],
   hud: ['数据条', '手机：比分下方（浮窗模式时在浮窗下方）', '大小盘和角球让球两格显示模型算出的赢盘机会，60% 以上会变黄；下一格是你记下的投注现在赢的机会，没有记投注时显示预计的角球数。点这几格都能打开完整的盘口面板。下面一行是两队的角球节奏（基础 × 心态 × 攻势）。浮窗模式下，最前面多一格比分和时间，点它可以调时间，中场时会变成“下半场 ▶”。'],
   ou: ['大小盘', '盘口面板', '按现在的比赛时间、比分、红牌和你记录的攻势，把剩下的时间模拟 4,000 次，算最后角球数超过盘口的机会。点下面的数字换盘口，或按底部的“更新盘口”直接用博彩的盘口。上方可以切换看本半场盘还是全场盘。'],
-  odds: ['更新盘口', '底部“更新盘口”', '读取博彩这场的角球盘口：比赛中读滚球盘，开赛前读赛前盘（优先 Bet365）。读到的盘口直接设成 app 的大小盘和让球盘，数据条和盘口面板的机会跟着更新。下面的小字是上次读取是几分钟前。每按一次用 1 次联网请求。'],
+  odds: ['盘口', '底部“更新盘口”或“填盘口”', '盘口有两种来源，在这个按钮打开的“盘口”里切换。联网自动：按一下读博彩这场的角球盘口（比赛中读 API-Football 的滚球盘，开赛前读赛前盘、优先 Bet365），直接设成 app 的大小盘和让球盘，同步时也会顺便更新；每按一次用 1 次联网请求。跟我的网站：每家博彩公司的盘口都不一样，联网读到的常常跟你用的网站对不上；选这个就照你网站上的盘口填，联网不会再改，底部按钮变成“填盘口”，小字是现在用的盘口。'],
   hd: ['角球让球', '盘口面板', '跟博彩 app 的滚球让球一样，从现在的角球比分起算，之前的角球不算。例如主 −0.5：接下来主队要比客队多拿至少 1 个角球才赢。下方的数字可以换让球盘口。'],
   my: ['我的投注', '底部“我的注”、盘口面板', '把你在博彩 app 实际投的那一笔记下来（哪个盘、哪一边、盘口、投注那一刻的角球），app 会按比赛情况一直算这笔现在赢的机会。比赛结束后自动算出输赢，计入比赛仓库的统计。'],
-  ab: ['自动投注（模拟）', '盘口面板 → 自动投注', '不用真钱的模拟下注，用来检验模型准不准。开始后，任一边的赢盘机会连续一段时间（默认 3 分钟）都在 60%、70% 或 80% 以上，就在那一档记一笔。比赛结束后结算，比赛仓库的“统计”会显示每一档的命中率。'],
+  ab: ['自动投注（模拟）', '盘口面板 → 自动投注', '不用真钱的模拟下注，用来检验模型准不准。开始后，任一边的赢盘机会连续一段时间（默认 3 分钟）都在 60%、70% 或 80% 以上，就在那一档记一笔。到每个半场最后五分钟（上半场 40:00、下半场 85:00）会自动结束，不用你按停止；已经记下的照常结算。比赛结束后结算，比赛仓库的“统计”会显示每一档的命中率。'],
   why: ['角球节奏', '手机：数据条下方；iPad：盘口面板最上方', '每队接下来平均每 10 分钟几个角球＝基础节奏 × 心态 × 本场攻势，比赛中一直更新。基础节奏：按比赛时段、主客场和赛前预期，经验上这个时候每队的平均节奏（开场最慢、补时最快，主队多三成）。心态：比分和红牌，例如领先 1 球 ×0.77、落后 1 球 ×1.12、少一人 ×0.59。本场攻势：你记的进入前场、禁区、传中跟平均比（对方压得越多，这边越低）；刚开场时记录少，会接近 1。点它会打开盘口面板的“拆开看”，有剩余时间的预计和转化对照。'],
   exp: ['赛前预期', '盘口面板、功能 → 赛前预期', '赛前估计的全场角球数，比赛前段记录还少的时候，它对预测的影响最大。最快是填博彩 app 上这场的赛前全场角球盘口（连上联网时会自动读）；也可以用两队最近的场均角球：联网的免费方案查不到以前的比赛，所以 app 每天自动收集日职联和你连过联网的联赛的完场角球，存在这台设备上，日职联已经内置了本赛季的资料。都没有时可以手动填。'],
   data: ['本半场记录', '盘口面板 → 数据', '这半场你点过的各项次数，跟同样比赛时间里的平均次数比较，看哪队压得比较多。'],
@@ -3268,6 +3298,21 @@ function renderSheet(){
         <p class="hint">常用的都在底部快捷栏：同步、盘口、我的注、撤销、功能。看到“?”可以点开看说明。</p>
         <div class="hlp">${HELP_ORDER.map(k => { const x = HELP[k]; return `<div><h4>${x[0]}<small>${x[1]}</small></h4><p>${x[2]}</p></div>`; }).join('')}</div>`;
       break;
+    case 'lines': {   // 盘口：跟你的网站（自己填）或联网自动
+      const p = M.tm.ht ? 2 : M.tm.p, half = PER[p][2];
+      const row = (k, label, v, fmt, step) => `<div class="lnset"><span>${label}</span><button data-a="lnset" data-k="${k}" data-d="${-step}" aria-label="${label}减">−</button><b>${v == null ? '未设' : fmt(v)}</b><button data-a="lnset" data-k="${k}" data-d="${step}" aria-label="${label}加">＋</button></div>`;
+      h = `<div class="card-h"><h3>盘口</h3>${helpBtn('odds')}<button class="pill" data-a="close">完成</button></div>
+        <p class="hint">每家博彩公司的角球盘口都不一样，比赛中还会一直变。app 联网读的是 Bet365 的赛前盘和 API-Football 的滚球盘，所以常常跟你用的网站对不上。选“跟我的网站”，就照你网站上现在的盘口填，联网同步时不会再改。</p>
+        <div class="chips"><button class="chip" data-a="osrc" data-v="me" aria-pressed="${oddsMine()}">跟我的网站（自己填）</button><button class="chip" data-a="osrc" data-v="api" aria-pressed="${!oddsMine()}">联网自动（Bet365 等）</button></div>
+        <div class="lbl">${half}</div>
+        ${row('line', `${half}大小`, M.line[p - 1], fmtLine, 0.5)}
+        ${row('hd', `${half}让球（主队）`, M.hd[p - 1], hdShort, 0.5)}
+        <div class="lbl">全场</div>
+        ${row('fl', '全场大小', M.fl, fmtLine, 0.5)}
+        ${row('fh', '全场让球（主队）', M.fh, hdShort, 0.5)}
+        <p class="hint">让球按主队写：主队让 1 个填 −1，主队受让半个填 +0.5。滚球让球跟博彩一样，从现在的角球比分起算。改完马上按新盘口算机会。</p>`;
+      break;
+    }
     case 'pip': {
       const phone = innerWidth < 600;
       h = `<div class="card-h"><h3>视频浮窗</h3><button class="pill" data-a="close">完成</button></div>
@@ -3495,7 +3540,7 @@ function renderSheet(){
           <div><h4>准确度</h4><p>用“三个联赛训练、拿第四个联赛测试”的方式轮流验证。和只用时间、比分、人数和角球的基本模型相比，加上这些记录后，下半场大小判断的误差（Brier 分数）降低约 1.3%；上半场几乎没有差别，因为上半场的记录还太少。再填上全场预期，下半场降低约 2.5%，上半场约 0.8%。概率本身是准的：模型说 50% 左右的情况，实际大约 50%；说 70% 左右，实际约 68%。提升幅度不大，因为半场角球本身的随机性很高。</p></div>
           <div><h4>两队各自的角球和让球</h4><p>模型会分别算出两队还会有几个角球，再算出让球盘的赢盘、走盘概率（走盘只在整数让球时出现）。让球比大小更受益于你的记录：加上进入前场、进入禁区和传中后，让球判断的误差降低约 3%，上下半场都是，因为这些记录能看出哪一队在压着打。全场预期对让球几乎没有帮助。概率同样验证过：模型说 70% 左右的情况，实际约 69%。</p></div>
           <div><h4>本半场盘和全场盘</h4><p>预测上方可以切换“本半场／全场”。全场盘＝已经发生的角球（包括上半场和中途加入时补录的）＋模拟出来的剩余角球；在上半场看全场盘时，会接着把整个下半场也模拟进去，下半场先沿用目前的攻势系数。下半场默认就是全场盘，跟博彩 app 一样。</p></div>
-          <div><h4>自动投注（模拟）</h4><p>按“开始自动投注”后，等这场记录满 5 分钟，开始监控画面上现在的大小盘两边和让球两边。任一边的赢盘率连续一段比赛时间（默认 3 分钟，可改 1、2、5 分钟）都在 60%、70% 或 80% 以上，就在那一档记一笔；中间只要掉到档位以下就重新计时。同一个盘口、同一边、同一档每场只记一次；已经确定的盘（例如角球数已经超过大小盘）不记。最后输入实际角球数结算，统计每一档的命中率，不管赔率。</p></div>
+          <div><h4>自动投注（模拟）</h4><p>按“开始自动投注”后，等这场记录满 5 分钟，开始监控画面上现在的大小盘两边和让球两边。任一边的赢盘率连续一段比赛时间（默认 3 分钟，可改 1、2、5 分钟）都在 60%、70% 或 80% 以上，就在那一档记一笔；中间只要掉到档位以下就重新计时。同一个盘口、同一边、同一档每场只记一次；已经确定的盘（例如角球数已经超过大小盘）不记。到每个半场最后五分钟（上半场 40:00、下半场 85:00）自动结束。最后输入实际角球数结算，统计每一档的命中率，不管赔率。</p></div>
           <div><h4>你的记录</h4><p>你结束的比赛越多，“平均”会越来越接近你自己的记录习惯，攻势系数也会跟着校准。${H.n ? `目前已用到你 ${H.n} 场已结束的比赛。` : '目前还没有已结束的比赛。'}</p></div>
           <div><h4>来源</h4><p>模型数据：StatsBomb Open Data（github.com/statsbomb/open-data）。</p></div>
         </div>`;
@@ -3517,6 +3562,15 @@ card.addEventListener('click', ev => {
     case 'help': openSheet('help'); break;
     case 'hback': if (d.back) openSheet(d.back.kind, d.back.data); else closeSheet(); break;
     case 'pip': openSheet('pip'); break;
+    case 'osrc': ODP.src = b.dataset.v; LS.set('corner-sb-odds', ODP); renderSheet(); renderAll(); showToast(oddsMine() ? '盘口跟你的网站：照网站填，联网不会改' : '盘口联网自动：按“更新盘口”读 Bet365 和滚球盘'); break;
+    case 'lnset': {
+      const p = M.tm.ht ? 2 : M.tm.p, k = b.dataset.k, dd = +b.dataset.d;
+      if (k === 'line') M.line[p - 1] = clamp(M.line[p - 1] + dd, 0.5, 15.5);
+      else if (k === 'hd') M.hd[p - 1] = clamp(M.hd[p - 1] + dd, -6, 6);
+      else if (k === 'fl') M.fl = clamp((M.fl == null ? 9.5 : M.fl) + dd, 0.5, 30.5);
+      else if (k === 'fh') M.fh = clamp((M.fh == null ? -0.5 : M.fh) + dd, -10, 10);
+      save(); renderPred(); renderQBar(); renderSheet(); break;
+    }
     case 'pippos': PIP.pos = b.dataset.v; savePip(); renderSheet(); renderAll(); if (PIP.pos !== 'off') showToast(`浮窗模式已开启：浮窗放在屏幕${PIP.pos === 'top' ? '上方' : '下方'}`); break;
     case 'piph': PIP.h = +b.dataset.v; savePip(); renderSheet(); break;
     case 'pipn': PIP.h = clamp(PIP.h + (+b.dataset.d), 60, 360); savePip(); renderSheet(); break;
@@ -3658,7 +3712,7 @@ card.addEventListener('click', ev => {
         if (join && d.ht){ endFirstHalf(); saveNow(); syncWake(); renderAll(); showToast('已从中场休息开始记录，下半场开球时按 ▶'); }
         // 你按画面设定的时间跟联网实时的差＝画面延迟，记下来
         if (join && !d.ht && M.api){ const dl = learnDelay(clockOf(M), 'join'); saveNow(); if (dl != null) showToast(`已从 ${fmtClock(M.tm.p, clockOf(M))} 开始记录${delayNote(dl)}`); }
-        if (join && M.api && NET.odds !== false && !M.odds) setTimeout(() => oddsFetch(false), 3000);
+        if (join && M.api && NET.odds !== false && !M.odds && !oddsMine()) setTimeout(() => oddsFetch(false), 3000);
       }
       break;
     }
@@ -4163,7 +4217,7 @@ setInterval(() => {
 }, 500);
 
 let offline = '离线使用：请从主屏幕的图示打开，联网时打开一次后就能离线使用。';
-const APPVER = 'v22';
+const APPVER = 'v23';
 if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:'){
   // 新版本在背景下载好、接手这个页面时，提示重新载入（记录随时都存好了，重新载入不会丢）
   let hadCtrl = !!navigator.serviceWorker.controller;
