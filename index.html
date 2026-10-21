@@ -542,6 +542,18 @@ body{background:var(--paper)}
 .mid .teams.tms{display:flex;flex-direction:column;gap:3px;margin:0 0 0 auto;text-align:right;font-size:12px;color:var(--muted)}
 .teams.tms em{font-style:normal;font-weight:600} .teams.tms em.h{color:var(--home)} .teams.tms em.a{color:var(--away)}
 .teams.tms b{font:600 16px var(--f-num);color:var(--ink)}
+.why{margin:2px 0 4px;font-size:12px}
+.why .wr{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:start;padding:6px 0;border-top:1px solid var(--rule)}
+.why .wr.wh{border-top:0;padding:4px 0 2px}
+.why .wr>span{color:var(--ink2);font-weight:600;line-height:1.25}
+.why small{display:block;font:400 11px/1.3 var(--f-ui);color:var(--muted);margin-top:2px}
+.why .wr b{font:600 16px/1.15 var(--f-num);font-variant-numeric:tabular-nums;color:var(--ink);text-align:right}
+.why .wh em{font-style:normal;font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.why .wh em.h{color:var(--home)} .why .wh em.a{color:var(--away)}
+.why .wr.tot{border-top-color:var(--ink2)} .why .wr.tot b{font-size:18px}
+.why .wr.cv b{color:var(--ink2)}
+.why .note{margin:6px 0 0}
+.why small i{font-style:normal;white-space:nowrap}
 .morebtn{border:0;border-top:1px solid var(--rule);background:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0 2px;font-size:12.5px;color:var(--ink2);width:100%;text-align:left}
 .more{display:flex;flex-direction:column;gap:10px}
 .more .dist,.more .lines,.more .factor,.more .ctls,.more .note{margin:0}
@@ -1136,7 +1148,7 @@ function predState(){
   const scope = M.mk[p - 1], full = scope === 'f';
   const add2 = M.add[1] == null ? H.addDef[1] : M.add[1];
   const more = full && p === 1 ? [{ half: 2, end: (45 + add2) * 60 }] : null;
-  return { p, t, end, add, add2, cnt, hc, co, cf, gl, rd, last, elapsed, obsHalf, mult: mm.mult, halfMin: t / 60,
+  return { p, t, end, add, add2, cnt, hc, co, cf, gl, rd, last, elapsed, obsHalf, mult: mm.mult, parts: mm.parts, useP: M.exp != null && M.exp > 0, halfMin: t / 60,
     scope, more, mt: full ? 'ft' : 'h' + p, have: full ? cf : co,
     line: full ? M.fl : M.line[p - 1], hd: full ? M.fh : M.hd[p - 1] };
 }
@@ -1148,6 +1160,50 @@ function predict(s){
 }
 const pct = v => Math.round(v * 100) + '%';
 const fmtLine = x => (Math.round(x * 100) / 100).toString();
+
+/* ================= 拆开看：每队接下来的角球节奏怎么来的 =================
+   节奏（每 10 分钟）＝ 基础节奏（比赛时段、主客场、全场预期）× 心态（比分、红牌）× 本场攻势（你记的进入前场、禁区、传中）。
+   跟 mSimulate 里每分钟的 λ 是同一套乘法（不含“刚有角球”这种几分钟就消失的短暂加成）。
+   “转化”（进禁区几次出一个角球）只作对照，模型不用它：它场场波动大、不稳定。 */
+let predWhy = (() => { try { return localStorage.getItem('corner-sb-why') === '1'; } catch (e) { return false; } })();
+function remainBase(s){
+  const P = MODEL.base, segs = [[s.p, s.t, s.end]].concat((s.more || []).map(x => [x.half, 0, x.end]));
+  let w = 0, sec = 0;
+  for (const [hf, a, b] of segs){
+    for (let t = a; t < b - 1e-9;){
+      const mi = Math.floor(t / 60), step = Math.min(60 - (t - mi * 60), b - t);
+      w += P.bin[(hf - 1) * 10 + Math.min(Math.floor(mi / 5), 9)] * step; sec += step; t += step;
+    }
+  }
+  return { rate: sec > 0 ? w / sec : 0, min: sec / 60 };
+}
+function whyParts(s, r){
+  const P = MODEL.base, rb = remainBase(s);
+  return { min: rb.min, team: [0, 1].map(i => {
+    const prior = s.useP ? Math.exp(s.parts[i][s.parts[i].length - 1]) : 1;
+    const act = s.mult[i] / prior, base10 = rb.rate * (i === 0 ? P.home : 1) * prior * 10;
+    const d = s.gl[i] - s.gl[1 - i], man = Math.sign(s.rd[1 - i] - s.rd[i]);
+    const st = P.state[d <= -2 ? 0 : d === -1 ? 1 : d === 0 ? 2 : d === 1 ? 3 : 4] * P.man[man + 1];
+    const now10 = base10 * st * act, c = s.cnt[i], hr = H.rates[i];
+    return { base10, st, act, now10, d, man, c, ratio: hr.ck > 0 ? hr.bx / hr.ck : null, flat: now10 / 10 * rb.min, sim: r.meanT[i] };
+  }) };
+}
+function whyHTML(s, r){
+  const w = whyParts(s, r), T = w.team, f2 = x => x.toFixed(2);
+  const row = (cls, lbl, sub, f) => `<div class="wr ${cls}"><span>${lbl}<small>${sub}</small></span>${T.map((x, i) => `<b>${f(x, i)}</b>`).join('')}</div>`;
+  const mood = x => (x.d === 0 ? '平局' : x.d > 0 ? `领先 ${x.d} 球` : `落后 ${-x.d} 球`) + (x.man > 0 ? '，多一人' : x.man < 0 ? '，少一人' : '');
+  const seen = Math.round(s.elapsed);
+  return `<div class="why">
+    <div class="wr wh"><span></span>${T.map((x, i) => `<em class="${i ? 'a' : 'h'}">${esc(teamName(i))}</em>`).join('')}</div>
+    ${row('', '基础节奏', `每 10 分钟；时段、主客场、${s.useP ? `全场预期 ${fmtLine(M.exp)}` : '没填全场预期'}`, (x, i) => `${f2(x.base10)}<small>${i ? '客场' : '主场'}</small>`)}
+    ${row('', '× 心态', '比分、红牌', x => `×${f2(x.st)}<small>${mood(x)}</small>`)}
+    ${row('', '× 本场攻势', seen >= 1 ? `你记了 ${seen} 分钟` : '还没开始记', x => `×${f2(x.act)}<small><i>前场 ${x.c.f3}</i> · <i>禁区 ${x.c.bx}</i> · <i>传中 ${x.c.cr}</i></small>`)}
+    ${row('tot', '= 现在节奏', '每 10 分钟', x => f2(x.now10))}
+    ${row('', `剩余约 ${Math.round(w.min)} 分钟`, '还会有（模拟）', x => `${x.sim.toFixed(1)}<small>比分不变约 ${x.flat.toFixed(1)}</small>`)}
+    ${row('cv', '转化（对照）', '进禁区 → 角球', x => `${x.c.bx} → ${x.c.ck}<small>${x.ratio ? `平均 ${x.ratio.toFixed(1)} 次出 1 个` : ''}</small>`)}
+    <p class="note">基础节奏含比赛时段、主客场和全场预期；心态是比分和红牌；本场攻势来自你记的进入前场、禁区、传中（对方压得越多，这边越低）。三个相乘就是现在节奏。“还会有”是模拟结果，模拟里之后还可能进球、比分会变，所以跟“比分不变”不一样。转化只作对照，它场场波动大、不稳定，不改变预测。</p>
+  </div>`;
+}
 
 /* ================= 我的投注：你在博彩 app 实际投的注，按现在的比赛情况算命中率 =================
    b = { k, mt 盘 h1/h2/ft, mk 'hd' 让球 / 'ou' 大小, sd 'h'/'a'/'o'/'u', ln 这一边的盘口（让球：主 −0.5 记 -0.5；客 +0.5 记 0.5），
@@ -1374,6 +1430,8 @@ function renderPred(){
     <div class="hrule"></div>
     <div class="expl"><div><small>预计${mName}</small><p class="pred-line"><b class="big">${E.toFixed(1)}</b> 个，还会有 ${r.mean.toFixed(1)} 个</p></div>
       <div class="teams tms">${[0, 1].map(i => `<span><em class="${i ? 'a' : 'h'}">${esc(teamName(i))}</em> <b>${exT[i].toFixed(1)}</b> <small>×${s.mult[i].toFixed(2)}</small></span>`).join('')}</div></div>
+    <button class="morebtn whyb" data-pa="why" aria-expanded="${predWhy}"><span>拆开看：基础 × 心态 × 攻势</span><span>${predWhy ? '收起' : '展开 ›'}</span></button>
+    ${predWhy ? whyHTML(s, r) : ''}
     ${expRow()}
     <button class="morebtn" data-pa="more" aria-expanded="${predMore}"><span>分布图 · 攻势系数 · 全场预期 · 补时</span><span>${predMore ? '收起' : '展开 ›'}</span></button>
     ${predMore ? `<div class="more">
@@ -1458,6 +1516,7 @@ function predAction(b){
     case 'add': { const cur = M.add[p - 1] == null ? H.addDef[p - 1] : M.add[p - 1]; M.add[p - 1] = clamp(cur + d, 0, 20); break; }
     case 'add0': M.add[p - 1] = null; break;
     case 'more': predMore = !predMore; renderPred(); return;
+    case 'why': predWhy = !predWhy; try { localStorage.setItem('corner-sb-why', predWhy ? '1' : '0'); } catch (e) {} renderPred(); return;
     case 'open': openMid('pred'); return;
     case 'kick1': { const dl = kick(1); saveNow(); syncWake(); renderAll(); if (!showLate()) showToast('上半场开球，从 0:00 开始计时' + delayNote(dl)); return; }
     case 'new': closeMid(); startNew(); return;
