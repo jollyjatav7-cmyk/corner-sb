@@ -1039,12 +1039,12 @@ function predState(){
   let elapsed = 0, obsHalf = t / 60;
   if (o.p === p){ elapsed = Math.max(0, S + t - o.t) / 60; obsHalf = elapsed; }
   else if (o.p < p) elapsed = Math.max(0, halfLen1() - o.t) / 60 + t / 60;
-  const mm = mMultipliers(cnt, elapsed, H.rates, M.exp);
+  const mm = mMultipliers(cnt, elapsed, H.rates, M.exp, expShare());
   // 盘：本半场（h）或全场（f）。上半场看全场盘时，接着模拟整个下半场
   const scope = M.mk[p - 1], full = scope === 'f';
   const add2 = M.add[1] == null ? H.addDef[1] : M.add[1];
   const more = full && p === 1 ? [{ half: 2, end: (45 + add2) * 60 }] : null;
-  return { p, t, end, add, add2, cnt, hc, co, cf, gl, rd, last, elapsed, obsHalf, mult: mm.mult, parts: mm.parts, useP: M.exp != null && M.exp > 0, halfMin: t / 60,
+  return { p, t, end, add, add2, cnt, hc, co, cf, gl, rd, last, elapsed, obsHalf, mult: mm.mult, parts: mm.parts, prior: mm.prior, share: mm.split ? expShare() : null, useP: M.exp != null && M.exp > 0, halfMin: t / 60,
     scope, more, mt: full ? 'ft' : 'h' + p, have: full ? cf : co,
     line: full ? M.fl : M.line[p - 1], hd: full ? M.fh : M.hd[p - 1] };
 }
@@ -1076,7 +1076,7 @@ function remainBase(s){
 function whyParts(s, r){
   const P = MODEL.base, rb = remainBase(s);
   return { min: rb.min, team: [0, 1].map(i => {
-    const prior = s.useP ? Math.exp(s.parts[i][s.parts[i].length - 1]) : 1;
+    const prior = s.prior ? s.prior[i] : 1;
     const act = s.mult[i] / prior, base10 = rb.rate * (i === 0 ? P.home : 1) * prior * 10;
     const d = s.gl[i] - s.gl[1 - i], man = Math.sign(s.rd[1 - i] - s.rd[i]);
     const st = P.state[d <= -2 ? 0 : d === -1 ? 1 : d === 0 ? 2 : d === 1 ? 3 : 4] * P.man[man + 1];
@@ -1091,13 +1091,13 @@ function whyHTML(s, r){
   const seen = Math.round(s.elapsed);
   return `<div class="why">
     <div class="wr wh"><span></span>${T.map((x, i) => `<em class="${i ? 'a' : 'h'}">${esc(teamName(i))}</em>`).join('')}</div>
-    ${row('', '基础节奏', `每 10 分钟；时段、主客场、${s.useP ? `全场预期 ${fmtLine(M.exp)}` : '没填全场预期'}`, (x, i) => `${f2(x.base10)}<small>${i ? '客场' : '主场'}</small>`)}
+    ${row('', '基础节奏', `每 10 分钟；时段、主客场、${s.useP ? `全场预期 ${fmtLine(M.exp)}${s.share ? '（两队分开）' : ''}` : '没填全场预期'}`, (x, i) => `${f2(x.base10)}<small>${i ? '客场' : '主场'}${s.share ? ` · 预期 ${(M.exp * s.share[i]).toFixed(1)}` : ''}</small>`)}
     ${row('', '× 心态', '比分、红牌', x => `×${f2(x.st)}<small>${mood(x)}</small>`)}
     ${row('', '× 本场攻势', seen >= 1 ? `你记了 ${seen} 分钟` : '还没开始记', x => `×${f2(x.act)}<small><i>前场 ${x.c.f3}</i> · <i>禁区 ${x.c.bx}</i> · <i>传中 ${x.c.cr}</i></small>`)}
     ${row('tot', '= 现在节奏', '每 10 分钟', x => f2(x.now10))}
     ${row('', `剩余约 ${Math.round(w.min)} 分钟`, '还会有（模拟）', x => `${x.sim.toFixed(1)}<small>比分不变约 ${x.flat.toFixed(1)}</small>`)}
     ${row('cv', '转化（对照）', '进禁区 → 角球', x => `${x.c.bx} → ${x.c.ck}<small>${x.ratio ? `平均 ${x.ratio.toFixed(1)} 次出 1 个` : ''}</small>`)}
-    <p class="note">基础节奏含比赛时段、主客场和全场预期；心态是比分和红牌；本场攻势来自你记的进入前场、禁区、传中（对方压得越多，这边越低）。三个相乘就是现在节奏。“还会有”是模拟结果，模拟里之后还可能进球、比分会变，所以跟“比分不变”不一样。转化只作对照，它场场波动大、不稳定，不改变预测。</p>
+    <p class="note">基础节奏含比赛时段、主客场和全场预期（用“查／算”填的两队平均，会按两队分开，但只部分采用：回测显示近 10 场平均有不少噪声，全信反而不准）；心态是比分和红牌；本场攻势来自你记的进入前场、禁区、传中（对方压得越多，这边越低）。三个相乘就是现在节奏。“还会有”是模拟结果，模拟里之后还可能进球、比分会变，所以跟“比分不变”不一样。转化只作对照，它场场波动大、不稳定，不改变预测。</p>
   </div>`;
 }
 
@@ -1339,7 +1339,7 @@ function renderPred(){
         <div class="ctl c6"><span>全场预期</span><button data-pa="exp" data-d="-0.5" aria-label="全场预期减少">−</button><b>${M.exp == null ? '未填' : fmtLine(M.exp)}</b><button data-pa="exp" data-d="0.5" aria-label="全场预期增加">＋</button>${M.exp == null ? '<i></i>' : '<button class="x" data-pa="exp0">清除</button>'}<button class="x" data-pa="expc">查／算</button></div>
         <div class="ctl"><span>${half}补时</span><button data-pa="add" data-d="-1" aria-label="补时减一分钟">−</button><b>${s.add} 分</b><button data-pa="add" data-d="1" aria-label="补时加一分钟">＋</button>${addAuto ? '<i></i>' : '<button class="x" data-pa="add0">默认</button>'}</div>
       </div>
-      <p class="note">“全场预期”填赛前的全场角球盘口或两队平均角球，预测会更准。补时默认 ${H.addDef[s.p - 1]} 分钟${H.n >= 3 ? '（根据你已结束的比赛）' : ''}，第四官员举牌后再调整。</p>
+      <p class="note">“全场预期”填赛前的全场角球盘口或两队平均角球，预测会更准。用“查／算”填两队平均时会按两队分开算（让球盘更准）；直接填盘口只调整总数。补时默认 ${H.addDef[s.p - 1]} 分钟${H.n >= 3 ? '（根据你已结束的比赛）' : ''}，第四官员举牌后再调整。</p>
       <button class="fixb" data-pa="join">补录／校正比分和角球</button>
     </div>` : ''}`;
   mini.innerHTML = `${full ? '全场' : ''}大 ${fmtLine(line)} <b>${pct(over)}</b>`;
@@ -1408,7 +1408,7 @@ function predAction(b){
     case 'hd': if (full) M.fh = clamp((M.fh == null ? -0.5 : M.fh) + d, -10, 10); else M.hd[p - 1] = clamp(M.hd[p - 1] + d, -6, 6); break;
     case 'hdv': if (full) M.fh = v; else M.hd[p - 1] = v; break;
     case 'exp': M.exp = clamp(M.exp == null ? (d > 0 ? 10.5 : 9.5) : M.exp + d, 3, 25); break;
-    case 'exp0': M.exp = null; break;
+    case 'exp0': M.exp = null; M.expIn = null; M.expSrc = null; break;
     case 'add': { const cur = M.add[p - 1] == null ? H.addDef[p - 1] : M.add[p - 1]; M.add[p - 1] = clamp(cur + d, 0, 20); break; }
     case 'add0': M.add[p - 1] = null; break;
     case 'more': predMore = !predMore; renderPred(); return;
@@ -2124,6 +2124,13 @@ async function apiForm(){
   });
 }
 const expOf = v => (v[0] + v[3]) / 2 + (v[2] + v[1]) / 2;  // v = [主得, 主失, 客得, 客失]
+/* 两队各占全场预期的比例（只有用“查／算”或联网查过两队平均时才有）；总数仍以 M.exp 为准，你之后用 −／＋ 改了总数也照样按这个比例分 */
+function expShare(){
+  const v = M.expIn;
+  if (M.exp == null || !Array.isArray(v) || v.length !== 4) return null;
+  const h = (v[0] + v[3]) / 2, a = (v[2] + v[1]) / 2;
+  return h > 0 && a > 0 ? [h / (h + a), a / (h + a)] : null;
+}
 /* 一键：联网查两队近 10 场的场均角球，直接填好赛前预期（约 3 次请求）；没连上比赛就打开手动填 */
 var expBusy = false;   // var：渲染可能比这一行先跑
 async function expAuto(){
@@ -2537,7 +2544,7 @@ function renderSheet(){
       const v = d.v, e = expOf(v), n0 = esc(teamName(0)), n1 = esc(teamName(1));
       const L = [[0, `${n0} 场均得角球`], [1, `${n0} 场均失角球`], [2, `${n1} 场均得角球`], [3, `${n1} 场均失角球`]];
       h = `<div class="card-h"><h3>赛前全场预期</h3><button class="pill" data-a="close">取消</button></div>
-        <p class="hint">用两队最近 10 场的场均角球算：${n0}预期 =（${n0}场均得 + ${n1}场均失）÷ 2，${n1}同理，两队相加。填了这个数，预测会更准，尤其是比赛前段记录还少的时候。</p>
+        <p class="hint">用两队最近 10 场的场均角球算：${n0}预期 =（${n0}场均得 + ${n1}场均失）÷ 2，${n1}同理，两队相加。填了这个数，预测会更准，尤其是比赛前段记录还少的时候。用这里的两队平均，app 还会知道哪队预期更多，让球盘更准。</p>
         ${NET.key ? `<button class="pill dark" data-a="xfetch">联网自动查两队近 10 场</button>` : '<p class="hint">设定联网数据（菜单 → 联网数据）后，可以一键自动查。</p>'}
         ${d.msg ? `<p class="netnote">${esc(d.msg)}</p>` : d.src ? `<p class="netnote">${esc(d.src)}</p>` : ''}
         <div class="xrows">${L.map(([i, l]) => `<label class="xrow"><span>${l}</span><input type="range" class="tpr" data-x="${i}" min="0" max="12" step="0.1" value="${v[i]}"><b id="xv${i}">${v[i].toFixed(1)}</b></label>`).join('')}</div>
@@ -2857,12 +2864,12 @@ card.addEventListener('input', ev => {
 });
 
 /* ================= 导出与导入 ================= */
-const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、hd 上下半场角球让球(主队，负数=主队让)、pe 各半场结束时的比赛时钟秒数、obs 开始观看的位置{p 半场, t 比赛时钟秒数}、stop 结束记录的位置(未结束为 null)、mk 上下半场预测用的盘(h本半场/f全场)、fl 全场大小盘、fh 全场让球(主队)、ev 事件阵列。只有 obs 到 stop 之间是实际观看的时间。'
+const README = '角球数据记录导出档（fmt=1）。matches 是比赛阵列，每场：id、d 日期、lg 联赛、h 主队、a 客队、st 状态(1进行中/2已结束)、exp 赛前全场角球预期、expIn 赛前两队近 10 场场均角球[主得, 主失, 客得, 客失]（可省略；用来把预期分到两队）、line 上下半场盘口、add 上下半场补时(分钟，null=默认)、hd 上下半场角球让球(主队，负数=主队让)、pe 各半场结束时的比赛时钟秒数、obs 开始观看的位置{p 半场, t 比赛时钟秒数}、stop 结束记录的位置(未结束为 null)、mk 上下半场预测用的盘(h本半场/f全场)、fl 全场大小盘、fh 全场让球(主队)、ev 事件阵列。只有 obs 到 stop 之间是实际观看的时间。'
   + 'ab.bets 是自动投注（模拟）记录：mt 盘(h1上半场/h2下半场/ft全场)、mk(ou大小/hd让球)、sd(o大/u小/h主/a客)、ln 盘口(让球以主队为准)、pr 投注当下模型的赢盘率、tier 档位(%)、p 与 t 投注时的半场与比赛时钟秒数、hold 需要稳定的秒数、sc 当时比分、ck 当时这个盘已有的角球、r 结果(1命中/0没中/0.5走盘/null待结算)。res 是结算用的最后角球 {h1 上半场[主,客], ft 全场[主,客]}。my 是你自己记下的实际投注：mt 盘、mk(hd让球/ou大小)、sd(h主/a客/o大/u小)、ln 这一边的盘口、s0 投注时这个盘的角球[主,客]、cnt(1=投注前的角球也算，0=从投注时起算)、at 记下的时间。'
   + '每个事件 = [t 比赛时钟秒数（下半场从2700起算）, p 半场(1上半/2下半), i 队伍(0主队/1客队), c 代码, b(可省略；1=中途加入时补录、时间不详), a(可省略；1=联网同步自动补上的，时间是同步当下)]。api 是联网连上的比赛(API-Football fixture id、两队英文名、sw=1 表示主客跟输入相反、最后同步到的 st 状态/el 分钟/g 比分/ck 角球/ck1 上半场角球/sh 射门、dl 你的画面比实时慢几秒、pok 各半场的开球时间戳是否跟分钟数对得上、fin=1 表示赛后同步到了完场数据)。代码与定义见 codes；定义与 StatsBomb Open Data 的事件一致：f3 运动战传球（到人）或带球进入前场三分之一但没进禁区；bx 运动战传球（到人，非传中）或带球从禁区外进入禁区；co/cf 运动战传中到人/没到人；sb/ss/so/sg 射门被挡/被扑/偏出(含中柱)/进球；ck 角球；og 对方乌龙（本队得分）；rc 本队红牌。';
 function openExport(list){
   const ds = new Date().toISOString().slice(0, 10);
-  const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, line: m.line, hd: m.hd, mk: m.mk, fl: m.fl, fh: m.fh, add: m.add, pe: m.pe, obs: m.obs, stop: m.stop,
+  const matches = list.map(m => ({ id: m.id, d: m.d, lg: m.lg, h: m.h, a: m.a, st: m.st, exp: m.exp, expIn: m.expIn || null, line: m.line, hd: m.hd, mk: m.mk, fl: m.fl, fh: m.fh, add: m.add, pe: m.pe, obs: m.obs, stop: m.stop,
     ab: { bets: m.ab.bets }, res: m.res, api: m.api, ev: m.ev.map(e => e.a ? [e.t, e.p, e.i, e.c, e.b ? 1 : 0, 1] : e.b ? [e.t, e.p, e.i, e.c, 1] : [e.t, e.p, e.i, e.c]) }));
   const codes = {}; for (const c of ORDER) codes[c] = LABEL[c];
   const obj = { app: '角球数据记录', fmt: 1, exported: new Date().toISOString().slice(0, 16), readme: README, codes, matches };
@@ -2892,7 +2899,7 @@ function importText(txt){
   for (const r of o.matches){
     if (!r || !r.id) continue;
     const m = fixMatch({ id: String(r.id), c: nowSec(), u: nowSec(), d: String(r.d || ''), lg: String(r.lg || ''), h: String(r.h || ''), a: String(r.a || ''),
-      st: r.st === 1 ? 1 : 2, exp: typeof r.exp === 'number' ? r.exp : null, line: r.line, hd: r.hd, mk: r.mk, fl: r.fl, fh: r.fh, ab: r.ab, res: r.res, api: r.api, add: r.add, pe: r.pe || {}, obs: r.obs, stop: r.stop,
+      st: r.st === 1 ? 1 : 2, exp: typeof r.exp === 'number' ? r.exp : null, expIn: Array.isArray(r.expIn) && r.expIn.length === 4 ? r.expIn.map(Number) : null, line: r.line, hd: r.hd, mk: r.mk, fl: r.fl, fh: r.fh, ab: r.ab, res: r.res, api: r.api, add: r.add, pe: r.pe || {}, obs: r.obs, stop: r.stop,
       tm: null, ev: (r.ev || []).map(x => ({ t: x[0], p: x[1], i: x[2], c: x[3], b: x[4], a: x[5] })) });
     if (m.id === M.id) continue;
     const last = m.ev[m.ev.length - 1];

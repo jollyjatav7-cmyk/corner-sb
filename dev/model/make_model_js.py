@@ -1,4 +1,4 @@
-"""Write the compact model JSON used by the app from fit3 final params.
+"""Write the compact model JSON used by the app from fit3 final params (plus coefSplit from fit5.py final l10).
 Usage: python3 -I make_model_js.py <params3.json> <out.json>
 """
 import json
@@ -13,6 +13,7 @@ out = {
     'groups': {'f3': ['f3'], 'bx': ['bx', 'co'], 'cr': ['co', 'cf'], 'sh': ['sb', 'ss', 'so', 'sg'], 'ck': ['ck']},
     'meanTotal': r(d['meanTotal'], 4), 'features': d['features'],
     'coefNoPrior': [r(x) for x in d['coefNoPrior']], 'coefPrior': [r(x) for x in d['coefPrior']],
+    'coefSplit': [r(x) for x in d['coefSplit']],
     'pseudo': d['pseudo'], 'addDef': [4, 6],
 }
 json.dump(out, open(sys.argv[2], 'w'), ensure_ascii=False, separators=(',', ':'))

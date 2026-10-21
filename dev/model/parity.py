@@ -11,13 +11,15 @@ import numpy as np
 DEV = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 d = json.load(open(os.path.join(DEV, 'data', 'params3.json')))
 sr = {1: d['ratesSide']['home'], 0: d['ratesSide']['away']}
-cases = [([{'f3': 12, 'bx': 4, 'cr': 3}, {'f3': 6, 'bx': 1, 'cr': 2}], 20.0, None),
-         ([{'f3': 25, 'bx': 9, 'cr': 7}, {'f3': 10, 'bx': 3, 'cr': 2}], 35.0, 11.5),
-         ([{'f3': 3, 'bx': 0, 'cr': 1}, {'f3': 9, 'bx': 4, 'cr': 3}], 6.0, None)]
+cases = [([{'f3': 12, 'bx': 4, 'cr': 3}, {'f3': 6, 'bx': 1, 'cr': 2}], 20.0, None, None),
+         ([{'f3': 25, 'bx': 9, 'cr': 7}, {'f3': 10, 'bx': 3, 'cr': 2}], 35.0, 11.5, None),
+         ([{'f3': 3, 'bx': 0, 'cr': 1}, {'f3': 9, 'bx': 4, 'cr': 3}], 6.0, None, None),
+         ([{'f3': 25, 'bx': 9, 'cr': 7}, {'f3': 10, 'bx': 3, 'cr': 2}], 35.0, 11.5, [0.35, 0.65]),
+         ([{'f3': 0, 'bx': 0, 'cr': 0}, {'f3': 0, 'bx': 0, 'cr': 0}], 0.0, 8.5, [0.62, 0.38])]
 py = []
-for cnt, el, exp in cases:
-    names = d['features'] + (['pr_x_x'] if exp else [])
-    coef = d['coefPrior'] if exp else d['coefNoPrior']
+for cnt, el, exp, share in cases:
+    names = d['features'] + (['pr_x_x'] if exp else []) + (['ps_x_x'] if share else [])
+    coef = d['coefSplit'] if share else d['coefPrior'] if exp else d['coefNoPrior']
     out = []
     for i in (0, 1):
         z = coef[0]
@@ -25,6 +27,8 @@ for cnt, el, exp in cases:
             kind, who, g = nm.split('_')
             if kind == 'pr':
                 x = np.log(exp / d['meanTotal'])
+            elif kind == 'ps':
+                x = np.log(2 * share[i])
             else:
                 k = i if who == 'own' else 1 - i
                 r = sr[1 - k][g]  # app index 0 = home = side 1 in the fit
@@ -40,7 +44,7 @@ const src = fs.readFileSync(path.join(dev, 'src', 'model.js'), 'utf8').replace('
 const tmp = path.join(os.tmpdir(), 'corner_model_parity.js'); fs.writeFileSync(tmp, src);
 const m = require(tmp);
 const cases = JSON.parse(process.argv[2]);
-console.log(JSON.stringify(cases.map(([c, e, x]) => m.mMultipliers(c, e, m.MODEL.rates, x).mult.map(v => +v.toFixed(4)))));
+console.log(JSON.stringify(cases.map(([c, e, x, s]) => m.mMultipliers(c, e, m.MODEL.rates, x, s).mult.map(v => +v.toFixed(4)))));
 """, DEV, json.dumps(cases)], capture_output=True, text=True, check=True).stdout
 print('python', py)
 print('js    ', js.strip())

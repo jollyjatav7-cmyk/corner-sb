@@ -95,5 +95,25 @@
   -0.021106731910528222,
   1.026563629628121
  ],
- "pseudo": 15.0
+ "pseudo": 15.0,
+ "coefSplit": [
+  0.016586483612250624,
+  0.13898469305894418,
+  0.17126752044936958,
+  0.06271967837137872,
+  -0.20699768405187582,
+  -0.0010227617750831967,
+  0.600535481037446,
+  0.4879821064122209
+ ],
+ "featuresSplit": [
+  "so_own_f3",
+  "so_own_bx",
+  "so_own_cr",
+  "so_opp_f3",
+  "so_opp_bx",
+  "pr_x_x",
+  "ps_x_x"
+ ],
+ "splitNote": "coefSplit: fit5.py final l10 - five activity features + log(E_total/meanTotal) + log(2*E_own/E_total), E from last-10 team averages"
 }

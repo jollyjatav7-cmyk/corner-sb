@@ -15,18 +15,22 @@ function mPois(lam, rnd){
   do { k++; p *= rnd(); } while (p > L);
   return k - 1;
 }
-/* 攻势系数：cnt[i][group] 本场看到的次数；elapsed 看到的分钟数；rates[i][group] 主队／客队每分钟的平均次数；exp 赛前全场预期（可为 null） */
-function mMultipliers(cnt, elapsed, rates, exp){
-  const useP = exp != null && exp > 0;
-  const coef = useP ? MODEL.coefPrior : MODEL.coefNoPrior;
-  const names = useP ? MODEL.features.concat(['pr_x_x']) : MODEL.features;
-  const out = [0, 0], parts = [[], []];
+/* 攻势系数：cnt[i][group] 本场看到的次数；elapsed 看到的分钟数；rates[i][group] 主队／客队每分钟的平均次数；exp 赛前全场预期（可为 null）；
+   share（可省略）＝ [主, 客] 两队各占全场预期的比例（来自“查／算”的两队近 10 场平均）。有 share 时用 coefSplit：
+   回测（留一联赛）显示分开用两队预期，让球盘更准（上半场 Brier 约好 1%），大小盘不变。
+   回传 mult（含赛前预期的总倍数）、parts（各项的对数贡献）、prior（其中来自赛前预期的倍数）。 */
+function mMultipliers(cnt, elapsed, rates, exp, share){
+  const useP = exp != null && exp > 0, useS = useP && share != null && share[0] > 0 && share[1] > 0 && MODEL.coefSplit != null;
+  const coef = useS ? MODEL.coefSplit : useP ? MODEL.coefPrior : MODEL.coefNoPrior;
+  const names = MODEL.features.concat(useP ? ['pr_x_x'] : [], useS ? ['ps_x_x'] : []);
+  const out = [0, 0], parts = [[], []], prior = [1, 1];
   for (let i = 0; i < 2; i++){
     let z = coef[0];
     names.forEach((nm, j) => {
       const [kind, who, g] = nm.split('_');
       let x;
       if (kind === 'pr') x = Math.log(exp / MODEL.meanTotal);
+      else if (kind === 'ps') x = Math.log(2 * share[i]);
       else {
         // 主队跟主队的平均比、客队跟客队的平均比（rates[0] 主队、rates[1] 客队）
         const j = who === 'own' ? i : 1 - i;
@@ -36,10 +40,11 @@ function mMultipliers(cnt, elapsed, rates, exp){
       }
       z += coef[j + 1] * x;
       parts[i].push(coef[j + 1] * x);
+      if (kind === 'pr' || kind === 'ps') prior[i] *= Math.exp(coef[j + 1] * x);
     });
     out[i] = Math.exp(z);
   }
-  return { mult: out, parts };
+  return { mult: out, parts, prior, split: useS };
 }
 /* half 1/2；t0 本半场已过秒数；score/reds/last/mult 都是 [主, 客]；last 为本半场最后一个角球的秒数或 null；
    end 本半场预计总秒数。more（可省略）是之后要接着模拟的半场，例如 [{ half: 2, end: 2880 }]，用来算全场盘。
