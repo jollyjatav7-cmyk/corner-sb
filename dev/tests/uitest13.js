@@ -135,7 +135,7 @@ async function pip(browser, name, vp, opts, H){
   await page.click('#hud [data-pa="kick2"]'); await pause();
   console.log(`[${name}:P6] ${ok(/下半场开球/.test(await h.toast()), 'second half from the hud')} cell=[${await txt('#hud .hud-s')}]`);
   // odds drawer stays below the band
-  await page.click('#qbOdds'); await pause(400);
+  await page.click('#hud [data-pa="open"]'); await pause(400);
   const mid = await rect('#mid');
   console.log(`[${name}:P7] drawer ${mid.t}-${mid.b} ${ok(mid.t >= band.b, 'odds drawer below the band')} tab=${await page.$eval('#mid', e => e.dataset.tab)}`);
   await page.click('#midClose'); await pause(400);
@@ -154,7 +154,7 @@ async function pip(browser, name, vp, opts, H){
   console.log(`[${name}:P10] band ${b2.t}-${b2.b} strip ${s2.t}-${s2.b} extra ${ex2} ${ok(s2.b <= b2.t, 'quick bar above the band')} ${ok(ex2 <= s2.t, 'pads above the quick bar')}`);
   await h.tap(1, 'ck', 1);
   console.log(`[${name}:P11] tap still works: away corners ${await txt('#ckA')}`);
-  await page.click('#qbOdds'); await pause(400);
+  await page.click('#hud [data-pa="open"]'); await pause(400);
   const m2 = await rect('#mid');
   console.log(`[${name}:P12] drawer ${m2.t}-${m2.b} ${ok(m2.b <= b2.t, 'odds drawer above the band')}`);
   await page.screenshot({ path: `${out}/${name}_p2_bottom_drawer.png` });
