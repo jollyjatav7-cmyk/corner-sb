@@ -57,7 +57,7 @@ async function setup(browser, vp, opts, init){
     rect: sel => page.$eval(sel, e => { const r = e.getBoundingClientRect(); return { t: Math.round(r.top), b: Math.round(r.bottom), h: Math.round(r.height) }; }),
     shown: sel => page.$eval(sel, e => getComputedStyle(e).display !== 'none' && !e.hidden).catch(() => false),
     store: () => page.evaluate(() => JSON.parse(localStorage.getItem('corner-sb-matches') || '{}')),
-    cur: () => page.evaluate(() => { const s = JSON.parse(localStorage.getItem('corner-sb-matches') || '{}'); return s[JSON.parse(localStorage.getItem('corner-sb-current') || '""')] || null; }),
+    cur: () => page.evaluate(() => { const s = JSON.parse(localStorage.getItem('corner-sb-matches') || '{}'); return s[JSON.parse(localStorage.getItem('corner-sb-current') || '""')] || { h: '', a: '', lg: '', ev: [], ab: { on: null, bets: [] }, blank: 1 }; }),
     tap: async (i, c, n = 1) => { for (let k = 0; k < n; k++){ await page.locator(`.pad[data-i="${i}"] [data-c="${c}"]:visible`).first().click(); await page.clock.runFor(15000); } },
     sheet: async () => (await page.$eval('#sheet', e => e.hidden)) ? 'closed' : ((await page.textContent('#card h3')) || '').trim(),
     toast: async () => (await page.$eval('#toast', e => e.hidden)) ? '' : ((await page.textContent('#toastMsg')) || '').trim(),

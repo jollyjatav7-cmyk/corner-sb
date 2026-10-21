@@ -45,7 +45,7 @@ async function run(browser, name, vp, opts){
   const pause = ms => page.waitForTimeout(ms || 250);
   const sheet = async () => (await page.$eval('#sheet', e => e.hidden)) ? 'closed' : ((await page.textContent('#card h3')) || '').trim();
   const toast = async () => (await page.$eval('#toast', e => e.hidden)) ? '' : ((await page.textContent('#toastMsg')) || '').trim();
-  const cur = () => page.evaluate(() => { const s = JSON.parse(localStorage.getItem('corner-sb-matches') || '{}'); return s[JSON.parse(localStorage.getItem('corner-sb-current') || '""')]; });
+  const cur = () => page.evaluate(() => { const s = JSON.parse(localStorage.getItem('corner-sb-matches') || '{}'); return s[JSON.parse(localStorage.getItem('corner-sb-current') || '""')] || { h: '', a: '', lg: '', ev: [], ab: { on: null, bets: [] }, blank: 1 }; });
   const ok = (c, m) => (c ? 'OK ' : 'FAIL ') + m;
   // linked live match, joined from the API
   await page.fill('#fH', '柏太阳神'); await page.fill('#fA', '千叶'); await page.clock.runFor(3000); await pause(800);
@@ -107,6 +107,35 @@ async function run(browser, name, vp, opts){
   while (await secs() < 85 * 60 + 10) await page.clock.runFor(30000);
   await page.clock.runFor(15000); await pause(400);
   console.log(`[${name}:A6] at ${await txt('#clkT')} ${ok((await cur()).ab.on === null, 'ended at 85:00')} toast=${await toast()}`);
+  // D. finish → settle → 看明细; league does not carry over; details from the warehouse row and the auto-bet tab
+  await page.fill('#fLg', '日职联');
+  await page.click('#qbMore'); await page.locator('#card [data-a="finish"]').click(); await page.locator('#card [data-a="fkeep"]').click(); await pause(600);
+  console.log(`[${name}:D1] after keep: ${await sheet()}`);
+  if ((await sheet()) === '结算自动投注'){ await page.click('#card [data-a="sgo"]'); await pause(300); }
+  console.log(`[${name}:D2] toast=${await toast()}`);
+  await page.click('#toastUndo'); await pause(300);
+  console.log(`[${name}:D3] ${ok((await sheet()) === '投注明细', '看明细 opens the details')} | ${(await txt('#card')).slice(0, 260)}`);
+  await page.screenshot({ path: `${out}/${name}_d1_detail.png` });
+  const rows = await page.locator('#card .bd').count();
+  console.log(`[${name}:D4] detail rows=${rows}`);
+  await page.click('#card [data-a="close"]');
+  await page.openMid('ab');
+  console.log(`[${name}:D5] auto-bet tab has 这场明细=${!!(await page.$('#ab [data-ab="detail"]'))}`);
+  await page.click('#ab [data-ab="detail"]'); await pause(300);
+  console.log(`[${name}:D6] from tab → ${await sheet()}`);
+  await page.click('#card [data-a="close"]');
+  await page.click('#qbMore'); await page.locator('#card [data-a="new"]').click(); await pause(300);
+  console.log(`[${name}:D7] new match league=[${await page.inputValue('#fLg')}] home=[${await page.inputValue('#fH')}] ${ok((await page.inputValue('#fLg')) === '', 'league cleared')}`);
+  await page.click('#qbMore'); await page.locator('#card [data-a="arch"]').click(); await pause(200);
+  await page.locator('#card .wrow', { hasText: '柏太阳神' }).locator('[data-a="wopen"]').click(); await pause(150);
+  await page.locator('#card [data-a="mbets"]').click(); await pause(300);
+  console.log(`[${name}:D8] from warehouse → ${await sheet()} back=${!!(await page.$('#card [data-a="hback"]'))}`);
+  await page.click('#card [data-a="hback"]'); await pause(200);
+  console.log(`[${name}:D9] back → ${await sheet()}`);
+  await page.click('#card [data-a="close"]');
+  await page.click('#qbMore'); await page.locator('#card [data-a="defs"]').click(); await pause(200);
+  console.log(`[${name}:D10] defs has offside/foul note=${/越位、犯规怎么算/.test(await txt('#card'))}`);
+  await page.click('#card [data-a="close"]');
   console.log(`[${name}] ERRORS: ${errors.length ? errors.join('\n') : 'none'}`);
   await ctx.close();
 }

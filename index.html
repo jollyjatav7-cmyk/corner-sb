@@ -678,6 +678,15 @@ body{background:var(--paper)}
 .hlp p{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink2)}
 .hlp .where{font-size:12px;color:var(--muted);margin-top:2px}
 .bigp{height:46px;font-size:15px}
+.bdl{display:grid}
+.bd{display:grid;grid-template-columns:52px minmax(0,1fr) auto 44px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--rule)}
+.bd .t{font:600 13px var(--f-num);color:var(--ink2)}
+.bd .w{display:grid;gap:2px;min-width:0}
+.bd .w b{font-size:14px;font-weight:600}
+.bd .w small{font-size:12px;color:var(--muted);line-height:1.4}
+.bd .pr{font:600 15px var(--f-num);text-align:right;white-space:nowrap}
+.bd .pr small{display:block;font:500 10.5px var(--f-ui);color:var(--muted)}
+.bd .rs{text-align:right;font-size:13px;font-weight:600}
 .lnset{display:grid;grid-template-columns:1fr 44px minmax(84px,auto) 44px;align-items:center;gap:8px}
 .lnset span{font-size:14px;color:var(--ink2)}
 .lnset button{height:40px;border:0;border-radius:12px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule);font-size:20px;color:var(--ink)}
@@ -1017,7 +1026,7 @@ let M = null, seq = 0;
 function newMatch(prev){
   const d = new Date();
   return { id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), c: nowSec(), u: nowSec(),
-    d: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, lg: prev ? prev.lg : '', h: '', a: '', st: 1,
+    d: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, lg: '', h: '', a: '', st: 1,
     exp: null, line: prev ? prev.line.slice() : [4.5, 4.5], hd: prev && prev.hd ? prev.hd.slice() : [-0.5, -0.5], add: [null, null], pe: {},
     mk: ['h', 'f'], fl: null, fh: null, ab: { on: null, bets: [] }, res: null, api: null, apiNo: null,
     obs: { p: 1, t: 0 }, stop: null, tm: { p: 1, b: 0, r: 0, at: 0, ht: 0 }, ev: [] };
@@ -1814,6 +1823,26 @@ function abEval(s, mkts){
   return { mt: s.mt, prog: Object.values(best), idle: !run };
 }
 const resTxt = r => r == null ? '<span class="pend">待结算</span>' : r === 1 ? '<span class="win">命中</span>' : r === 0 ? '<span class="lose">没中</span>' : '<span class="push">走盘</span>';
+/* 一场比赛的投注明细：每一笔自动投注的时间、盘口、当时的比分和角球、模型机会、档位、结果，加上你记下的投注 */
+function mbetsHTML(m){
+  const bets = m.ab.bets.slice().sort((a, b) => a.p - b.p || a.t - b.t), my = m.my || [], f = finalCk(m), r = m.res || {};
+  const ft = r.ft || f.ft, h1 = r.h1 || f.h1;
+  const fin = mt => mt === 'h1' ? h1 : mt === 'ft' ? ft : ft && h1 ? [ft[0] - h1[0], ft[1] - h1[1]] : null;
+  const w = bets.filter(b => b.r === 1).length, l = bets.filter(b => b.r === 0).length, pu = bets.filter(b => b.r === 0.5).length, pend = bets.filter(b => b.r == null).length;
+  const tiers = TIERS.map(k => { const x = bets.filter(b => b.tier === k), xw = x.filter(b => b.r === 1).length, xl = x.filter(b => b.r === 0).length;
+    return x.length ? `<tr><td>≥${k}%</td><td>${x.length}</td><td>${xw}</td><td>${xl}</td><td class="hr">${xw + xl ? pct(xw / (xw + xl)) : '—'}</td><td>${pct(x.reduce((t, b) => t + b.pr, 0) / x.length)}</td></tr>` : ''; }).join('');
+  const one = b => {
+    const c = fin(b.mt), now = b.ck || [0, 0], sc = b.sc || [0, 0];
+    const after = c ? (b.mk === 'ou' ? `最后 ${c[0] + c[1]} 个` : `最后 ${c[0]}–${c[1]}${b.fr ? `，投注后 ${c[0] - now[0]}–${c[1] - now[1]}` : ''}`) : '最后的角球还不知道';
+    return `<div class="bd"><span class="t">${fmtClock(b.p, b.t)}</span><span class="w"><b>${betLabel(b)}</b><small>当时比分 ${sc[0]}–${sc[1]}、${MKT[b.mt]}角球 ${now[0]}–${now[1]} · ${after}</small></span><span class="pr">${pct(b.pr)}<small>≥${b.tier}</small></span><span class="rs">${resTxt(b.r)}</span></div>`;
+  };
+  return `<p class="hint">${esc(m.h || '主队')} vs ${esc(m.a || '客队')} · ${esc(m.d)}${m.lg ? ' · ' + esc(m.lg) : ''}<br>最后角球：${h1 ? `上半场 ${h1[0]}–${h1[1]}` : '上半场不知道'}，${ft ? `全场 ${ft[0]}–${ft[1]}` : '全场不知道'}${m.res ? '（结算时确认的）' : m.api && m.api.fin ? '（联网完场数据）' : ''}</p>
+    <div class="lbl">自动投注（模拟）${bets.length ? `：${bets.length} 笔，命中 ${w}、没中 ${l}${pu ? `、走盘 ${pu}` : ''}${pend ? `、待结算 ${pend}` : ''}${w + l ? `，命中率 ${pct(w / (w + l))}` : ''}` : '：这场没有'}</div>
+    ${bets.length ? `${tiers ? `<table class="sts"><thead><tr><th>档位</th><th>笔数</th><th>命中</th><th>没中</th><th>命中率</th><th>模型当时</th></tr></thead><tbody>${tiers}</tbody></table>` : ''}
+      <div class="bdl">${bets.map(one).join('')}</div>` : ''}
+    <div class="lbl">我的投注${my.length ? `：${my.length} 笔` : '：这场没有'}</div>
+    ${my.length ? `<div class="bdl">${my.map(b => { const x = myResult(m, b); return `<div class="bd"><span class="t"></span><span class="w"><b>${myLabel(b)}</b><small>投注时 ${b.s0[0]}:${b.s0[1]}${b.mk === 'hd' ? (b.cnt ? '（投注前的角球也算）' : '（从投注时起算）') : ''}</small></span><span class="pr"></span><span class="rs">${x == null ? '<span class="pend">还不知道</span>' : `<span class="${x > 0 ? 'win' : x < 0 ? 'lose' : 'push'}">${MYR[x]}</span>`}</span></div>`; }).join('')}</div>` : ''}`;
+}
 function renderAB(){
   const el = $('#ab'), bets = M.ab.bets, v = abView, live = M.st === 1;
   const bd = $('#abBadge'); bd.textContent = bets.length ? bets.length : M.ab.on ? '开' : ''; bd.classList.toggle('on', !!M.ab.on && live);
@@ -1839,7 +1868,7 @@ function renderAB(){
   el.innerHTML = `<div class="sec-h"><h2>自动投注（模拟）</h2>${helpBtn('ab')}<span class="sp"></span><small>${bets.length ? `这场 ${bets.length} 笔` : '只算命中率'}</small></div>
     ${ctl}
     ${bets.length ? `<table class="abt"><tbody>${list}</tbody></table>` : ''}
-    <div class="row">${pend ? `<button class="pill dark" data-ab="settle">结算 ${pend} 笔</button>` : ''}<button class="pill" data-ab="stats">命中率统计</button></div>`;
+    <div class="row">${pend ? `<button class="pill dark" data-ab="settle">结算 ${pend} 笔</button>` : ''}${bets.length ? '<button class="pill" data-ab="detail">这场明细</button>' : ''}<button class="pill" data-ab="stats">命中率统计</button></div>`;
 }
 $('#ab').addEventListener('click', ev => {
   const b = ev.target.closest('[data-ab]'); if (!b) return;
@@ -1849,6 +1878,7 @@ $('#ab').addEventListener('click', ev => {
     case 'hold': AB.hold = +b.dataset.v; LS.set('corner-sb-ab', AB); abTrack = {}; renderAB(); return;
     case 'settle': openSettle(M.id); return;
     case 'stats': openSheet('arch', { tab: 'stats' }); return;
+    case 'detail': closeMid(); openSheet('mbets', { id: M.id }); return;
   }
 });
 /* 结算：用最后的角球数（上半场、全场）算出每一笔的结果 */
@@ -3128,7 +3158,7 @@ function whRow(m, d){
     const note = d.note && d.note.id === m.id ? `<p class="netnote">${esc(d.note.t)}</p>` : '';
     const pick = d.pick && d.pick.id === m.id ? `<div class="picks sg-list">${d.pick.cands.map((x, i) => { const fx = x.f, gl = fx.goals || {}; return `<button data-a="ppick" data-id="${esc(m.id)}" data-i="${i}"><span class="t1">${esc(fx.teams.home.name)} <b>${gl.home ?? ''}${gl.home != null ? '–' : 'vs'}${gl.away ?? ''}</b> ${esc(fx.teams.away.name)}</span><span class="t2">${esc(fx.league ? fx.league.name : '')}　${fixWhen(fx)}${x.sw ? '　<em>主客跟你输入的相反</em>' : ''}</span></button>`; }).join('')}</div>` : '';
     act = `<div class="wact">${apTxt ? `<div class="t2 apt">${apTxt}</div>` : ''}${note}${pick}
-      <div class="row">${cur ? '' : `<button class="pill dark" data-a="mopen" data-id="${esc(m.id)}">打开</button>`}${canSync ? `<button class="pill ${ap ? '' : 'green'}" data-a="msync" data-id="${esc(m.id)}" ${pastBusy ? 'disabled' : ''}>${pastBusy === m.id ? '同步中…' : ap ? '再同步' : '联网同步'}</button>` : ''}${pend ? `<button class="pill dark" data-a="msettle" data-id="${esc(m.id)}">结算</button>` : ''}<button class="pill" data-a="mexp" data-id="${esc(m.id)}">导出</button><button class="pill ${d.del === m.id ? 'danger' : ''}" data-a="mdel" data-id="${esc(m.id)}">${d.del === m.id ? '确定删除' : '删除'}</button></div></div>`;
+      <div class="row">${cur ? '' : `<button class="pill dark" data-a="mopen" data-id="${esc(m.id)}">打开</button>`}${canSync ? `<button class="pill ${ap ? '' : 'green'}" data-a="msync" data-id="${esc(m.id)}" ${pastBusy ? 'disabled' : ''}>${pastBusy === m.id ? '同步中…' : ap ? '再同步' : '联网同步'}</button>` : ''}${pend ? `<button class="pill dark" data-a="msettle" data-id="${esc(m.id)}">结算</button>` : ''}${m.ab.bets.length || (m.my || []).length ? `<button class="pill" data-a="mbets" data-id="${esc(m.id)}">投注明细</button>` : ''}<button class="pill" data-a="mexp" data-id="${esc(m.id)}">导出</button><button class="pill ${d.del === m.id ? 'danger' : ''}" data-a="mdel" data-id="${esc(m.id)}">${d.del === m.id ? '确定删除' : '删除'}</button></div></div>`;
   }
   return `<div class="wrow"><button data-a="wopen" data-id="${esc(m.id)}" aria-expanded="${open}"><span class="w1">${esc(m.h || '主队')} ${r.g[0]}–${r.g[1]} ${esc(m.a || '客队')}${cur ? ' <i class="wtag live">目前这场</i>' : ''}${m.st !== 2 ? ' <i class="wtag">未结束</i>' : ''}${pend ? ` <i class="wtag warn">${pend} 笔待结算</i>` : ''}</span>
     <span class="w2">${esc(m.d)}${m.lg ? ' · ' + esc(m.lg) : ''} · 角球 ${ft[0]}–${ft[1]}${h1 ? `（上半场 ${h1[0]}–${h1[1]}）` : ''} · 事件 ${m.ev.length} 笔</span>
@@ -3237,6 +3267,7 @@ const DEFS = [
   ['定位球怎么点', '任意球、角球、界外球、球门球本身那一脚，不点进入前场、进入禁区或传中。之后发生的照常点：直接任意球射门、头球攻门点“射门”，被挡出底线点“角球”，进了点“进球”。定位球开出后，比赛恢复成运动战，之后的推进、传中和进禁区也照常点。'],
   ['进入前场', '本队在运动战中把球推进前场三分之一：传球而且队友接到，或者自己带球过线。把球场长度分成三等份，最靠近对方球门的那一份就是前场三分之一，大约是对方半场靠近球门的三分之二。球又被打回去、再推进一次，就再点一次。如果这一下直接进了禁区，只点“进入禁区”。'],
   ['进入禁区', '本队在运动战中从禁区外把球送进对方禁区：传球而且队友在禁区里接到，或者自己带球进禁区。传中另外点，不要重复点这个。定位球（角球、任意球、界外球）不算。'],
+  ['越位、犯规怎么算', '越位：传球越位，不算进入前场，也不算进入禁区（数据里越位的传球算“没传成”）；自己带球过线不会越位，照样算。犯规：看球有没有先进去。队友已经接到、或自己已经带球过线，之后才吹犯规（不管哪一方犯规），照样算；球还没过线、队友还没碰到就吹了，不算。犯规以后的任意球那一脚是定位球，不点。'],
   ['传中到人／没到人', '运动战中从边路往禁区传的球（地面或高空都算）。队友接到、头球或射门碰到算“到人”；被挡出、被解围、门将没收或直接出界算“没到人”。角球和任意球的传中不算。两边都有按键，球从哪边传就点哪边，结果一样。'],
   ['传中被挡、第二点', '传中一出脚就被挡，也算传中，点“没到人”；挡出底线的话，再点“角球”，挡在场内就不用再点别的。“到人”只看第一下碰到球的是谁：第一点被对方碰到就是没到人，之后本队在禁区里把球抢回来也不改。抢回来以后本队射门就点“射门”，从禁区外再传进或带进禁区就点“进入禁区”，在禁区里直接捡到不用点。'],
   ['射门', '所有射门都算，包括头球、任意球和点球。“被挡”是被防守球员挡下；“被扑”是门将扑到或碰到（包括扑出底线、扑到门柱）；“偏出”是没有打在门框以内，打中门柱或横梁也算偏出；射进就点“进球”。'],
@@ -3343,6 +3374,15 @@ function renderSheet(){
         <button class="pill bigp" data-a="nq2">不保存，删除这场</button>
         <p class="hint">“先留着”会放在比赛仓库的“未结束”里，可以再打开接着记录。</p>`;
       break;
+    case 'mbets': {   // 一场的投注明细
+      const m = store[d.id] || (M.id === d.id ? M : null);
+      if (!m){ closeSheet(); return; }
+      const pend = m.ab.bets.filter(b => b.r == null).length;
+      h = `<div class="card-h"><h3>投注明细</h3>${d.back ? '<button class="pill" data-a="hback">返回</button>' : ''}<button class="pill" data-a="close">关闭</button></div>
+        ${mbetsHTML(m)}
+        <div class="row">${pend ? `<button class="pill dark" data-a="msettle" data-id="${esc(m.id)}">结算 ${pend} 笔</button>` : ''}<button class="pill" data-a="mexp" data-id="${esc(m.id)}">导出这场</button></div>`;
+      break;
+    }
     case 'mybets': {
       const s = predState();
       h = `<div class="card-h"><h3>我的投注</h3>${helpBtn('my')}<button class="pill" data-a="close">关闭</button></div>
@@ -3637,6 +3677,7 @@ card.addEventListener('click', ev => {
     case 'noff': M.api = null; M.apiNo = namesKey(); saveNow(); closeSheet(); renderPred(); showToast('已解除联网连接'); break;
     case 'abhold': AB.hold = +b.dataset.v; LS.set('corner-sb-ab', AB); abTrack = {}; renderSheet(); renderAB(); break;
     case 'msettle': openSettle(b.dataset.id); break;
+    case 'mbets': openSheet('mbets', { id: b.dataset.id, back: sheetKind === 'arch' ? { kind: 'arch', data: sheetData } : null }); break;
     case 'ss': { const f = b.dataset.f, i = +b.dataset.i; d[f][i] = clamp(d[f][i] + (+b.dataset.d), 0, 40); renderSheet(); break; }
     case 'sgo': {
       const m = store[d.id] || M, need = needRes(m);
@@ -3645,7 +3686,7 @@ card.addEventListener('click', ev => {
       let w = 0, l = 0, pu = 0;
       for (const x of m.ab.bets){ x.r = settleBet(x, m.res); if (x.r === 1) w++; else if (x.r === 0) l++; else if (x.r === 0.5) pu++; }
       store[m.id] = m; saveNow(); closeSheet(); renderAll();
-      showToast(`已结算 ${w + l + pu} 笔：命中 ${w}，没中 ${l}${pu ? `，走盘 ${pu}` : ''}`, () => openSheet('arch', { tab: 'stats' }), '看统计');
+      showToast(`已结算 ${w + l + pu} 笔：命中 ${w}，没中 ${l}${pu ? `，走盘 ${pu}` : ''}`, () => openSheet('mbets', { id: m.id }), '看明细');
       break;
     }
     case 'new': closeSheet(); askNew(); break;
@@ -4217,7 +4258,7 @@ setInterval(() => {
 }, 500);
 
 let offline = '离线使用：请从主屏幕的图示打开，联网时打开一次后就能离线使用。';
-const APPVER = 'v23';
+const APPVER = 'v24';
 if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:'){
   // 新版本在背景下载好、接手这个页面时，提示重新载入（记录随时都存好了，重新载入不会丢）
   let hadCtrl = !!navigator.serviceWorker.controller;
