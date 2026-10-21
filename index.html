@@ -733,15 +733,17 @@ body{background:var(--paper)}
   .hud .rhy{grid-column:1/-1;border-radius:0;box-shadow:none;background:none;border-top:1px solid var(--line2);padding:5px 10px 6px;gap:8px}
   .hud .rhy .rt.a{padding-left:8px}
   .hud .rhy .r1 em{font-size:12.5px} .hud .rhy .r1 b{font-size:16px}
-  .hud .rhy .r2{font-size:12px}
-  .hud .rhy small{font-size:10px}
+  /* 第二行跟着屏幕宽度缩放，不会被切掉；手机上省略乘号（标签已经说明是哪一项） */
+  .hud .rhy .r2{font-size:clamp(10.5px, 2.95vw, 12.5px);gap:0}
+  .hud .rhy .r2 i{display:none}
+  .hud .rhy .r2 small{font-size:clamp(9px, 2.4vw, 10.5px);margin:0 2px 0 5px} .hud .rhy .r2 small:first-child{margin-left:0}
+  .hud .rhy .r1 small{font-size:10px}
 }
 /* 窄的手机（例如 iPhone SE）：字小一点，乘号省略 */
 @media (max-width:389px){
   .hud .rhy{gap:6px;padding:4px 8px 5px}
   .hud .rhy .rt.a{padding-left:6px}
-  .hud .rhy .r2{font-size:11.5px} .hud .rhy .r2 i{display:none} .hud .rhy .r2 small{margin-left:3px} .hud .rhy .r2 small:first-child{margin-left:0}
-  .hud .rhy small{font-size:9.5px}
+  .hud .rhy .r1 small{font-size:9.5px}
 }
 /* 视频浮窗：手机上空出浮窗的位置，记录按键和盘口都在浮窗外面 */
 .pipband{display:none}
@@ -4161,7 +4163,7 @@ setInterval(() => {
 }, 500);
 
 let offline = '离线使用：请从主屏幕的图示打开，联网时打开一次后就能离线使用。';
-const APPVER = 'v21';
+const APPVER = 'v22';
 if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:'){
   // 新版本在背景下载好、接手这个页面时，提示重新载入（记录随时都存好了，重新载入不会丢）
   let hadCtrl = !!navigator.serviceWorker.controller;
