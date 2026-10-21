@@ -139,13 +139,14 @@ async function run(browser, name, vp, opts){
   await page.click('#clkBtn'); await page.click('#card [data-a="finish"]'); await pause(300);
   if (!(await page.$eval('#sheet', e => e.hidden))) await page.click('#card [data-a="close"]').catch(() => {});
   await page.click('#menuBtn'); await page.click('#card [data-a="arch"]'); await pause(300);
+  await page.locator('#card [data-a="wopen"]').first().click(); await pause(150);
   const btn = page.locator('#card [data-a="msync"]').first();
   console.log(`[${name}:list] sync buttons=${await page.locator('#card [data-a="msync"]').count()} first=${await btn.textContent()}`);
   const b2 = calls.length;
   await btn.click(); await pause(900);
   console.log(`[${name}:past-sync] ${(await txt('#card .netnote')).slice(0, 140)} | requests=${calls.length - b2}`);
   if (await page.$('#card [data-a="ppick"]')){ await page.locator('#card [data-a="ppick"]', { hasText: 'Napoli' }).first().click(); await pause(900); console.log(`[${name}:past-pick] ${(await txt('#card .netnote')).slice(0, 140)}`); }
-  console.log(`[${name}:past-row] ${(await page.locator('#card .mrow').first().innerText()).replace(/\s+/g, ' ').slice(0, 220)}`);
+  console.log(`[${name}:past-row] ${(await page.locator('#card .wrow').first().innerText()).replace(/\s+/g, ' ').slice(0, 220)}`);
   await page.screenshot({ path: `${out}/${name}_d4_list.png`, fullPage: false });
   await page.click('#card [data-a="close"]');
   console.log(`[${name}] ERRORS: ${errors.length ? errors.join('\n') : 'none'}`);

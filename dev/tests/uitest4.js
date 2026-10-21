@@ -103,6 +103,7 @@ async function run(browser, name, vp, opts){
   // export carries markets and bets
   await page.click('#menuBtn'); await page.click('#card [data-a="arch"]');
   console.log(`[${name}:archive] ${(await txt('#card')).slice(0, 200)}`);
+  await page.click('#card [data-a="wtab"][data-v="tidy"]');   // v19: 导出全部 lives under 备份与整理
   await page.click('#card [data-a="expall"]');
   const o = JSON.parse(await page.inputValue('#expText'));
   const m1 = o.matches.find(m => m.h === '阿森纳');

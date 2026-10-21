@@ -12,7 +12,7 @@ const { chromium } = require(process.env.PLAYWRIGHT || 'playwright');
   await p2.click('#menuBtn'); await p2.click('#card [data-a="import"]'); await p2.fill('#pasteIn', txt); await p2.click('#card [data-a="paste"]');
   await p2.click('#menuBtn'); await p2.click('#card [data-a="arch"]');
   console.log((await p2.textContent('#card')).replace(/\s+/g, ' ').slice(0, 200));
-  await p2.click('#card [data-a="mopen"]');
+  await p2.locator('#card [data-a="wopen"]').first().click(); await p2.click('#card [data-a="mopen"]');
   console.log('opened:', (await p2.textContent('.score')).replace(/\s+/g, ' '), '| events in strip:', (await p2.textContent('#recent')).replace(/\s+/g, ' '));
   console.log('ERRORS:', errs.length ? errs : 'none'); await b.close();
 })();
