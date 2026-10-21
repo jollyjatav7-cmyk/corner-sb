@@ -23,6 +23,10 @@ core = '\n'.join(l for l in core.split('\n') if not l.startswith("if (typeof mod
 html = read(SRC, 'app.html')
 for key in ('__MODELJS__', '__VALTEXT__', '__HCAPTEXT__'):
     assert html.count(key) == 1, f'{key} must appear exactly once in app.html'
+import re
+ver = re.search(r"corner-sb-(v\d+)", read(SRC, 'sw.js')).group(1)   # 版本号跟着 sw.js 的快取名称
+assert html.count('__APPVER__') == 1, '__APPVER__ must appear exactly once in app.html'
+html = html.replace('__APPVER__', ver)
 html = (html.replace('__MODELJS__', core)
             .replace('__VALTEXT__', read(DATA, 'valtext.txt').strip())
             .replace('__HCAPTEXT__', read(DATA, 'hcaptext.txt').strip()))

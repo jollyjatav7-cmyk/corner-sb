@@ -3251,7 +3251,7 @@ function renderSheet(){
             ${t('import', '导入', '从文件或文字导入比赛')}
           </div></div>
         </div>
-        <p class="hint">${offline}</p>`;
+        <p class="hint">${offline}　版本 ${APPVER}</p>`;
       break;
     }
     case 'help1': {
@@ -3781,11 +3781,11 @@ $('#fileIn').addEventListener('change', ev => {
 /* ================= 提示 ================= */
 let toastT = 0, toastFn = null;
 let toastLabel = '撤销';
-function showToast(msg, fn, label){
+function showToast(msg, fn, label, ms){
   $('#toastMsg').textContent = msg; toastFn = fn || null; toastLabel = label || '撤销';
   $('#toastUndo').textContent = toastLabel;
   $('#toastUndo').hidden = !fn; $('#toast').hidden = false;
-  clearTimeout(toastT); toastT = setTimeout(() => { $('#toast').hidden = true; toastFn = null; }, Math.min(9000, Math.max(fn ? 4000 : 2600, msg.length * 110)));  // 长的提示多留一会儿
+  clearTimeout(toastT); toastT = setTimeout(() => { $('#toast').hidden = true; toastFn = null; }, ms || Math.min(9000, Math.max(fn ? 4000 : 2600, msg.length * 110)));  // 长的提示多留一会儿
 }
 function hideToast(){ clearTimeout(toastT); $('#toast').hidden = true; toastFn = null; }
 $('#toastUndo').addEventListener('click', () => {
@@ -4161,8 +4161,19 @@ setInterval(() => {
 }, 500);
 
 let offline = '离线使用：请从主屏幕的图示打开，联网时打开一次后就能离线使用。';
-if ('serviceWorker' in navigator && location.protocol === 'https:'){
-  navigator.serviceWorker.register('./sw.js').then(() => navigator.serviceWorker.ready).then(() => { offline = '离线使用：已准备好，没有网络也能从主屏幕打开。'; }).catch(() => {});
+const APPVER = 'v21';
+if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:'){
+  // 新版本在背景下载好、接手这个页面时，提示重新载入（记录随时都存好了，重新载入不会丢）
+  let hadCtrl = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadCtrl){ hadCtrl = true; return; }   // 第一次安装，不是更新
+    showToast('新版本已经下载好，你的记录都已存好', () => location.reload(), '现在更新', 30000);
+  });
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    // iPhone 上切回 app 不会重新载入：回到前台时检查一次有没有新版本
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+    return navigator.serviceWorker.ready;
+  }).then(() => { offline = '离线使用：已准备好，没有网络也能从主屏幕打开。'; }).catch(() => {});
 }
 renderAll(); syncWake();
 setTimeout(() => { if (NET.key) bookCollect(false); }, 15000);
