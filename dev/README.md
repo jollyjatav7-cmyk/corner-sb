@@ -45,6 +45,7 @@ node uitest8.js http://localhost:8766 out            # one-name search, one-tap 
 node uitest9.js  http://localhost:8766 out           # my bets: a real bet with the corner score at the time of the bet, live win chance
 node uitest10.js http://localhost:8766 out           # bookmaker corner lines from /odds and /odds/live (mocked)
 node uitest16.js http://localhost:8766 out           # v25: half button, resume after a stoppage pause, auto-bet stops/trend hold/warm-up, team averages (mocked)
+node uitest17.js http://localhost:8766 out           # v26: odds and profit, merging a split match, model check, storage use, expectation filled by itself (mocked)
 node fitphone.js http://localhost:8766 out           # phone layouts fit the screen
 node compat.js  http://localhost:8766                # old saved data still loads
 ```
