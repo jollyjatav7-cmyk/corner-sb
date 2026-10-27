@@ -44,6 +44,7 @@ node uitest7.js http://localhost:8766 out            # kick-off stamps checked a
 node uitest8.js http://localhost:8766 out            # one-name search, one-tap expectation, no-corner-stats matches, late kick-off tap, faded backfill (mocked)
 node uitest9.js  http://localhost:8766 out           # my bets: a real bet with the corner score at the time of the bet, live win chance
 node uitest10.js http://localhost:8766 out           # bookmaker corner lines from /odds and /odds/live (mocked)
+node uitest16.js http://localhost:8766 out           # v25: half button, resume after a stoppage pause, auto-bet stops/trend hold/warm-up, team averages (mocked)
 node fitphone.js http://localhost:8766 out           # phone layouts fit the screen
 node compat.js  http://localhost:8766                # old saved data still loads
 ```
@@ -60,6 +61,10 @@ python3 -I dev/model/fit3.py validate work2 work/match_summary.csv 0.0     # hel
 python3 -I dev/model/fit3.py final work2 work/match_summary.csv params3.json
 python3 -I dev/model/make_model_js.py params3.json dev/data/model.json
 ```
+
+Handicap uncertainty (`shareSd` in model.json, v25): `python3 -I dev/model/val_share.py out.pkl` simulates every checkpoint with and without
+who-gets-on-top noise (leave-one-league-out) and prints log loss per league; 0.25 made handicap picks calibrated (75% said → 75% hit) with totals unchanged.
+`parity.py` also checks the JS and Python simulators give the same handicap probabilities.
 
 Analysis scripts: `extract3.py` (where each corner came from, extra candidate inputs),
 `origins_report.py` (numbers for the corner-origin report), `fit4.py` (tests extra buttons such as counters).

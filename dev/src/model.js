@@ -48,14 +48,18 @@ function mMultipliers(cnt, elapsed, rates, exp, share){
 }
 /* half 1/2；t0 本半场已过秒数；score/reds/last/mult 都是 [主, 客]；last 为本半场最后一个角球的秒数或 null；
    end 本半场预计总秒数。more（可省略）是之后要接着模拟的半场，例如 [{ half: 2, end: 2880 }]，用来算全场盘。
-   回传剩余角球总数的分布 dist[k]、平均，以及两队各自的平均 meanT 和“主队剩余 − 客队剩余”的分布 diff（键为差值）。 */
+   回传剩余角球总数的分布 dist[k]、平均，以及两队各自的平均 meanT 和“主队剩余 − 客队剩余”的分布 diff（键为差值）。
+   “谁会占上风”的不确定性：每一次模拟抽一个 z ~ N(0, shareSd²)，主队 × e^(z − sd²/2)、客队 × e^(−z − sd²/2)。
+   两队的平均和总数不变，只是让球的机会不会那么极端（回测：没有它时让球说 75% 实际约 72%，加了以后约 75%）。 */
 function mSimulate(half, t0, score, reds, last, end, mult, n, seed, more){
-  const P = MODEL.base, rnd = mRng(seed), dist = [], diff = {};
+  const P = MODEL.base, rnd = mRng(seed), dist = [], diff = {}, sd = MODEL.shareSd || 0, hv = sd * sd / 2;
   const man = [Math.sign(reds[1] - reds[0]), Math.sign(reds[0] - reds[1])];
   const segs = [[half, t0, end]].concat((more || []).map(x => [x.half, 0, x.end]));
   let sum = 0, sumH = 0, sumA = 0;
   for (let s = 0; s < n; s++){
-    let g0 = score[0], g1 = score[1], l0 = last[0] == null ? -1e9 : last[0], l1 = last[1] == null ? -1e9 : last[1], tot = 0, c0 = 0;
+    let g0 = score[0], g1 = score[1], l0 = last[0] == null ? -1e9 : last[0], l1 = last[1] == null ? -1e9 : last[1], tot = 0, c0 = 0, z = 0;
+    if (sd > 0){ const u1 = rnd() || 1e-12, u2 = rnd(); z = sd * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2); }
+    const mu = [mult[0] * Math.exp(z - hv), mult[1] * Math.exp(-z - hv)];
     for (let si = 0; si < segs.length; si++){
       const hf = segs[si][0], se = segs[si][2];
       const gH = P.goal[hf - 1][1], gA = P.goal[hf - 1][0];
@@ -68,7 +72,7 @@ function mSimulate(half, t0, score, reds, last, end, mult, n, seed, more){
           const diff = i === 0 ? g0 - g1 : g1 - g0;
           const st = P.state[diff <= -2 ? 0 : diff === -1 ? 1 : diff === 0 ? 2 : diff === 1 ? 3 : 4];
           const lc = i === 0 ? l0 : l1;
-          const lam = b * (i === 0 ? P.home : 1) * P.man[man[i] + 1] * st * (t - lc <= P.cluSec ? P.clu : 1) * mult[i] * dt;
+          const lam = b * (i === 0 ? P.home : 1) * P.man[man[i] + 1] * st * (t - lc <= P.cluSec ? P.clu : 1) * mu[i] * dt;
           const k = mPois(lam, rnd);
           tot += k;
           if (i === 0) c0 += k;

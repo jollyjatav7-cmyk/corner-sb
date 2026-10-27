@@ -32,7 +32,8 @@ async function run(browser, name, vp, opts){
   const n1 = await page.$$eval('#ab .abt tr', r => r.length);
   console.log(`[${name}:h1-late] bets=${n1} | ${(await txt('#ab .abt')).slice(0, 160)}`);
   await page.screenshot({ path: `${out}/${name}_a1_h1bets.png` });
-  // end of first half → toast offers settlement
+  // end of first half (after 44:00; an earlier tap offers 按错了 instead) → toast offers settlement
+  await page.clock.runFor(7 * 60000);
   await page.click('#clkBtn'); await page.click('#card [data-a="endh"]');
   console.log(`[${name}:ht] toast=${await txt('#toast')}`);
   await page.click('#toastUndo');

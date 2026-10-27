@@ -220,6 +220,40 @@ def feature_matrix(cp, rates, names, pseudo=15.0, rpseudo=10.0, mean_total=None)
 
 
 # ---------------------------------------------------------------- simulator (mirrors the app)
+def simulate_pt(P, half, t0, score, reds, last, end, mult, n, rng, share_sd=0.0):
+    """Like simulate, but returns (home_remaining, away_remaining) and applies the app's who-gets-on-top noise:
+    each run draws z ~ N(0, share_sd^2), home x e^(z - sd^2/2), away x e^(-z - sd^2/2) (see make_model_js.py shareSd)."""
+    z = rng.standard_normal(n) * share_sd
+    mh = mult[0] * np.exp(z - share_sd ** 2 / 2)
+    ma = mult[1] * np.exp(-z - share_sd ** 2 / 2)
+    tot = {1: np.zeros(n), 0: np.zeros(n)}
+    sh, sa = np.full(n, float(score[0])), np.full(n, float(score[1]))
+    lc = {1: np.full(n, -1e9 if last[0] is None else last[0]), 0: np.full(n, -1e9 if last[1] is None else last[1])}
+    man = {1: np.sign(reds[1] - reds[0]), 0: np.sign(reds[0] - reds[1])}
+    mlt = {1: mh, 0: ma}
+    st_arr = np.array(P['state'])
+    t = float(t0)
+    while t < end - 1e-9:
+        mi = int(t // 60)
+        step = min(60.0 - (t - mi * 60), end - t)
+        dt = step / 60.0
+        b = P['bin'][(half - 1) * 10 + min(mi // 5, 9)]
+        for side in (1, 0):
+            diff = (sh - sa) if side == 1 else (sa - sh)
+            clu = np.where(t - lc[side] <= P['cluSec'], P['clu'], 1.0)
+            lam = b * (P['home'] if side == 1 else 1.0) * P['man'][int(man[side]) + 1] * st_arr[state_idx(diff)] * clu * mlt[side] * dt
+            k = rng.poisson(lam)
+            tot[side] += k
+            lc[side] = np.where(k > 0, t + step / 2, lc[side])
+            g = rng.poisson(P['goal'][half - 1][side] * dt, n)
+            if side == 1:
+                sh = sh + g
+            else:
+                sa = sa + g
+        t += step
+    return tot[1], tot[0]
+
+
 def simulate(P, half, t0, score, reds, last, end, mult, n, rng):
     """Corners still to come in this half (both teams). score/reds/last/mult are [home, away]."""
     total = np.zeros(n)

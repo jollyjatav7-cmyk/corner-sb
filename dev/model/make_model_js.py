@@ -15,6 +15,10 @@ out = {
     'coefNoPrior': [r(x) for x in d['coefNoPrior']], 'coefPrior': [r(x) for x in d['coefPrior']],
     'coefSplit': [r(x) for x in d['coefSplit']],
     'pseudo': d['pseudo'], 'addDef': [4, 6],
+    # who-gets-on-top uncertainty for the handicap: each simulated match draws z ~ N(0, shareSd^2),
+    # home x e^(z - sd^2/2), away x e^(-z - sd^2/2). Chosen with val_share.py (leave-one-league-out):
+    # handicap picks said 75% -> 72% without it, 75% with it; totals unchanged.
+    'shareSd': 0.25,
 }
 json.dump(out, open(sys.argv[2], 'w'), ensure_ascii=False, separators=(',', ':'))
 print('written', len(json.dumps(out)))

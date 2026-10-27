@@ -51,3 +51,34 @@ print('js    ', js.strip())
 # model.json keeps 5 significant digits, so allow tiny rounding differences
 diff = float(np.max(np.abs(np.array(json.loads(js)) - np.array(py))))
 print('MATCH' if diff < 1e-3 else 'MISMATCH', 'max diff', round(diff, 5))
+
+# simulation: handicap and total probabilities with the who-gets-on-top noise (shareSd), JS vs Python, 40,000 runs each
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import model2 as M2  # noqa: E402
+mj = json.load(open(os.path.join(DEV, 'data', 'model.json')))
+P = mj['base']
+P['goal'] = [[g[0], g[1]] for g in P['goal']]   # [away, home] like the fit
+scases = [(1, 600, [0, 0], [0, 0], [None, None], 2880, [1.0, 1.0]),
+          (1, 1800, [1, 0], [0, 0], [1700, None], 2880, [1.3, 0.8]),
+          (2, 300, [0, 1], [0, 0], [None, None], 3060, [0.9, 1.2])]
+rng = np.random.default_rng(3)
+pys = []
+for half, t0, sc, rd, last, end, mult in scases:
+    h, a = M2.simulate_pt(P, half, t0, sc, rd, last, end, mult, 40000, rng, share_sd=mj['shareSd'])
+    d_ = h - a
+    pys.append([round(float((d_ - 0.5 > 0).mean()), 3), round(float((d_ + 0.5 > 0).mean()), 3), round(float((h + a > 2.5).mean()), 3)])
+jss = subprocess.run(['node', '-e', """
+const fs = require('fs'), path = require('path'), os = require('os');
+const dev = process.argv[1];
+const src = fs.readFileSync(path.join(dev, 'src', 'model.js'), 'utf8').replace('__MODEL__', fs.readFileSync(path.join(dev, 'data', 'model.json'), 'utf8'));
+const tmp = path.join(os.tmpdir(), 'corner_model_parity2.js'); fs.writeFileSync(tmp, src);
+const m = require(tmp);
+const cases = JSON.parse(process.argv[2]);
+console.log(JSON.stringify(cases.map(([hf, t0, sc, rd, last, end, mult]) => { const r = m.mSimulate(hf, t0, sc, rd, last, end, mult, 40000, 7);
+  const h = m.mHandicap(r, [0, 0], -0.5), h2 = m.mHandicap(r, [0, 0], 0.5); return [+h.home.toFixed(3), +h2.home.toFixed(3), +m.mOver(r, 0, 2.5).toFixed(3)]; })));
+""", DEV, json.dumps(scases)], capture_output=True, text=True, check=True).stdout
+print('sim python', pys)
+print('sim js    ', jss.strip())
+sdiff = float(np.max(np.abs(np.array(json.loads(jss)) - np.array(pys))))
+print('SIM MATCH' if sdiff < 0.012 else 'SIM MISMATCH', 'max diff', round(sdiff, 4), '(random error about 0.005)')
